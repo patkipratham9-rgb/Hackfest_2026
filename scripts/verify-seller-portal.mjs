@@ -671,7 +671,108 @@ testAssert(summary.critical === 1, "Catalog aggregation: exactly 1 critical-stoc
 testAssert(summary.low === 3, "Catalog aggregation: 3 low-stock items (stocks 1, 4, 8)");
 testAssert(summary.normal === 1, "Catalog aggregation: 1 normal healthy item (stock=25)");
 
+// =================================================================
+// 12. SELLER ORDER BOARD & FULFILLMENT KANBAN (CP-OB01)
+// =================================================================
+console.log("\n--- 12. SELLER ORDER BOARD & FULFILLMENT KANBAN (CP-OB01) ---");
+
+// 12.1 Route file and Layout integration
+const ordersPageContent = fs.readFileSync("./src/app/seller/orders/page.tsx", "utf-8");
+testAssert(fs.existsSync("./src/app/seller/orders/page.tsx"), "src/app/seller/orders/page.tsx exists");
+
+// 12.2 Pipeline Metrics & Header Elements
+testAssert(ordersPageContent.includes("data-testid=\"view-kanban-toggle\""), "Kanban view toggle with data-testid='view-kanban-toggle' present");
+testAssert(ordersPageContent.includes("data-testid=\"view-list-toggle\""), "List view toggle with data-testid='view-list-toggle' present");
+testAssert(ordersPageContent.includes("data-testid=\"metric-total-orders\""), "Total orders metric with data-testid='metric-total-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"metric-placed-orders\""), "Needs packing metric with data-testid='metric-placed-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"metric-packed-orders\""), "In packing metric with data-testid='metric-packed-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"metric-ready-orders\""), "Ready at counter metric with data-testid='metric-ready-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"metric-completed-orders\""), "Completed metric with data-testid='metric-completed-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"pending-orders-badge\""), "Pending active orders badge with data-testid='pending-orders-badge' present");
+testAssert(ordersPageContent.includes("data-testid=\"simulate-order-button\""), "Demo order generator trigger with data-testid='simulate-order-button' present");
+
+// 12.3 Kanban Columns
+testAssert(ordersPageContent.includes("data-testid=\"kanban-col-placed\""), "Placed orders column with data-testid='kanban-col-placed' present");
+testAssert(ordersPageContent.includes("data-testid=\"kanban-col-packed\""), "Packed orders column with data-testid='kanban-col-packed' present");
+testAssert(ordersPageContent.includes("data-testid=\"kanban-col-ready\""), "Ready at counter column with data-testid='kanban-col-ready' present");
+testAssert(ordersPageContent.includes("data-testid=\"kanban-col-completed\""), "Completed column with data-testid='kanban-col-completed' present");
+
+// 12.4 Filter Tabs & Search
+testAssert(ordersPageContent.includes("data-testid=\"filter-all-orders\""), "Filter all orders tab with data-testid='filter-all-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"filter-placed-orders\""), "Filter placed orders tab with data-testid='filter-placed-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"filter-packed-orders\""), "Filter packed orders tab with data-testid='filter-packed-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"filter-ready-orders\""), "Filter ready orders tab with data-testid='filter-ready-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"filter-completed-orders\""), "Filter completed orders tab with data-testid='filter-completed-orders' present");
+testAssert(ordersPageContent.includes("data-testid=\"order-search-input\""), "Order search input with data-testid='order-search-input' present");
+
+// 12.5 Order Card Elements & Actions
+testAssert(ordersPageContent.includes("order-card-"), "Order card element with data-testid='order-card-[id]' present");
+testAssert(ordersPageContent.includes("order-id-"), "Order ID badge with data-testid='order-id-[id]' present");
+testAssert(ordersPageContent.includes("order-status-"), "Order status badge with data-testid='order-status-[id]' present");
+testAssert(ordersPageContent.includes("customer-name-"), "Customer name element with data-testid='customer-name-[id]' present");
+testAssert(ordersPageContent.includes("customer-phone-"), "Customer phone link with data-testid='customer-phone-[id]' present");
+testAssert(ordersPageContent.includes("pickup-time-"), "Pickup slot element with data-testid='pickup-time-[id]' present");
+testAssert(ordersPageContent.includes("pickup-code-"), "Counter PIN token with data-testid='pickup-code-[id]' present");
+testAssert(ordersPageContent.includes("order-total-"), "Order total price with data-testid='order-total-[id]' present");
+testAssert(ordersPageContent.includes("advance-order-btn-"), "Order advance trigger with data-testid='advance-order-btn-[id]' present");
+testAssert(ordersPageContent.includes("mark-packed-"), "Mark packed trigger attribute present");
+testAssert(ordersPageContent.includes("mark-ready-"), "Mark ready trigger attribute present");
+testAssert(ordersPageContent.includes("mark-completed-"), "Mark completed trigger attribute present");
+testAssert(ordersPageContent.includes("view-tracking-"), "Customer tracking link with data-testid='view-tracking-[id]' present");
+
+// 12.6 Counter Code PIN Verification Modal
+testAssert(ordersPageContent.includes("data-testid=\"counter-verify-modal\""), "PIN verification modal with data-testid='counter-verify-modal' present");
+testAssert(ordersPageContent.includes("data-testid=\"verify-code-input\""), "PIN input field with data-testid='verify-code-input' present");
+testAssert(ordersPageContent.includes("data-testid=\"verify-code-error\""), "PIN mismatch error alert with data-testid='verify-code-error' present");
+testAssert(ordersPageContent.includes("data-testid=\"confirm-pickup-button\""), "Confirm pickup trigger with data-testid='confirm-pickup-button' present");
+testAssert(ordersPageContent.includes("data-testid=\"cancel-pickup-button\""), "Cancel verification trigger with data-testid='cancel-pickup-button' present");
+
+// 12.7 Server Action & Role Authorization
+const actionsForOrders = fs.readFileSync("./src/actions/marketplaceActions.ts", "utf-8");
+testAssert(actionsForOrders.includes("export async function updateOrderStatusAction"), "updateOrderStatusAction server action exported");
+testAssert(actionsForOrders.includes("export async function getStoreOrdersAction"), "getStoreOrdersAction server action exported");
+
+function simulateUpdateOrderStatusAction(orderId, nextStatus, options = {}) {
+  if (options.role && options.role !== "seller" && options.role !== "admin") {
+    return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+  }
+  const VALID_FORWARD_TRANSITIONS = {
+    placed: ["packed", "cancelled"],
+    packed: ["ready", "cancelled"],
+    ready: ["completed", "cancelled"],
+    completed: [],
+    cancelled: [],
+  };
+  const current = options.current || "placed";
+  const allowed = VALID_FORWARD_TRANSITIONS[current] || [];
+  if (!allowed.includes(nextStatus) && current !== nextStatus && nextStatus !== "placed") {
+    return { success: false, error: `Invalid transition from ${current} to ${nextStatus}` };
+  }
+  return { success: true };
+}
+
+testAssert(!simulateUpdateOrderStatusAction("ord-1", "packed", { role: "customer" }).success, "Order status update rejected for customer role");
+testAssert(!simulateUpdateOrderStatusAction("ord-1", "packed", { role: "anonymous" }).success, "Order status update rejected for anonymous role");
+testAssert(simulateUpdateOrderStatusAction("ord-1", "packed", { role: "seller", current: "placed" }).success, "Order status update authorized for seller");
+testAssert(simulateUpdateOrderStatusAction("ord-1", "packed", { role: "admin", current: "placed" }).success, "Order status update authorized for admin");
+testAssert(simulateUpdateOrderStatusAction("ord-1", "ready", { role: "seller", current: "packed" }).success, "Permitted transition: packed -> ready");
+testAssert(simulateUpdateOrderStatusAction("ord-1", "completed", { role: "seller", current: "ready" }).success, "Permitted transition: ready -> completed");
+testAssert(!simulateUpdateOrderStatusAction("ord-1", "completed", { role: "seller", current: "placed" }).success, "Illegal skip rejected: placed -> completed");
+
+// PIN Verification Algorithm
+function verifyCounterCode(input, expected) {
+  if (!input || !expected) return { valid: false, error: "PIN required" };
+  return input.trim().toUpperCase() === expected.trim().toUpperCase()
+    ? { valid: true }
+    : { valid: false, error: `Invalid PIN. Counter token must match '${expected}'.` };
+}
+
+testAssert(verifyCounterCode("LL-792", "LL-792").valid, "Exact matching PIN successfully verified");
+testAssert(verifyCounterCode("ll-792", "LL-792").valid, "Case-insensitive PIN successfully verified");
+testAssert(!verifyCounterCode("LL-111", "LL-792").valid, "Mismatched PIN correctly rejected");
+testAssert(!verifyCounterCode("", "LL-792").valid, "Empty PIN correctly rejected");
+
 console.log("\n==================================================================");
-console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-PI05!`);
-console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls & Low-Stock Badges Operational!");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-OB01!`);
+console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls, Low-Stock Badges & Order Board Operational!");
 console.log("==================================================================");

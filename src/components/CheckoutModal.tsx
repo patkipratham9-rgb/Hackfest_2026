@@ -489,7 +489,7 @@ export function CheckoutModal() {
                     UPI Instant Pay
                   </div>
                   <div className="text-[10px] text-forest-600 mt-0.5">
-                    GPay / PhonePe / Paytm
+                    GPay / PhonePe • Cashfree PG
                   </div>
                 </button>
 

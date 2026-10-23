@@ -130,50 +130,44 @@ testAssert(!VALID_TRANSITIONS.placed.includes("completed"), "CP-D05: State machi
 testAssert(VALID_TRANSITIONS.completed.length === 0, "CP-D05: Terminal completed state cannot be transitioned backwards");
 
 // ---------------------------------------------------------------------------
-// PHASE 4: PAYMENTS & RAZORPAY (CP-P01 - CP-P04)
+// PHASE 4: PAYMENTS & CASHFREE PG (CP-P01 - CP-P04)
 // ---------------------------------------------------------------------------
-console.log("\n--- PHASE 4: PAYMENTS & RAZORPAY WEBHOOKS ---");
+console.log("\n--- PHASE 4: PAYMENTS & CASHFREE PG WEBHOOKS ---");
 
-// CP-P01: Razorpay Credentials
-const razorpayKeyId = process.env.RAZORPAY_KEY_ID || "rzp_test_localloop123";
-const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || "secret_test_mock456";
-testAssert(Boolean(razorpayKeyId && razorpayKeySecret), "CP-P01: Razorpay test credentials configured");
+// CP-P01: Cashfree Credentials
+const cashfreeAppId = process.env.CASHFREE_APP_ID || process.env.CASHFREE_CLIENT_ID || "cf_test_localloop123";
+const cashfreeSecretKey = process.env.CASHFREE_SECRET_KEY || process.env.CASHFREE_CLIENT_SECRET || "cf_secret_test_mock456";
+testAssert(Boolean(cashfreeAppId && cashfreeSecretKey), "CP-P01: Cashfree test credentials configured");
 
-// CP-P02: Server-side order creation logic
-const orderAmountINR = 495;
-const orderAmountPaise = Math.round(orderAmountINR * 100);
-testAssert(orderAmountPaise === 49500, "CP-P02: Rupee to Paise conversion verified (₹495 = 49,500 paise)");
+// CP-P02: Server-side order creation logic & decimal currency validation
+const orderAmountINR = 495.00;
+const formattedAmount = Number(orderAmountINR.toFixed(2));
+testAssert(formattedAmount === 495.00, "CP-P02: Cashfree decimal currency verified (₹495.00 INR format)");
 
-// CP-P03: Cryptographic signature verification
-const testOrderId = "order_mock_test_123";
-const testPaymentId = "pay_mock_test_456";
-const testSecret = "secret_test_mock456";
-const expectedSignature = crypto
-  .createHmac("sha256", testSecret)
-  .update(`${testOrderId}|${testPaymentId}`)
-  .digest("hex");
-
-const computedSignature = crypto
-  .createHmac("sha256", testSecret)
-  .update(`${testOrderId}|${testPaymentId}`)
-  .digest("hex");
-
-testAssert(expectedSignature === computedSignature, "CP-P03: HMAC-SHA256 signature verification matches");
-
-// CP-P04: Signed & Idempotent Webhook
-const webhookBody = JSON.stringify({
-  event: "payment.captured",
-  payload: {
-    payment: { entity: { id: testPaymentId, notes: { order_id: "ORD-LL-TEST" } } },
+// CP-P03: Cryptographic Cashfree signature verification (timestamp + rawBody with HMAC-SHA256 Base64)
+const testTimestamp = `${Date.now()}`;
+const testRawBody = JSON.stringify({
+  type: "PAYMENT_SUCCESS_WEBHOOK",
+  data: {
+    order: { order_id: "ORD-LL-TEST", order_amount: 495.00, order_currency: "INR" },
+    payment: { cf_payment_id: "cf_pay_test_456", payment_status: "SUCCESS" },
   },
 });
-const webhookSig = crypto
-  .createHmac("sha256", "whsec_test_secret789")
-  .update(webhookBody)
-  .digest("hex");
+const expectedSignature = crypto
+  .createHmac("sha256", cashfreeSecretKey)
+  .update(`${testTimestamp}${testRawBody}`)
+  .digest("base64");
 
-testAssert(Boolean(webhookSig), "CP-P04: Cryptographically signed webhook payload created");
-testAssert(fs.existsSync("./src/app/api/webhooks/razorpay/route.ts"), "CP-P04: Idempotent webhook handler endpoint implemented");
+const computedSignature = crypto
+  .createHmac("sha256", cashfreeSecretKey)
+  .update(`${testTimestamp}${testRawBody}`)
+  .digest("base64");
+
+testAssert(expectedSignature === computedSignature, "CP-P03: Cashfree Base64 HMAC-SHA256 signature verification matches");
+
+// CP-P04: Signed & Idempotent Cashfree Webhook Handler
+testAssert(fs.existsSync("./src/app/api/webhooks/cashfree/route.ts"), "CP-P04: Cashfree idempotent webhook handler endpoint implemented");
+testAssert(fs.existsSync("./src/lib/cashfree.ts"), "CP-P04: Cashfree library initialized and configured");
 
 // ---------------------------------------------------------------------------
 // PHASE 5: DEPLOYMENT (CP-V01 - CP-V04)

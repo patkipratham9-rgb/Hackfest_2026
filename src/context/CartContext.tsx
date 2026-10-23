@@ -30,6 +30,7 @@ interface CartContextType {
     customerPhone: string;
     pickupTime: string;
     paymentMethod: "upi" | "counter";
+    items?: CartItem[];
   }) => Order | null;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   totalItems: number;
@@ -292,13 +293,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     customerPhone: string;
     pickupTime: string;
     paymentMethod: "upi" | "counter";
+    items?: CartItem[];
   }): Order | null => {
-    if (cart.length === 0) return null;
+    const orderItems = data.items && data.items.length > 0 ? data.items : cart;
+    if (orderItems.length === 0) return null;
 
-    const primaryStoreName = cart[0].product.storeName;
-    const primaryStoreId = cart[0].product.storeId;
+    const primaryStoreName = orderItems[0].product.storeName;
+    const primaryStoreId = orderItems[0].product.storeId;
     const orderNumber = Math.floor(1000 + Math.random() * 9000);
     const pickupDigits = Math.floor(100 + Math.random() * 900);
+
+    const orderSubtotal = data.items
+      ? data.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+      : subtotal;
+    const orderPlatformFee = 15;
+    const orderTotal = orderSubtotal + orderPlatformFee;
 
     const newOrder: Order = {
       id: `ORD-LL-${orderNumber}`,
@@ -308,10 +317,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       storeLane: "Main Market Cross",
       customerName: data.customerName,
       customerPhone: data.customerPhone,
-      items: [...cart],
-      subtotal,
-      platformFee,
-      total: totalAmount,
+      items: [...orderItems],
+      subtotal: orderSubtotal,
+      platformFee: orderPlatformFee,
+      total: orderTotal,
       status: "placed",
       paymentMethod: data.paymentMethod,
       paymentStatus: data.paymentMethod === "upi" ? "paid" : "pending",
@@ -323,7 +332,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const updated = [newOrder, ...orders];
     setOrders(updated);
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
-    clearCart();
+    if (!data.items) {
+      clearCart();
+    }
     setIsCheckoutOpen(false);
     setIsCartOpen(false);
 

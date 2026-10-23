@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useSeller } from "@/context/SellerContext";
 import { useCart } from "@/context/CartContext";
-import { OrderStatus } from "@/types";
+import { Order, OrderStatus } from "@/types";
+import { MOCK_PRODUCTS } from "@/data/mockData";
 import {
   ShoppingBag,
   Clock,
@@ -13,145 +14,856 @@ import {
   ArrowRight,
   User,
   Phone,
-  Store,
+  Search,
+  Filter,
+  Columns3,
+  List,
+  Sparkles,
+  AlertCircle,
+  KeyRound,
+  X,
+  Check,
+  ShieldCheck,
+  RotateCw,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function SellerOrdersPage() {
   const { activeStore } = useSeller();
-  const { orders, updateOrderStatus } = useCart();
+  const { orders, updateOrderStatus, createOrder } = useCart();
 
-  const storeOrders = orders.filter((o) => o.storeId === activeStore.id || o.storeName === activeStore.name);
-  const displayOrders = storeOrders.length > 0 ? storeOrders : orders;
+  // Search & Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
+  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
 
-  const handleAdvance = (orderId: string, currentStatus: OrderStatus) => {
-    const flow: OrderStatus[] = ["placed", "packed", "ready", "completed"];
-    const idx = flow.indexOf(currentStatus);
-    if (idx < flow.length - 1) {
-      updateOrderStatus(orderId, flow[idx + 1]);
+  // Counter Code Verification Modal State
+  const [verifyingOrder, setVerifyingOrder] = useState<Order | null>(null);
+  const [verificationInput, setVerificationInput] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+
+  // Action Success Toast
+  const [successToast, setSuccessToast] = useState("");
+
+  // Filter orders relevant to active store (or fallback to all orders for demonstration)
+  const storeOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.storeId === activeStore.id || o.storeName === activeStore.name
+    );
+  }, [orders, activeStore]);
+
+  const displayOrders = useMemo(() => {
+    return storeOrders.length > 0 ? storeOrders : orders;
+  }, [storeOrders, orders]);
+
+  // Status-based breakdown for pipeline metrics
+  const placedOrders = useMemo(
+    () => displayOrders.filter((o) => o.status === "placed"),
+    [displayOrders]
+  );
+  const packedOrders = useMemo(
+    () => displayOrders.filter((o) => o.status === "packed"),
+    [displayOrders]
+  );
+  const readyOrders = useMemo(
+    () => displayOrders.filter((o) => o.status === "ready"),
+    [displayOrders]
+  );
+  const completedOrders = useMemo(
+    () => displayOrders.filter((o) => o.status === "completed"),
+    [displayOrders]
+  );
+
+  const pendingCount = placedOrders.length + packedOrders.length + readyOrders.length;
+
+  // Filtered orders based on search query and status tab
+  const filteredOrders = useMemo(() => {
+    return displayOrders.filter((order) => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        !searchQuery ||
+        order.id.toLowerCase().includes(q) ||
+        order.customerName.toLowerCase().includes(q) ||
+        order.customerPhone.includes(q) ||
+        order.pickupCode.toLowerCase().includes(q);
+
+      const matchesStatus =
+        statusFilter === "all" || order.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [displayOrders, searchQuery, statusFilter]);
+
+  // Handle advancing state
+  const handleAdvance = (order: Order) => {
+    if (order.status === "placed") {
+      updateOrderStatus(order.id, "packed");
+      setSuccessToast(`Order ${order.id} marked as Packed!`);
+    } else if (order.status === "packed") {
+      updateOrderStatus(order.id, "ready");
+      setSuccessToast(`Order ${order.id} is now Ready for Counter Pickup!`);
+    } else if (order.status === "ready") {
+      // Open verification modal for PIN release
+      setVerifyingOrder(order);
+      setVerificationInput("");
+      setVerificationError("");
     }
+  };
+
+  // Verify PIN & mark completed
+  const handleConfirmVerification = () => {
+    if (!verifyingOrder) return;
+
+    const trimmed = verificationInput.trim().toUpperCase();
+    const expected = verifyingOrder.pickupCode.toUpperCase();
+
+    if (trimmed !== expected) {
+      setVerificationError(
+        `Invalid PIN. Counter token must match '${expected}'.`
+      );
+      return;
+    }
+
+    updateOrderStatus(verifyingOrder.id, "completed");
+    setSuccessToast(`Pickup verified! Order ${verifyingOrder.id} marked as Completed.`);
+    setVerifyingOrder(null);
+  };
+
+  // Quick PIN autofill for live demo presentations
+  const handleAutofillPIN = () => {
+    if (verifyingOrder) {
+      setVerificationInput(verifyingOrder.pickupCode);
+      setVerificationError("");
+    }
+  };
+
+  // Simulate incoming new order for hackathon presentation
+  const handleSimulateNewOrder = () => {
+    const randomProduct = MOCK_PRODUCTS[Math.floor(Math.random() * MOCK_PRODUCTS.length)];
+    const mockCustNames = [
+      "Sunil Joshi",
+      "Kavita Kulkarni",
+      "Mahesh Hubballi",
+      "Deepa Desai",
+      "Anand Hiremath",
+    ];
+    const chosenName = mockCustNames[Math.floor(Math.random() * mockCustNames.length)];
+    const randomPhone = `+91 ${Math.floor(90000 + Math.random() * 90000)} ${Math.floor(10000 + Math.random() * 90000)}`;
+    const randomPin = `LL-${Math.floor(100 + Math.random() * 900)}`;
+
+    createOrder({
+      customerName: chosenName,
+      customerPhone: randomPhone,
+      pickupTime: "Today in 20 minutes",
+      paymentMethod: "counter",
+      items: [
+        {
+          product: {
+            ...randomProduct,
+            storeId: activeStore.id,
+            storeName: activeStore.name,
+          },
+          quantity: 2,
+        },
+      ],
+    });
+
+    setSuccessToast(`Simulated incoming order from ${chosenName} (PIN: ${randomPin})!`);
+  };
+
+  // Status badge styling helper
+  const getStatusBadge = (status: OrderStatus) => {
+    switch (status) {
+      case "placed":
+        return {
+          label: "1. Placed / Needs Packing",
+          color: "bg-amber-100 text-amber-900 border-amber-300",
+          dot: "bg-amber-500",
+        };
+      case "packed":
+        return {
+          label: "2. Packed & Staged",
+          color: "bg-sky-100 text-sky-900 border-sky-300",
+          dot: "bg-sky-500",
+        };
+      case "ready":
+        return {
+          label: "3. Ready at Counter",
+          color: "bg-terracotta-100 text-terracotta-900 border-terracotta-300 animate-pulse",
+          dot: "bg-terracotta-500",
+        };
+      case "completed":
+        return {
+          label: "4. Completed",
+          color: "bg-emerald-100 text-emerald-900 border-emerald-300",
+          dot: "bg-emerald-600",
+        };
+      default:
+        return {
+          label: status,
+          color: "bg-cream-200 text-forest-700 border-cream-300",
+          dot: "bg-forest-400",
+        };
+    }
+  };
+
+  // Render individual Order Card
+  const renderOrderCard = (order: Order) => {
+    const isCompleted = order.status === "completed";
+    const statusMeta = getStatusBadge(order.status);
+
+    return (
+      <motion.div
+        key={order.id}
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        data-testid={`order-card-${order.id}`}
+        className="p-4 sm:p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-3.5 shadow-warm flex flex-col justify-between hover:border-terracotta-300 transition-colors"
+      >
+        <div className="space-y-3">
+          {/* Card Header: ID, Token & Status Badge */}
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <span
+                data-testid={`order-id-${order.id}`}
+                className="font-mono font-bold text-xs text-forest-900 block"
+              >
+                {order.id}
+              </span>
+              <span className="text-[10px] text-forest-500">
+                {order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span
+                data-testid={`pickup-code-${order.id}`}
+                className="px-2 py-0.5 rounded-lg bg-terracotta-100 border border-terracotta-300 font-mono font-extrabold text-terracotta-800 text-[11px] flex items-center gap-1"
+                title="Counter Verification PIN"
+              >
+                <KeyRound className="w-3 h-3 text-terracotta-600" />
+                <span>{order.pickupCode}</span>
+              </span>
+
+              <span
+                data-testid={`order-status-${order.id}`}
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 shadow-2xs ${statusMeta.color}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+                <span>{order.status}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Customer & Pickup Details Box */}
+          <div className="p-3 rounded-2xl bg-cream-100 border border-cream-200 text-xs space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span
+                data-testid={`customer-name-${order.id}`}
+                className="text-forest-900 font-bold flex items-center gap-1.5"
+              >
+                <User className="w-3.5 h-3.5 text-forest-600" />
+                <span>{order.customerName}</span>
+              </span>
+              <a
+                href={`tel:${order.customerPhone.replace(/\s+/g, "")}`}
+                data-testid={`customer-phone-${order.id}`}
+                className="text-terracotta-700 hover:text-terracotta-800 flex items-center gap-1 font-mono text-[11px] font-semibold"
+              >
+                <Phone className="w-3 h-3" />
+                <span>{order.customerPhone}</span>
+              </a>
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-cream-200/80 text-[11px] text-forest-700">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-forest-500" />
+                <span>Pickup Window:</span>
+              </span>
+              <strong
+                data-testid={`pickup-time-${order.id}`}
+                className="text-forest-900"
+              >
+                {order.pickupTime}
+              </strong>
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-forest-700">
+              <span>Payment Mode:</span>
+              <span className="font-semibold capitalize text-forest-800">
+                {order.paymentMethod === "upi" ? "UPI Paid" : "Pay at Counter"}
+              </span>
+            </div>
+          </div>
+
+          {/* Ordered Line Items */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-forest-500 uppercase tracking-wider block">
+              Items ({order.items.length})
+            </span>
+            <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+              {order.items.map((item, idx) => (
+                <div
+                  key={`${item.product.id}-${idx}`}
+                  className="text-xs flex justify-between text-forest-800 py-0.5 border-b border-cream-200/50 last:border-0"
+                >
+                  <span className="line-clamp-1 pr-2">
+                    <strong className="text-forest-950 font-semibold">{item.quantity}×</strong> {item.product.name}
+                  </span>
+                  <span className="font-semibold shrink-0 text-forest-900">
+                    ₹{item.product.price * item.quantity}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-cream-200 flex justify-between font-bold text-xs text-forest-950">
+              <span>Total Bill:</span>
+              <span
+                data-testid={`order-total-${order.id}`}
+                className="text-terracotta-700 text-sm font-serif font-extrabold"
+              >
+                ₹{order.total}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Bar */}
+        <div className="pt-3 border-t border-cream-200 flex items-center gap-2">
+          {order.status === "placed" && (
+            <button
+              type="button"
+              data-testid={`advance-order-btn-${order.id}`}
+              data-mark-packed={`mark-packed-${order.id}`}
+              onClick={() => handleAdvance(order)}
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Mark as Packed</span>
+            </button>
+          )}
+
+          {order.status === "packed" && (
+            <button
+              type="button"
+              data-testid={`advance-order-btn-${order.id}`}
+              data-mark-ready={`mark-ready-${order.id}`}
+              onClick={() => handleAdvance(order)}
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Mark Ready for Pickup</span>
+            </button>
+          )}
+
+          {order.status === "ready" && (
+            <button
+              type="button"
+              data-testid={`advance-order-btn-${order.id}`}
+              data-mark-completed={`mark-completed-${order.id}`}
+              onClick={() => handleAdvance(order)}
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-terracotta-500 hover:bg-terracotta-600 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Verify & Release Order</span>
+            </button>
+          )}
+
+          {isCompleted && (
+            <div className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center justify-center gap-1.5 select-none">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Order Completed</span>
+            </div>
+          )}
+
+          <Link
+            href={`/orders/${order.id}`}
+            data-testid={`view-tracking-${order.id}`}
+            className="p-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 text-xs font-semibold transition-colors shrink-0"
+            title="View Live Customer Tracking Screen"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
+      {/* Header & Pipeline Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-cream-300">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600">
-            Counter Fulfillment Pipeline
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600">
+              Counter Fulfillment Pipeline • Checkpoint CP-OB01
+            </span>
+            {pendingCount > 0 && (
+              <span
+                data-testid="pending-orders-badge"
+                className="px-2 py-0.2 rounded-full bg-terracotta-500 text-white text-[10px] font-bold animate-pulse"
+              >
+                {pendingCount} Pending
+              </span>
+            )}
+          </div>
           <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950">
             Store Pickup Orders
           </h1>
           <p className="text-xs text-forest-600 mt-0.5">
-            Manage incoming pickup orders for {activeStore.name} in real time
+            Manage incoming orders for <strong className="text-forest-900">{activeStore.name}</strong> ({activeStore.area}) across all fulfillment stages.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {/* Simulate New Order Button */}
+          <button
+            type="button"
+            data-testid="simulate-order-button"
+            onClick={handleSimulateNewOrder}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 font-bold text-xs shadow-warm transition-all cursor-pointer"
+            title="Simulate incoming order for demo"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-terracotta-400" />
+            <span>Simulate Order</span>
+          </button>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-cream-200 p-0.5 rounded-xl border border-cream-300">
+            <button
+              type="button"
+              data-testid="view-kanban-toggle"
+              onClick={() => setViewMode("kanban")}
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "kanban"
+                  ? "bg-cream-50 text-forest-950 shadow-xs"
+                  : "text-forest-600 hover:text-forest-900"
+              }`}
+              title="Kanban Board View"
+            >
+              <Columns3 className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              data-testid="view-list-toggle"
+              onClick={() => setViewMode("list")}
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "list"
+                  ? "bg-cream-50 text-forest-950 shadow-xs"
+                  : "text-forest-600 hover:text-forest-900"
+              }`}
+              title="List View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {displayOrders.map((order) => {
-          const isCompleted = order.status === "completed";
-          return (
-            <motion.div
-              key={order.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-4 shadow-warm flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-sm text-forest-950">
-                    {order.id}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-forest-800 text-cream-100">
-                    {order.status}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-cream-100 border border-cream-200 text-xs space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-forest-600 flex items-center gap-1">
-                      <User className="w-3.5 h-3.5" />
-                      <span>{order.customerName}</span>
-                    </span>
-                    <span className="text-forest-600 flex items-center gap-1 font-mono text-[11px]">
-                      <Phone className="w-3 h-3" />
-                      <span>{order.customerPhone}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 border-t border-cream-200 text-forest-700">
-                    <span>Pickup Window:</span>
-                    <strong>{order.pickupTime}</strong>
-                  </div>
-
-                  <div className="flex items-center justify-between text-forest-700">
-                    <span>Counter Code PIN:</span>
-                    <span className="font-mono font-extrabold text-terracotta-700 text-sm">
-                      {order.pickupCode}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-forest-500 uppercase tracking-wider block">
-                    Items ({order.items.length})
-                  </span>
-                  {order.items.map((item) => (
-                    <div
-                      key={item.product.id}
-                      className="text-xs flex justify-between text-forest-800"
-                    >
-                      <span>
-                        {item.quantity} × {item.product.name}
-                      </span>
-                      <span className="font-semibold">
-                        ₹{item.product.price * item.quantity}
-                      </span>
-                    </div>
-                  ))}
-                  <div className="pt-2 border-t border-cream-200 flex justify-between font-bold text-xs text-forest-950">
-                    <span>Total Bill:</span>
-                    <span className="text-terracotta-700 text-sm">₹{order.total}</span>
-                  </div>
-                </div>
+      {/* Success Notification Alert */}
+      <AnimatePresence>
+        {successToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="p-3.5 rounded-2xl bg-forest-800 text-cream-100 flex items-center justify-between gap-3 shadow-warm"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
               </div>
+              <p className="text-xs font-bold">{successToast}</p>
+            </div>
+            <button
+              onClick={() => setSuccessToast("")}
+              className="text-xs font-bold text-cream-200 hover:text-white px-2 py-0.5"
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              <div className="pt-3 border-t border-cream-200 flex items-center gap-2">
+      {/* Pipeline Metrics Overview */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="p-3.5 rounded-2xl bg-cream-50 border border-cream-300">
+          <span className="text-[10px] font-bold text-forest-600 uppercase tracking-wider block">
+            Total Orders
+          </span>
+          <span
+            data-testid="metric-total-orders"
+            className="font-serif font-extrabold text-xl text-forest-950"
+          >
+            {displayOrders.length}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300">
+          <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+            1. Needs Packing
+          </span>
+          <span
+            data-testid="metric-placed-orders"
+            className="font-serif font-extrabold text-xl text-amber-950"
+          >
+            {placedOrders.length}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-300">
+          <span className="text-[10px] font-bold text-sky-800 uppercase tracking-wider block">
+            2. In Packing
+          </span>
+          <span
+            data-testid="metric-packed-orders"
+            className="font-serif font-extrabold text-xl text-sky-950"
+          >
+            {packedOrders.length}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-terracotta-50 border border-terracotta-300">
+          <span className="text-[10px] font-bold text-terracotta-800 uppercase tracking-wider block">
+            3. Ready at Counter
+          </span>
+          <span
+            data-testid="metric-ready-orders"
+            className="font-serif font-extrabold text-xl text-terracotta-950"
+          >
+            {readyOrders.length}
+          </span>
+        </div>
+
+        <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300">
+          <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+            4. Completed
+          </span>
+          <span
+            data-testid="metric-completed-orders"
+            className="font-serif font-extrabold text-xl text-emerald-950"
+          >
+            {completedOrders.length}
+          </span>
+        </div>
+      </div>
+
+      {/* Search & Status Filters */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-cream-50 p-3 rounded-2xl border border-cream-300">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-forest-500" />
+          <input
+            type="text"
+            data-testid="order-search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by ID, customer, PIN..."
+            className="w-full pl-9 pr-3.5 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+          <button
+            type="button"
+            data-testid="filter-all-orders"
+            onClick={() => setStatusFilter("all")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              statusFilter === "all"
+                ? "bg-forest-800 text-cream-100 shadow-xs"
+                : "bg-cream-100 text-forest-700 hover:bg-cream-200 border border-cream-300"
+            }`}
+          >
+            All ({displayOrders.length})
+          </button>
+          <button
+            type="button"
+            data-testid="filter-placed-orders"
+            onClick={() => setStatusFilter("placed")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              statusFilter === "placed"
+                ? "bg-amber-600 text-white shadow-xs"
+                : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300"
+            }`}
+          >
+            Needs Packing ({placedOrders.length})
+          </button>
+          <button
+            type="button"
+            data-testid="filter-packed-orders"
+            onClick={() => setStatusFilter("packed")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              statusFilter === "packed"
+                ? "bg-sky-600 text-white shadow-xs"
+                : "bg-sky-50 text-sky-800 hover:bg-sky-100 border border-sky-300"
+            }`}
+          >
+            Packed ({packedOrders.length})
+          </button>
+          <button
+            type="button"
+            data-testid="filter-ready-orders"
+            onClick={() => setStatusFilter("ready")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              statusFilter === "ready"
+                ? "bg-terracotta-500 text-white shadow-xs"
+                : "bg-terracotta-50 text-terracotta-800 hover:bg-terracotta-100 border border-terracotta-300"
+            }`}
+          >
+            Ready ({readyOrders.length})
+          </button>
+          <button
+            type="button"
+            data-testid="filter-completed-orders"
+            onClick={() => setStatusFilter("completed")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              statusFilter === "completed"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300"
+            }`}
+          >
+            Completed ({completedOrders.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Main Order Pipeline: Kanban vs List View */}
+      {viewMode === "kanban" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+          {/* Column 1: Placed */}
+          <div
+            data-testid="kanban-col-placed"
+            className="p-3.5 rounded-3xl bg-amber-50/50 border border-amber-200/80 space-y-3 min-h-[450px]"
+          >
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-amber-900">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>1. Needs Packing</span>
+              </div>
+              <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                {placedOrders.length}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {placedOrders.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-cream-50/60 border border-dashed border-amber-200 text-xs text-forest-400">
+                  No new orders to pack.
+                </div>
+              ) : (
+                placedOrders.map((order) => renderOrderCard(order))
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Packed */}
+          <div
+            data-testid="kanban-col-packed"
+            className="p-3.5 rounded-3xl bg-sky-50/50 border border-sky-200/80 space-y-3 min-h-[450px]"
+          >
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-sky-900">
+                <span className="w-2 h-2 rounded-full bg-sky-500" />
+                <span>2. Packing Staged</span>
+              </div>
+              <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-200 text-sky-900">
+                {packedOrders.length}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {packedOrders.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-cream-50/60 border border-dashed border-sky-200 text-xs text-forest-400">
+                  No orders currently in staging.
+                </div>
+              ) : (
+                packedOrders.map((order) => renderOrderCard(order))
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Ready */}
+          <div
+            data-testid="kanban-col-ready"
+            className="p-3.5 rounded-3xl bg-terracotta-50/50 border border-terracotta-200/80 space-y-3 min-h-[450px]"
+          >
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-terracotta-900">
+                <span className="w-2 h-2 rounded-full bg-terracotta-500 animate-ping" />
+                <span>3. Ready at Counter</span>
+              </div>
+              <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-terracotta-200 text-terracotta-900">
+                {readyOrders.length}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {readyOrders.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-cream-50/60 border border-dashed border-terracotta-200 text-xs text-forest-400">
+                  No orders awaiting customer pickup.
+                </div>
+              ) : (
+                readyOrders.map((order) => renderOrderCard(order))
+              )}
+            </div>
+          </div>
+
+          {/* Column 4: Completed */}
+          <div
+            data-testid="kanban-col-completed"
+            className="p-3.5 rounded-3xl bg-emerald-50/50 border border-emerald-200/80 space-y-3 min-h-[450px]"
+          >
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                <span>4. Completed</span>
+              </div>
+              <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">
+                {completedOrders.length}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {completedOrders.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-cream-50/60 border border-dashed border-emerald-200 text-xs text-forest-400">
+                  No completed orders yet.
+                </div>
+              ) : (
+                completedOrders.slice(0, 10).map((order) => renderOrderCard(order))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* List View */
+        <div className="space-y-3">
+          {filteredOrders.length === 0 ? (
+            <div className="p-12 text-center rounded-3xl bg-cream-50 border border-cream-300 space-y-2">
+              <Package className="w-10 h-10 text-forest-400 mx-auto opacity-50" />
+              <h3 className="font-serif font-bold text-base text-forest-950">
+                No Orders Matching Criteria
+              </h3>
+              <p className="text-xs text-forest-600">
+                Try clearing your search query or switching status filter tabs.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredOrders.map((order) => renderOrderCard(order))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Counter Code PIN Verification Modal */}
+      <AnimatePresence>
+        {verifyingOrder && (
+          <div
+            data-testid="counter-verify-modal"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-cream-50 rounded-3xl border border-cream-300 shadow-2xl p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-cream-300">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-forest-950">
+                      Verify Customer Pickup PIN
+                    </h3>
+                    <p className="text-[11px] text-forest-600">
+                      Order: {verifyingOrder.id} • {verifyingOrder.customerName}
+                    </p>
+                  </div>
+                </div>
                 <button
                   type="button"
-                  disabled={isCompleted}
-                  onClick={() => handleAdvance(order.id, order.status)}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                    isCompleted
-                      ? "bg-cream-200 text-forest-400 cursor-not-allowed"
-                      : "bg-terracotta-500 hover:bg-terracotta-600 text-white shadow-xs cursor-pointer"
-                  }`}
+                  data-testid="cancel-pickup-button"
+                  onClick={() => setVerifyingOrder(null)}
+                  className="p-1.5 rounded-lg text-forest-500 hover:text-forest-900 hover:bg-cream-200 cursor-pointer"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>
-                    {order.status === "placed"
-                      ? "Mark as Packed"
-                      : order.status === "packed"
-                      ? "Mark Ready for Pickup"
-                      : order.status === "ready"
-                      ? "Mark as Completed"
-                      : "Order Completed"}
-                  </span>
+                  <X className="w-4 h-4" />
                 </button>
+              </div>
 
-                <Link
-                  href={`/orders/${order.id}`}
-                  className="p-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 text-xs font-semibold"
-                  title="View Customer Tracking View"
+              <div className="space-y-3">
+                <p className="text-xs text-forest-700">
+                  Ask the customer to show their 5-character counter verification token from their order tracking screen:
+                </p>
+
+                <div className="p-3.5 rounded-2xl bg-cream-100 border border-cream-200 flex items-center justify-between">
+                  <span className="text-xs text-forest-600 font-medium">Expected PIN for this order:</span>
+                  <span className="font-mono font-extrabold text-sm text-terracotta-700 bg-cream-50 px-2 py-0.5 rounded-lg border border-cream-300">
+                    {verifyingOrder.pickupCode}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                    Enter Customer Counter PIN
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="verify-code-input"
+                    value={verificationInput}
+                    onChange={(e) => {
+                      setVerificationInput(e.target.value.toUpperCase());
+                      if (verificationError) setVerificationError("");
+                    }}
+                    placeholder={verifyingOrder.pickupCode}
+                    className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-center font-mono font-extrabold text-base tracking-widest text-forest-950 focus:outline-none focus:ring-2 focus:ring-terracotta-400 uppercase"
+                  />
+                  {verificationError && (
+                    <p
+                      data-testid="verify-code-error"
+                      className="text-[11px] text-rose-600 font-semibold mt-1.5 flex items-center gap-1"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{verificationError}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleAutofillPIN}
+                    className="text-[11px] font-bold text-terracotta-600 hover:text-terracotta-700 underline cursor-pointer"
+                  >
+                    Quick Autofill PIN (Demo Presentation Mode)
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-cream-300 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVerifyingOrder(null)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 font-bold text-xs transition-colors cursor-pointer"
                 >
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-testid="confirm-pickup-button"
+                  onClick={handleConfirmVerification}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Confirm Pickup</span>
+                </button>
               </div>
             </motion.div>
-          );
-        })}
-      </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

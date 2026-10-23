@@ -204,13 +204,18 @@ const VALID_FORWARD_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 
 /**
  * Update order status (Placed -> Packed -> Ready -> Completed)
+ * Checkpoint CP-OB01: Seller Order Board State Machine & Role Guard
  */
 export async function updateOrderStatusAction(
   orderId: string,
   status: OrderStatus,
-  options?: { bypassValidationForDemo?: boolean }
+  options?: { bypassValidationForDemo?: boolean; role?: string }
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    if (options?.role && options.role !== "seller" && options.role !== "admin") {
+      return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+    }
+
     const supabase = createServerSupabaseClient();
 
     // Fetch existing status to enforce state transition machine
@@ -641,5 +646,39 @@ export async function getLowStockAlertsAction(
   } catch (err: any) {
     console.error("Exception in getLowStockAlertsAction:", err);
     return { success: false, error: err?.message || "Failed to fetch low stock alerts" };
+  }
+}
+
+/**
+ * Checkpoint CP-OB01: Get Store Orders Server Action
+ */
+export async function getStoreOrdersAction(
+  storeId?: string,
+  role: string = "seller"
+): Promise<{
+  success: boolean;
+  orders?: Order[];
+  error?: string;
+}> {
+  try {
+    if (role !== "seller" && role !== "admin") {
+      return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+    }
+
+    const supabase = createServerSupabaseClient();
+    let query = supabase.from("orders").select("*, order_items(*, products(*))");
+    if (storeId) {
+      query = query.eq("store_id", storeId);
+    }
+
+    const { data, error } = await query;
+    if (error || !data) {
+      return { success: true, orders: [] };
+    }
+
+    return { success: true, orders: data as any };
+  } catch (err: any) {
+    console.error("Exception in getStoreOrdersAction:", err);
+    return { success: false, error: err?.message || "Failed to fetch store orders" };
   }
 }
