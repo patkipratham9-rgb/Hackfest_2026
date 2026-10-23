@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Store } from "@/types";
-import { MOCK_STORES } from "@/data/mockData";
+import { Store, Product } from "@/types";
+import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
 
 export type UserRole = "customer" | "seller" | "admin";
 
@@ -19,11 +19,15 @@ export interface SellerProfile {
 interface SellerContextType {
   seller: SellerProfile;
   activeStore: Store;
+  products: Product[];
   isAuthorizedSeller: boolean;
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
   toggleStoreOpen: () => void;
   updateStoreProfile: (updates: Partial<Store>) => void;
+  addProduct: (product: Omit<Product, "id">) => Product;
+  updateProduct: (id: string, updates: Partial<Product>) => void;
+  deleteProduct: (id: string) => void;
 }
 
 const DEFAULT_SELLER: SellerProfile = {
@@ -38,12 +42,14 @@ const DEFAULT_SELLER: SellerProfile = {
 
 const SELLER_ROLE_STORAGE_KEY = "localloop_user_role_v1";
 const SELLER_STORE_STORAGE_KEY = "localloop_seller_store_v1";
+const SELLER_PRODUCTS_STORAGE_KEY = "localloop_seller_products_v1";
 
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
 export function SellerProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRoleState] = useState<UserRole>("seller");
   const [activeStore, setActiveStore] = useState<Store>(MOCK_STORES[0]);
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -58,6 +64,14 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(savedStore);
         if (parsed && parsed.name) {
           setActiveStore((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+
+      const savedProducts = localStorage.getItem(SELLER_PRODUCTS_STORAGE_KEY);
+      if (savedProducts) {
+        const parsedProds = JSON.parse(savedProducts);
+        if (Array.isArray(parsedProds) && parsedProds.length > 0) {
+          setProducts(parsedProds);
         }
       }
     } catch {}
@@ -97,6 +111,39 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const addProduct = (newProd: Omit<Product, "id">): Product => {
+    const id = `prod-custom-${Date.now()}`;
+    const created: Product = { ...newProd, id };
+    setProducts((prev) => {
+      const next = [created, ...prev];
+      try {
+        localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    return created;
+  };
+
+  const updateProduct = (id: string, updates: Partial<Product>) => {
+    setProducts((prev) => {
+      const next = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
+      try {
+        localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const deleteProduct = (id: string) => {
+    setProducts((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      try {
+        localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const isAuthorizedSeller = userRole === "seller" || userRole === "admin";
 
   const seller: SellerProfile = {
@@ -110,11 +157,15 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       value={{
         seller,
         activeStore,
+        products,
         isAuthorizedSeller,
         userRole,
         setUserRole,
         toggleStoreOpen,
         updateStoreProfile,
+        addProduct,
+        updateProduct,
+        deleteProduct,
       }}
     >
       {children}

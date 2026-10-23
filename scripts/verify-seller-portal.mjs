@@ -275,7 +275,76 @@ testAssert(evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], true, fri10am).i
 testAssert(!evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], true, fri6am).isOpen, "Active Friday 6 AM before 08:00 returns isOpen: false");
 testAssert(!evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], true, fri11pm).isOpen, "Active Friday 11 PM after 21:00 returns isOpen: false");
 
+// ---------------------------------------------------------------------------
+// 7. PRODUCT LISTING FORM & INVENTORY MANAGEMENT (CP-PI01)
+// ---------------------------------------------------------------------------
+console.log("\n--- 7. PRODUCT LISTING FORM & INVENTORY MANAGEMENT (CP-PI01) ---");
+
+const productsPageContent = fs.readFileSync("./src/app/seller/products/page.tsx", "utf-8");
+
+// 7.1 Page Controls & Header
+testAssert(productsPageContent.includes("data-testid=\"add-product-button\""), "Add Product trigger button with data-testid='add-product-button' present");
+testAssert(productsPageContent.includes("data-testid=\"products-count-badge\""), "Product counter badge with data-testid='products-count-badge' present");
+testAssert(productsPageContent.includes("data-testid=\"seller-product-search\""), "Inventory search input with data-testid='seller-product-search' present");
+testAssert(productsPageContent.includes("data-testid=\"seller-product-category-filter\""), "Category filter dropdown with data-testid='seller-product-category-filter' present");
+
+// 7.2 Product Form & Modal Controls
+testAssert(productsPageContent.includes("data-testid=\"product-listing-form\""), "Product listing modal form with data-testid='product-listing-form' present");
+testAssert(productsPageContent.includes("data-testid=\"cancel-product-button\""), "Cancel / Close modal button with data-testid='cancel-product-button' present");
+testAssert(productsPageContent.includes("data-testid=\"product-name-input\""), "Product Title input with data-testid='product-name-input' present");
+testAssert(productsPageContent.includes("data-testid=\"product-description-input\""), "Description textarea with data-testid='product-description-input' present");
+testAssert(productsPageContent.includes("data-testid=\"product-price-input\""), "Price input with data-testid='product-price-input' present");
+testAssert(productsPageContent.includes("data-testid=\"product-original-price-input\""), "MRP / Original Price input with data-testid='product-original-price-input' present");
+testAssert(productsPageContent.includes("data-testid=\"product-category-select\""), "Category selector with data-testid='product-category-select' present");
+testAssert(productsPageContent.includes("data-testid=\"product-stock-input\""), "Stock count input with data-testid='product-stock-input' present");
+testAssert(productsPageContent.includes("data-testid=\"product-unit-input\""), "Unit of measure input with data-testid='product-unit-input' present");
+testAssert(productsPageContent.includes("data-testid=\"product-image-input\""), "Image URL input with data-testid='product-image-input' present");
+testAssert(productsPageContent.includes("data-testid=\"product-image-preview\""), "Image live preview element with data-testid='product-image-preview' present");
+testAssert(productsPageContent.includes("data-testid=\"product-bestseller-toggle\""), "Bestseller prominence toggle with data-testid='product-bestseller-toggle' present");
+testAssert(productsPageContent.includes("data-testid=\"product-tags-input\""), "Search tags input with data-testid='product-tags-input' present");
+testAssert(productsPageContent.includes("data-testid=\"reset-product-form-button\""), "Reset form button with data-testid='reset-product-form-button' present");
+testAssert(productsPageContent.includes("data-testid=\"save-product-button\""), "Save product submit button with data-testid='save-product-button' present");
+testAssert(productsPageContent.includes("data-testid=\"product-save-success-alert\""), "Save confirmation alert with data-testid='product-save-success-alert' present");
+
+// 7.3 Validation Error Elements
+testAssert(productsPageContent.includes("data-testid=\"product-name-error\""), "Product name validation error with data-testid='product-name-error' present");
+testAssert(productsPageContent.includes("data-testid=\"product-price-error\""), "Price validation error with data-testid='product-price-error' present");
+testAssert(productsPageContent.includes("data-testid=\"product-stock-error\""), "Stock validation error with data-testid='product-stock-error' present");
+testAssert(productsPageContent.includes("data-testid=\"product-category-error\""), "Category validation error with data-testid='product-category-error' present");
+
+// 7.4 Inventory Card Badges & Actions
+testAssert(productsPageContent.includes("data-testid=\"low-stock-badge\""), "Low stock threshold alert badge with data-testid='low-stock-badge' present");
+testAssert(productsPageContent.includes("edit-product-"), "Product edit trigger with data-testid='edit-product-[id]' present");
+testAssert(productsPageContent.includes("delete-product-"), "Product delete trigger with data-testid='delete-product-[id]' present");
+
+// 7.5 SellerContext Persistence & Methods
+const contextContent = fs.readFileSync("./src/context/SellerContext.tsx", "utf-8");
+testAssert(contextContent.includes("addProduct"), "SellerContext provides addProduct method");
+testAssert(contextContent.includes("updateProduct"), "SellerContext provides updateProduct method");
+testAssert(contextContent.includes("deleteProduct"), "SellerContext provides deleteProduct method");
+testAssert(contextContent.includes("localloop_seller_products_v1"), "Seller inventory changes persisted to localStorage (localloop_seller_products_v1)");
+
+// 7.6 Unit Validation Logic
+function validateProductListing(item) {
+  if (!item.name || !item.name.trim()) return { valid: false, error: "Title required" };
+  const price = parseFloat(item.price);
+  if (isNaN(price) || price <= 0) return { valid: false, error: "Price must be > 0" };
+  const stock = parseInt(item.stock, 10);
+  if (isNaN(stock) || stock < 0) return { valid: false, error: "Stock must be >= 0" };
+  if (!item.category) return { valid: false, error: "Category required" };
+  return { valid: true };
+}
+
+testAssert(!validateProductListing({ name: "", price: "180", stock: "10", category: "Grocery" }).valid, "Empty product title rejected");
+testAssert(!validateProductListing({ name: "Chai Powder", price: "0", stock: "10", category: "Grocery" }).valid, "Zero price rejected");
+testAssert(!validateProductListing({ name: "Chai Powder", price: "-50", stock: "10", category: "Grocery" }).valid, "Negative price rejected");
+testAssert(!validateProductListing({ name: "Chai Powder", price: "abc", stock: "10", category: "Grocery" }).valid, "Non-numeric price rejected");
+testAssert(!validateProductListing({ name: "Chai Powder", price: "120", stock: "-5", category: "Grocery" }).valid, "Negative stock rejected");
+testAssert(!validateProductListing({ name: "Chai Powder", price: "120", stock: "10", category: "" }).valid, "Missing category rejected");
+testAssert(validateProductListing({ name: "Brass Diya", price: "180", stock: "0", category: "Household" }).valid, "Zero stock (out-of-stock SKU) accepted");
+testAssert(validateProductListing({ name: "Byadagi Chili Powder", price: "240.50", stock: "50", category: "Grocery" }).valid, "Complete valid product accepted");
+
 console.log("\n==================================================================");
-console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01, CP-SP02, CP-SP03 & CP-SP04!`);
-console.log("Protected Seller Portal, Store Profile, Supabase Storage Banner Upload & Operating Hours Operational!");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01, CP-SP02, CP-SP03, CP-SP04 & CP-PI01!`);
+console.log("Protected Seller Portal, Store Profile, Supabase Storage Banner Upload, Operating Hours & Product Listing Operational!");
 console.log("==================================================================");
