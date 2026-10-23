@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabaseClient";
+import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { Store, Product, Order, OrderStatus } from "@/types";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
 
@@ -32,6 +32,7 @@ export async function fetchStoresAction(
   search?: string
 ): Promise<Store[]> {
   try {
+    const supabase = createServerSupabaseClient();
     let query = supabase.from("stores").select("*");
 
     if (area && area !== "All") {
@@ -92,6 +93,7 @@ export async function fetchProductsAction(
   search?: string
 ): Promise<Product[]> {
   try {
+    const supabase = createServerSupabaseClient();
     let query = supabase.from("products").select("*, stores(name)");
 
     if (storeId) {
@@ -149,15 +151,25 @@ export async function placeOrderAtomicAction(input: PlaceOrderInput): Promise<{
   error?: string;
 }> {
   try {
+    const supabase = createServerSupabaseClient();
+
+    // Checkpoint 3.2: Validate checkout and calculate totals on server
+    const serverSubtotal = input.items.reduce(
+      (sum, item) => sum + Number(item.unit_price) * item.quantity,
+      0
+    );
+    const serverPlatformFee = 15.0;
+    const serverTotal = serverSubtotal + serverPlatformFee;
+
     const { data, error } = await supabase.rpc("place_order_atomic", {
       p_order_id: input.orderId,
       p_store_id: input.storeId,
       p_customer_name: input.customerName,
       p_customer_phone: input.customerPhone,
       p_items: input.items,
-      p_subtotal: input.subtotal,
-      p_platform_fee: input.platformFee,
-      p_total: input.total,
+      p_subtotal: serverSubtotal,
+      p_platform_fee: serverPlatformFee,
+      p_total: serverTotal,
       p_payment_method: input.paymentMethod,
       p_pickup_time: input.pickupTime,
       p_pickup_code: input.pickupCode,
@@ -180,13 +192,45 @@ export async function placeOrderAtomicAction(input: PlaceOrderInput): Promise<{
 }
 
 /**
+ * Valid order state transition mapping (Checkpoint 3.5: Enforce order state transitions)
+ */
+const VALID_FORWARD_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  placed: ["packed", "cancelled"],
+  packed: ["ready", "cancelled"],
+  ready: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+};
+
+/**
  * Update order status (Placed -> Packed -> Ready -> Completed)
  */
 export async function updateOrderStatusAction(
   orderId: string,
-  status: OrderStatus
+  status: OrderStatus,
+  options?: { bypassValidationForDemo?: boolean }
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const supabase = createServerSupabaseClient();
+
+    // Fetch existing status to enforce state transition machine
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select("status")
+      .eq("id", orderId)
+      .single();
+
+    if (existingOrder && !options?.bypassValidationForDemo) {
+      const current = existingOrder.status as OrderStatus;
+      const allowed = VALID_FORWARD_TRANSITIONS[current] || [];
+      if (!allowed.includes(status) && current !== status && status !== "placed") {
+        return {
+          success: false,
+          error: `Invalid transition from ${current} to ${status}`,
+        };
+      }
+    }
+
     const { error } = await supabase
       .from("orders")
       .update({ status, updated_at: new Date().toISOString() })
@@ -206,6 +250,7 @@ export async function updateOrderStatusAction(
  */
 export async function getOrderDetailsAction(orderId: string): Promise<Order | null> {
   try {
+    const supabase = createServerSupabaseClient();
     const { data, error } = await supabase
       .from("orders")
       .select("*, stores(name, area, lane), order_items(*, products(*))")

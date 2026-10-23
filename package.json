@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node scripts/verify-user-journey.mjs"
+    "test": "node scripts/verify-user-journey.mjs",
+    "test:backend": "node scripts/verify-backend-checkpoints.mjs",
+    "test:all": "npm test && npm run test:backend"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
