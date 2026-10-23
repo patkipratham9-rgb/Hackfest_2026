@@ -1,10 +1,19 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import { useSeller } from "@/context/SellerContext";
 import { supabase } from "@/lib/supabaseClient";
 import { NeighborhoodArea, ProductCategory } from "@/types";
+import {
+  ALL_DAYS,
+  DayOfWeek,
+  parseOperatingHoursString,
+  formatOperatingHoursString,
+  validateOperatingHours,
+  checkLiveOperatingStatus,
+  formatTo12Hour,
+} from "@/lib/operatingHours";
 import {
   Store,
   MapPin,
@@ -20,6 +29,7 @@ import {
   UploadCloud,
   X,
   FileImage,
+  Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -41,6 +51,16 @@ const AREAS: NeighborhoodArea[] = [
   "Unkal Lake",
 ];
 
+const DAY_TEST_IDS: Record<DayOfWeek, string> = {
+  Mon: "day-toggle-mon",
+  Tue: "day-toggle-tue",
+  Wed: "day-toggle-wed",
+  Thu: "day-toggle-thu",
+  Fri: "day-toggle-fri",
+  Sat: "day-toggle-sat",
+  Sun: "day-toggle-sun",
+};
+
 export default function StoreProfilePage() {
   const { activeStore, updateStoreProfile, toggleStoreOpen } = useSeller();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +76,16 @@ export default function StoreProfilePage() {
   const [bannerUrl, setBannerUrl] = useState(activeStore.bannerUrl || "");
   const [imageUrl, setImageUrl] = useState(activeStore.imageUrl || "");
 
+  // Checkpoint CP-SP04: Structured Operating Hours & Schedule States
+  const initialHours = useMemo(
+    () => parseOperatingHoursString(activeStore.openingHours || "7:00 AM - 9:00 PM"),
+    [activeStore.openingHours]
+  );
+  const [openTime, setOpenTime] = useState(initialHours.openTime);
+  const [closeTime, setCloseTime] = useState(initialHours.closeTime);
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(initialHours.days);
+  const [hoursError, setHoursError] = useState("");
+
   // Supabase Storage Banner Upload states
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -66,6 +96,57 @@ export default function StoreProfilePage() {
   const [phoneError, setPhoneError] = useState("");
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Checkpoint CP-SP04: Live operating status calculation
+  const liveOperatingStatus = useMemo(() => {
+    return checkLiveOperatingStatus(openTime, closeTime, selectedDays, activeStore.isOpen);
+  }, [openTime, closeTime, selectedDays, activeStore.isOpen]);
+
+  // CP-SP04: Operating hours handlers
+  const handleOpenTimeChange = (newOpen: string) => {
+    setOpenTime(newOpen);
+    const result = validateOperatingHours(newOpen, closeTime, selectedDays);
+    if (!result.valid) {
+      setHoursError(result.error || "");
+    } else {
+      setHoursError("");
+    }
+    setOpeningHours(formatOperatingHoursString(newOpen, closeTime, selectedDays));
+  };
+
+  const handleCloseTimeChange = (newClose: string) => {
+    setCloseTime(newClose);
+    const result = validateOperatingHours(openTime, newClose, selectedDays);
+    if (!result.valid) {
+      setHoursError(result.error || "");
+    } else {
+      setHoursError("");
+    }
+    setOpeningHours(formatOperatingHoursString(openTime, newClose, selectedDays));
+  };
+
+  const handleToggleDay = (day: DayOfWeek) => {
+    const nextDays = selectedDays.includes(day)
+      ? selectedDays.filter((d) => d !== day)
+      : [...selectedDays, day];
+    setSelectedDays(nextDays);
+    const result = validateOperatingHours(openTime, closeTime, nextDays);
+    if (!result.valid) {
+      setHoursError(result.error || "");
+    } else {
+      setHoursError("");
+    }
+    setOpeningHours(formatOperatingHoursString(openTime, closeTime, nextDays));
+  };
+
+  const handleApplyPreset = (presetOpen: string, presetClose: string, presetDays: DayOfWeek[]) => {
+    setOpenTime(presetOpen);
+    setCloseTime(presetClose);
+    setSelectedDays(presetDays);
+    setHoursError("");
+    const formatted = formatOperatingHoursString(presetOpen, presetClose, presetDays);
+    setOpeningHours(formatted);
+  };
 
   // Checkpoint CP-SP03: Handle Supabase Storage Banner Upload
   const handleBannerFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +239,15 @@ export default function StoreProfilePage() {
       setPhoneError("");
     }
 
+    // Checkpoint CP-SP04: Operating Hours Validation
+    const hoursValidation = validateOperatingHours(openTime, closeTime, selectedDays);
+    if (!hoursValidation.valid) {
+      setHoursError(hoursValidation.error || "Please specify valid operating hours.");
+      isValid = false;
+    } else {
+      setHoursError("");
+    }
+
     return isValid;
   };
 
@@ -194,6 +284,11 @@ export default function StoreProfilePage() {
     setLane(activeStore.lane);
     setPhone(activeStore.phone || "+91 98450 12345");
     setOpeningHours(activeStore.openingHours || "7:00 AM - 9:00 PM");
+    const resetHours = parseOperatingHoursString(activeStore.openingHours || "7:00 AM - 9:00 PM");
+    setOpenTime(resetHours.openTime);
+    setCloseTime(resetHours.closeTime);
+    setSelectedDays(resetHours.days);
+    setHoursError("");
     setBannerUrl(activeStore.bannerUrl || "");
     setImageUrl(activeStore.imageUrl || "");
     setNameError("");
@@ -559,7 +654,7 @@ export default function StoreProfilePage() {
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
                 Counter Phone (for shopper pickups) *
               </label>
@@ -588,21 +683,184 @@ export default function StoreProfilePage() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Checkpoint CP-SP04: Operating Hours & Schedule Management Card */}
+        <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span className="text-xs font-bold text-forest-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-terracotta-500" />
+              <span>Counter Operating Hours & Schedule (CP-SP04)</span>
+            </span>
+
+            {/* Live Operational Status Indicator */}
+            <div
+              data-testid="store-hours-live-status"
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                liveOperatingStatus.isOpen
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                  : "bg-amber-100 text-amber-900 border border-amber-300"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  liveOperatingStatus.isOpen ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                }`}
+              />
+              <span>{liveOperatingStatus.badgeText}</span>
+              <span className="text-[11px] font-medium opacity-80">({liveOperatingStatus.detail})</span>
+            </div>
+          </div>
+
+          {/* Quick Presets */}
+          <div className="p-3.5 rounded-2xl bg-cream-100 border border-cream-200 space-y-2">
+            <span className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block">
+              Quick Schedule Presets
+            </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                data-testid="preset-retail"
+                onClick={() => handleApplyPreset("09:00", "21:00", [...ALL_DAYS])}
+                className="px-2.5 py-1.5 rounded-xl bg-cream-50 hover:bg-forest-100 border border-cream-300 text-forest-800 text-xs font-semibold transition-colors text-left cursor-pointer"
+              >
+                <div className="font-bold text-[11px]">Regular Retail</div>
+                <div className="text-[10px] text-forest-500">9 AM - 9 PM • All Days</div>
+              </button>
+
+              <button
+                type="button"
+                data-testid="preset-early"
+                onClick={() => handleApplyPreset("06:30", "21:30", [...ALL_DAYS])}
+                className="px-2.5 py-1.5 rounded-xl bg-cream-50 hover:bg-forest-100 border border-cream-300 text-forest-800 text-xs font-semibold transition-colors text-left cursor-pointer"
+              >
+                <div className="font-bold text-[11px]">Early Fresh</div>
+                <div className="text-[10px] text-forest-500">6:30 AM - 9:30 PM • All Days</div>
+              </button>
+
+              <button
+                type="button"
+                data-testid="preset-bazaar"
+                onClick={() =>
+                  handleApplyPreset("10:00", "20:30", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
+                }
+                className="px-2.5 py-1.5 rounded-xl bg-cream-50 hover:bg-forest-100 border border-cream-300 text-forest-800 text-xs font-semibold transition-colors text-left cursor-pointer"
+              >
+                <div className="font-bold text-[11px]">Market Bazaar</div>
+                <div className="text-[10px] text-forest-500">10 AM - 8:30 PM • Mon-Sat</div>
+              </button>
+
+              <button
+                type="button"
+                data-testid="preset-24h"
+                onClick={() => handleApplyPreset("00:00", "23:59", [...ALL_DAYS])}
+                className="px-2.5 py-1.5 rounded-xl bg-cream-50 hover:bg-forest-100 border border-cream-300 text-forest-800 text-xs font-semibold transition-colors text-left cursor-pointer"
+              >
+                <div className="font-bold text-[11px]">24/7 Counter</div>
+                <div className="text-[10px] text-forest-500">Always Open • All Days</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Time Input Selectors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Counter Opens At
+              </label>
+              <div className="relative">
+                <input
+                  type="time"
+                  data-testid="store-open-time-input"
+                  value={openTime}
+                  onChange={(e) => handleOpenTimeChange(e.target.value)}
+                  className={`w-full px-3.5 py-2.5 bg-cream-100 border rounded-xl text-xs text-forest-950 font-semibold focus:outline-none transition-colors ${
+                    hoursError
+                      ? "border-rose-400 focus:ring-2 focus:ring-rose-300"
+                      : "border-cream-300 focus:ring-2 focus:ring-terracotta-400"
+                  }`}
+                />
+              </div>
+            </div>
 
             <div>
               <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                Counter Pickup Hours
+                Counter Closes At
               </label>
-              <input
-                type="text"
-                data-testid="store-hours-input"
-                value={openingHours}
-                onChange={(e) => setOpeningHours(e.target.value)}
-                placeholder="e.g. 7:00 AM - 9:00 PM"
-                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
-              />
+              <div className="relative">
+                <input
+                  type="time"
+                  data-testid="store-close-time-input"
+                  value={closeTime}
+                  onChange={(e) => handleCloseTimeChange(e.target.value)}
+                  className={`w-full px-3.5 py-2.5 bg-cream-100 border rounded-xl text-xs text-forest-950 font-semibold focus:outline-none transition-colors ${
+                    hoursError
+                      ? "border-rose-400 focus:ring-2 focus:ring-rose-300"
+                      : "border-cream-300 focus:ring-2 focus:ring-terracotta-400"
+                  }`}
+                />
+              </div>
             </div>
           </div>
+
+          {/* Operational Days Selector */}
+          <div>
+            <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1.5">
+              Active Operational Days
+            </label>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {ALL_DAYS.map((day) => {
+                const isSelected = selectedDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    data-testid={DAY_TEST_IDS[day]}
+                    onClick={() => handleToggleDay(day)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-forest-800 text-cream-100 shadow-xs"
+                        : "bg-cream-200 text-forest-700 hover:bg-cream-300 opacity-60"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Formatted Hours Preview & Fallback Input */}
+          <div>
+            <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+              Formatted Storefront Display String
+            </label>
+            <input
+              type="text"
+              data-testid="store-hours-input"
+              value={openingHours}
+              onChange={(e) => {
+                setOpeningHours(e.target.value);
+                if (hoursError) setHoursError("");
+              }}
+              placeholder="e.g. 7:00 AM - 9:00 PM (Mon - Sat)"
+              className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+            />
+          </div>
+
+          {/* Operating Hours Validation Error Banner */}
+          {hoursError && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              data-testid="store-hours-error"
+              className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-2 text-xs font-semibold"
+            >
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{hoursError}</span>
+            </motion.div>
+          )}
         </div>
 
         {/* Action Controls */}

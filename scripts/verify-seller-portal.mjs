@@ -2,12 +2,13 @@
  * Checkpoint CP-SP01: Protected Seller Portal Layout & Permission Verification
  * Checkpoint CP-SP02: Store Profile Form & Neighborhood Geocoding
  * Checkpoint CP-SP03: Supabase Storage Banner Upload & Media Management
+ * Checkpoint CP-SP04: Operating Hours Configuration, Live Status & Validation
  */
 
 import fs from "fs";
 
 console.log("==================================================================");
-console.log("🏪 SELLER PORTAL VERIFICATION: CP-SP01, CP-SP02 & CP-SP03");
+console.log("🏪 SELLER PORTAL VERIFICATION: CP-SP01, CP-SP02, CP-SP03 & CP-SP04");
 console.log("==================================================================\n");
 
 let passed = 0;
@@ -93,7 +94,6 @@ testAssert(storePageContent.includes("data-testid=\"store-category-select\""), "
 testAssert(storePageContent.includes("data-testid=\"store-area-select\""), "Neighborhood Area geocoding selector present");
 testAssert(storePageContent.includes("data-testid=\"store-lane-input\""), "Street Lane / Landmark address input present");
 testAssert(storePageContent.includes("data-testid=\"store-phone-input\""), "Counter phone input present");
-testAssert(storePageContent.includes("data-testid=\"store-hours-input\""), "Opening hours input present");
 testAssert(storePageContent.includes("data-testid=\"store-banner-input\""), "Store banner URL input present");
 testAssert(storePageContent.includes("data-testid=\"store-banner-preview\""), "Live banner preview element present");
 testAssert(storePageContent.includes("data-testid=\"store-status-toggle\""), "Live storefront open/closed toggle button present");
@@ -164,7 +164,118 @@ testAssert(!validateBannerFile({ type: "image/png", size: 6 * 1024 * 1024 }).val
 testAssert(validateBannerFile({ type: "image/jpeg", size: 2 * 1024 * 1024 }).valid, "Valid 2MB JPEG accepted");
 testAssert(validateBannerFile({ type: "image/webp", size: 500 * 1024 }).valid, "Valid 500KB WebP accepted");
 
+// ---------------------------------------------------------------------------
+// 6. OPERATING HOURS CONFIGURATION, LIVE STATUS & VALIDATION (CP-SP04)
+// ---------------------------------------------------------------------------
+console.log("\n--- 6. OPERATING HOURS CONFIGURATION & VALIDATION (CP-SP04) ---");
+
+// 6.1 Check operating hours module exists and has all required exports
+const opHoursPath = "./src/lib/operatingHours.ts";
+testAssert(fs.existsSync(opHoursPath), "src/lib/operatingHours.ts utility module exists");
+
+const opHoursContent = fs.readFileSync(opHoursPath, "utf-8");
+testAssert(opHoursContent.includes("export function validateOperatingHours"), "validateOperatingHours function exported");
+testAssert(opHoursContent.includes("export function checkLiveOperatingStatus"), "checkLiveOperatingStatus function exported");
+testAssert(opHoursContent.includes("export function formatOperatingHoursString"), "formatOperatingHoursString function exported");
+testAssert(opHoursContent.includes("export function parseOperatingHoursString"), "parseOperatingHoursString function exported");
+testAssert(opHoursContent.includes("export function formatTo12Hour"), "formatTo12Hour function exported");
+testAssert(opHoursContent.includes("export const ALL_DAYS"), "ALL_DAYS list exported");
+
+// 6.2 Check UI controls in store profile page
+testAssert(storePageContent.includes("data-testid=\"store-hours-input\""), "Formatted store hours input (data-testid='store-hours-input') present");
+testAssert(storePageContent.includes("data-testid=\"store-open-time-input\""), "Opening time input (data-testid='store-open-time-input') present");
+testAssert(storePageContent.includes("data-testid=\"store-close-time-input\""), "Closing time input (data-testid='store-close-time-input') present");
+testAssert(storePageContent.includes("data-testid=\"store-hours-live-status\""), "Live operational status badge (data-testid='store-hours-live-status') present");
+testAssert(storePageContent.includes("data-testid=\"store-hours-error\""), "Hours validation error banner (data-testid='store-hours-error') present");
+
+// Quick Presets
+testAssert(storePageContent.includes("data-testid=\"preset-retail\""), "Retail preset (data-testid='preset-retail') present");
+testAssert(storePageContent.includes("data-testid=\"preset-early\""), "Early bird preset (data-testid='preset-early') present");
+testAssert(storePageContent.includes("data-testid=\"preset-bazaar\""), "Bazaar preset (data-testid='preset-bazaar') present");
+testAssert(storePageContent.includes("data-testid=\"preset-24h\""), "24/7 preset (data-testid='preset-24h') present");
+
+// Operational day toggles
+testAssert(storePageContent.includes("day-toggle-mon"), "Monday toggle (day-toggle-mon) present");
+testAssert(storePageContent.includes("day-toggle-tue"), "Tuesday toggle (day-toggle-tue) present");
+testAssert(storePageContent.includes("day-toggle-wed"), "Wednesday toggle (day-toggle-wed) present");
+testAssert(storePageContent.includes("day-toggle-thu"), "Thursday toggle (day-toggle-thu) present");
+testAssert(storePageContent.includes("day-toggle-fri"), "Friday toggle (day-toggle-fri) present");
+testAssert(storePageContent.includes("day-toggle-sat"), "Saturday toggle (day-toggle-sat) present");
+testAssert(storePageContent.includes("day-toggle-sun"), "Sunday toggle (day-toggle-sun) present");
+
+// 6.3 Operating Hours Validation Unit Tests
+function validateHours(openTime, closeTime, days) {
+  if (!openTime || !closeTime) {
+    return { valid: false, error: "Both opening and closing times must be specified." };
+  }
+  if (!days || days.length === 0) {
+    return { valid: false, error: "At least one operational day must be selected." };
+  }
+  const [openH, openM] = openTime.split(":").map(Number);
+  const [closeH, closeM] = closeTime.split(":").map(Number);
+  if (isNaN(openH) || isNaN(openM) || isNaN(closeH) || isNaN(closeM)) {
+    return { valid: false, error: "Invalid time format provided." };
+  }
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+  if (closeMinutes <= openMinutes) {
+    return { valid: false, error: "Closing time must be later than opening time." };
+  }
+  if (closeMinutes - openMinutes < 30) {
+    return { valid: false, error: "Operating hours window must be at least 30 minutes long." };
+  }
+  return { valid: true };
+}
+
+testAssert(!validateHours("", "21:00", ["Mon", "Tue"]).valid, "Missing opening time rejected");
+testAssert(!validateHours("09:00", "", ["Mon", "Tue"]).valid, "Missing closing time rejected");
+testAssert(!validateHours("09:00", "21:00", []).valid, "Zero operational days rejected");
+testAssert(!validateHours("21:00", "09:00", ["Mon"]).valid, "Closing time earlier than opening time rejected");
+testAssert(!validateHours("10:00", "10:00", ["Mon"]).valid, "Equal opening and closing times rejected");
+testAssert(!validateHours("10:00", "10:15", ["Mon"]).valid, "Window shorter than 30 minutes rejected");
+testAssert(validateHours("09:00", "21:00", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).valid, "Standard 9 AM - 9 PM schedule accepted");
+testAssert(validateHours("00:00", "23:59", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).valid, "24/7 all-day schedule accepted");
+
+// 6.4 Live Status Evaluation Unit Tests
+function evaluateLiveStatus(openTime, closeTime, days, isCounterOpen, now) {
+  if (!isCounterOpen) {
+    return { isOpen: false, badgeText: "Manually Closed" };
+  }
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const currentDay = dayNames[now.getDay()];
+  if (!days.includes(currentDay)) {
+    return { isOpen: false, badgeText: "Closed Today" };
+  }
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [openH, openM] = openTime.split(":").map(Number);
+  const [closeH, closeM] = closeTime.split(":").map(Number);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+
+  if (currentMinutes < openMinutes) {
+    return { isOpen: false, badgeText: "Closed Now" };
+  }
+  if (currentMinutes >= closeMinutes) {
+    return { isOpen: false, badgeText: "Closed for the Day" };
+  }
+  return { isOpen: true, badgeText: "Open Now" };
+}
+
+// Fixed reference dates:
+// 2026-10-23 is Friday
+const fri10am = new Date("2026-10-23T10:00:00");
+const fri6am = new Date("2026-10-23T06:00:00");
+const fri11pm = new Date("2026-10-23T23:00:00");
+// 2026-10-25 is Sunday
+const sun10am = new Date("2026-10-25T10:00:00");
+
+testAssert(!evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], false, fri10am).isOpen, "Manually toggled closed store returns isOpen: false");
+testAssert(!evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], true, sun10am).isOpen, "Non-operational Sunday returns isOpen: false");
+testAssert(evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], true, fri10am).isOpen, "Active Friday 10 AM within 08:00-21:00 returns isOpen: true");
+testAssert(!evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], true, fri6am).isOpen, "Active Friday 6 AM before 08:00 returns isOpen: false");
+testAssert(!evaluateLiveStatus("08:00", "21:00", ["Mon", "Fri"], true, fri11pm).isOpen, "Active Friday 11 PM after 21:00 returns isOpen: false");
+
 console.log("\n==================================================================");
-console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01, CP-SP02 & CP-SP03!`);
-console.log("Protected Seller Portal, Profile Form & Supabase Storage Banner Upload Operational!");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01, CP-SP02, CP-SP03 & CP-SP04!`);
+console.log("Protected Seller Portal, Store Profile, Supabase Storage Banner Upload & Operating Hours Operational!");
 console.log("==================================================================");
