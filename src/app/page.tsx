@@ -11,6 +11,10 @@ import { StoreCard } from "@/components/StoreCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Store, Product } from "@/types";
 import {
+  computePersonalizedRecommendations,
+  recordUserSearchQuery,
+} from "@/lib/userRecommendations";
+import {
   Sparkles,
   MapPin,
   Store as StoreIcon,
@@ -33,6 +37,7 @@ export default function HomePage() {
     isLocating,
     requestCurrentLocation,
     setIsLocationModalOpen,
+    recentlyViewed,
   } = useCart();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +45,21 @@ export default function HomePage() {
   const [stores, setStores] = useState<Store[]>(MOCK_STORES);
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [locationFeedback, setLocationFeedback] = useState<string | null>(null);
+
+  // Personalized user recommendations
+  const { recommendations, recentSearches, primaryInterestCategory } = useMemo(() => {
+    return computePersonalizedRecommendations(products, recentlyViewed || []);
+  }, [products, recentlyViewed]);
+
+  // Record user searches for ML recommendations
+  useEffect(() => {
+    if (searchQuery.trim().length >= 3) {
+      const timer = setTimeout(() => {
+        recordUserSearchQuery(searchQuery.trim());
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery]);
 
   // Guard: User must log in before loading the front page
   useEffect(() => {
@@ -443,6 +463,49 @@ export default function HomePage() {
           </motion.div>
         )}
       </section>
+
+      {/* Personalized Recommendations Section (User Interest & Recent Searches) */}
+      {recommendations.length > 0 && products.length > 0 && (
+        <section data-testid="user-recommendations-section" className="space-y-3.5 p-5 sm:p-6 rounded-3xl bg-forest-900 text-cream-50 shadow-warm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-forest-800 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-terracotta-500 text-white flex items-center justify-center shadow-xs">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="font-serif text-lg sm:text-xl font-bold text-cream-50">
+                  Recommended For You
+                </h2>
+                <p className="text-[11px] text-cream-200">
+                  Personalized based on your {primaryInterestCategory} interest &amp; recent views
+                </p>
+              </div>
+            </div>
+
+            {recentSearches.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] uppercase font-bold text-cream-300">Searched:</span>
+                {recentSearches.slice(0, 3).map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => setSearchQuery(term)}
+                    className="text-[10px] bg-forest-800 hover:bg-forest-700 text-terracotta-300 px-2 py-0.5 rounded-full border border-forest-700 transition-colors cursor-pointer"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-1">
+            {recommendations.slice(0, 4).map((product) => (
+              <ProductCard key={`rec-${product.id}`} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Local Goods Catalog Section */}
       <section className="space-y-4 pt-4 border-t border-cream-300">

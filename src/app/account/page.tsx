@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { UserAddress, AddressType, NeighborhoodArea } from "@/types";
+import { Map4MePicker } from "@/components/Map4MePicker";
 
 const HUBBALLI_LOCALITIES: NeighborhoodArea[] = [
   "Vidyanagar",
@@ -594,134 +595,38 @@ export default function AccountPage() {
         </div>
       )}
 
-      {/* Add / Edit Address Modal */}
+      {/* Map4Me Pinpoint Delivery Address Modal */}
       {isAddressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-cream-50 rounded-3xl p-6 border border-cream-300 shadow-2xl space-y-4">
-            <h3 className="font-serif font-bold text-lg text-forest-950">
-              {editingAddressId ? "Edit Address" : "Add New Address"}
-            </h3>
-
-            {addressError && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{addressError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveAddress} className="space-y-3.5 text-xs">
-              {/* Address Label Selector: Primary, Home, Office, Others */}
-              <div>
-                <label className="block font-bold text-forest-900 mb-1.5">
-                  Address Label
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(["Primary", "Home", "Office", "Others"] as AddressType[]).map((lbl) => (
-                    <button
-                      key={lbl}
-                      type="button"
-                      onClick={() => setAddressLabel(lbl)}
-                      className={`py-2 rounded-xl font-bold text-xs border transition-all ${
-                        addressLabel === lbl
-                          ? "bg-terracotta-600 text-cream-50 border-terracotta-600 shadow-xs"
-                          : "bg-white text-forest-700 border-cream-300 hover:bg-cream-100"
-                      }`}
-                    >
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-forest-900 mb-1">
-                  Street / Building / Flat No.
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Plot 14, 2nd Cross, Lingaraj Nagar"
-                  value={addressStreet}
-                  onChange={(e) => setAddressStreet(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-cream-300 bg-white focus:ring-2 focus:ring-terracotta-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-forest-900 mb-1">
-                  Landmark <span className="text-forest-400 font-normal">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Near KIMS Hospital Circle"
-                  value={addressLandmark}
-                  onChange={(e) => setAddressLandmark(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-cream-300 bg-white focus:ring-2 focus:ring-terracotta-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-forest-900 mb-1">
-                    Locality (Hubballi)
-                  </label>
-                  <select
-                    value={addressLocality}
-                    onChange={(e) => setAddressLocality(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-cream-300 bg-white focus:ring-2 focus:ring-terracotta-500 focus:outline-hidden"
-                  >
-                    {HUBBALLI_LOCALITIES.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
-                    <option value="Keshwapur">Keshwapur</option>
-                    <option value="Deshpande Nagar">Deshpande Nagar</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-forest-900 mb-1">
-                    PIN Code (6 digits)
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    required
-                    value={addressPincode}
-                    onChange={(e) => setAddressPincode(e.target.value.replace(/\D/g, ""))}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-cream-300 bg-white focus:ring-2 focus:ring-terracotta-500 focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <label className="flex items-center gap-2 pt-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={addressIsDefault}
-                  onChange={(e) => setAddressIsDefault(e.target.checked)}
-                  className="rounded-sm text-terracotta-600 focus:ring-terracotta-500"
-                />
-                <span className="text-forest-800 font-medium">
-                  Set this as my default address
-                </span>
-              </label>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddressModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-cream-300 text-forest-700 font-bold hover:bg-cream-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold shadow-xs"
-                >
-                  Save Address
-                </button>
-              </div>
-            </form>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/70 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-xl my-8">
+            <Map4MePicker
+              title={
+                editingAddressId
+                  ? "Map4Me: Edit Pinpoint Delivery Location"
+                  : "Map4Me: Pinpoint Accurate Delivery Address"
+              }
+              initialAddress={
+                editingAddressId
+                  ? {
+                      label: addressLabel,
+                      street: addressStreet,
+                      landmark: addressLandmark,
+                      locality: addressLocality,
+                      pincode: addressPincode,
+                      isDefault: addressIsDefault,
+                    }
+                  : undefined
+              }
+              onSaveAddress={(saved) => {
+                if (editingAddressId) {
+                  updateAddress(editingAddressId, saved);
+                } else {
+                  addAddress(saved);
+                }
+                setIsAddressModalOpen(false);
+              }}
+              onCancel={() => setIsAddressModalOpen(false)}
+            />
           </div>
         </div>
       )}

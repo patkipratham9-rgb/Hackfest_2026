@@ -25,6 +25,14 @@ interface AuthContextType {
   activeAppMode: AppMode;
   setActiveAppMode: (mode: AppMode) => void;
   sendOtp: (phone: string) => { success: boolean; message: string; testOtp?: string; cooldownSeconds: number };
+  signup: (data: {
+    name: string;
+    phone: string;
+    email?: string;
+    role?: UserRole;
+    storeName?: string;
+    initialAddress?: Omit<UserAddress, "id">;
+  }) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
   loginWithPhoneOtp: (phone: string, otp: string, role?: UserRole) => Promise<{ success: boolean; message: string }>;
   loginWithEmailPermission: (
     email: string,
@@ -46,57 +54,13 @@ interface AuthContextType {
 const AUTH_STORAGE_KEY = "localloop_auth_session_v1";
 const APP_MODE_STORAGE_KEY = "localloop_app_mode_v1";
 
-const DEFAULT_ADDRESSES: UserAddress[] = [
-  {
-    id: "addr_primary_vidyanagar",
-    label: "Primary",
-    street: "Plot #14, 2nd Cross, Lingaraj Nagar",
-    landmark: "Near KIMS Hospital Gate",
-    locality: "Vidyanagar",
-    city: "Hubballi-Dharwad",
-    pincode: "580021",
-    isDefault: true,
-  },
-  {
-    id: "addr_home_keshwapur",
-    label: "Home",
-    street: "Bhavani Nagar, Kusugal Road",
-    landmark: "Opp. Railway Grounds",
-    locality: "Station Road",
-    city: "Hubballi-Dharwad",
-    pincode: "580023",
-    isDefault: false,
-  },
-  {
-    id: "addr_office_bvb",
-    label: "Office",
-    street: "Department of CSE, KLE Tech Campus",
-    landmark: "Vidyanagar",
-    locality: "Vidyanagar",
-    city: "Hubballi-Dharwad",
-    pincode: "580031",
-    isDefault: false,
-  },
-];
-
-const DEFAULT_DEMO_USER: UserProfile = {
-  id: "user_pratham_01",
-  name: "Pratham Patki",
-  number: "9845122334",
-  email: "pratham.patki@kletech.ac.in",
-  role: "customer",
-  storeId: "store-1",
-  storeName: "Meena's Diyas & Filter Coffee",
-  addresses: DEFAULT_ADDRESSES,
-  emailPermissionsGranted: true,
-  createdAt: "2026-10-22T10:00:00.000Z",
-};
+const DEFAULT_ADDRESSES: UserAddress[] = [];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(DEFAULT_DEMO_USER);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [activeAppMode, setActiveAppModeState] = useState<AppMode>("shopper");
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -152,6 +116,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const sendOtp = (phone: string) => {
     return requestPhoneOtp(phone);
+  };
+
+  const signup = async (data: {
+    name: string;
+    phone: string;
+    email?: string;
+    role?: UserRole;
+    storeName?: string;
+    initialAddress?: Omit<UserAddress, "id">;
+  }) => {
+    const cleanName = sanitizeInput(data.name).trim();
+    if (!cleanName) {
+      return { success: false, message: "Please provide a valid full name." };
+    }
+
+    const phoneValidation = validatePhoneNumber(data.phone);
+    if (!phoneValidation.valid) {
+      return { success: false, message: phoneValidation.error || "Invalid phone number." };
+    }
+
+    let cleanEmail = "";
+    if (data.email && data.email.trim() !== "") {
+      const emailValidation = validateEmail(data.email);
+      if (!emailValidation.valid) {
+        return { success: false, message: emailValidation.error || "Invalid email address." };
+      }
+      cleanEmail = emailValidation.sanitized;
+    }
+
+    const role: UserRole = data.role || "customer";
+    const initialAddresses: UserAddress[] = [];
+    if (data.initialAddress && data.initialAddress.street) {
+      initialAddresses.push({
+        id: `addr_${Date.now()}`,
+        label: data.initialAddress.label || "Primary",
+        street: data.initialAddress.street,
+        landmark: data.initialAddress.landmark || "",
+        locality: data.initialAddress.locality || "Vidyanagar",
+        city: data.initialAddress.city || "Hubballi-Dharwad",
+        pincode: data.initialAddress.pincode || "580021",
+        isDefault: true,
+      });
+    }
+
+    const newUser: UserProfile = {
+      id: `user_${Date.now()}`,
+      name: cleanName,
+      number: phoneValidation.cleanNumber,
+      email: cleanEmail || undefined,
+      role,
+      storeId: role === "seller" ? `store_${Date.now()}` : undefined,
+      storeName: role === "seller" ? (data.storeName || `${cleanName}'s Store`) : undefined,
+      addresses: initialAddresses,
+      emailPermissionsGranted: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setUser(newUser);
+    setIsAuthenticated(true);
+    persistSession(newUser, true);
+
+    if (role === "seller") {
+      setActiveAppMode("merchant");
+    } else {
+      setActiveAppMode("shopper");
+    }
+
+    // Record new account in database
+    saveUserProfileToDbAction({
+      id: newUser.id,
+      fullName: newUser.name,
+      phone: newUser.number,
+      email: newUser.email,
+      addresses: newUser.addresses,
+    }).catch(console.warn);
+
+    return {
+      success: true,
+      message: role === "seller" ? "Merchant account created successfully!" : "Account created successfully! Welcome to LocalLoop.",
+      user: newUser,
+    };
   };
 
   const loginWithPhoneOtp = async (phone: string, otp: string, role: UserRole = "customer") => {
@@ -414,6 +460,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         activeAppMode,
         setActiveAppMode,
         sendOtp,
+        signup,
         loginWithPhoneOtp,
         loginWithEmailPermission,
         updateProfile,

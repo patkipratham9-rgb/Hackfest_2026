@@ -600,6 +600,106 @@ it("Merchant Account Removal: remove store and merchant account with confirmatio
 });
 
 // ----------------------------------------------------------------------
+// 8. DATA CLEARING, ML SALES LEARNING, MAP4ME PINPOINT, NOTIFICATIONS & IMAGE UPLOAD
+// ----------------------------------------------------------------------
+console.log(cyan("\n--- 8. CLEAN SLATE, ML ENGINE, MAP4ME PINPOINT, NOTIFICATIONS & PRODUCT PHOTO UPLOAD ---"));
+
+it("Clean Slate: Initial context state starts empty with manual onboarding", () => {
+  const authContextPath = path.join(process.cwd(), "src/context/AuthContext.tsx");
+  const authContent = fs.readFileSync(authContextPath, "utf-8");
+  assert.strictEqual(authContent.includes("useState<UserProfile | null>(null)"), true);
+  assert.strictEqual(authContent.includes("useState<boolean>(false)"), true);
+  assert.strictEqual(authContent.includes("DEFAULT_ADDRESSES: UserAddress[] = []"), true);
+
+  const mockDataPath = path.join(process.cwd(), "src/data/mockData.ts");
+  const mockContent = fs.readFileSync(mockDataPath, "utf-8");
+  assert.strictEqual(mockContent.includes("MOCK_STORES: Store[] = []"), true);
+  assert.strictEqual(mockContent.includes("MOCK_PRODUCTS: Product[] = []"), true);
+});
+
+it("Proper Login & Sign Up: Clean Create Account vs Log In separation", () => {
+  const loginPath = path.join(process.cwd(), "src/app/login/page.tsx");
+  const loginContent = fs.readFileSync(loginPath, "utf-8");
+  assert.strictEqual(loginContent.includes("Create Account"), true);
+  assert.strictEqual(loginContent.includes("Already Have an Account? Log In"), true);
+  assert.strictEqual(loginContent.includes("create-account-button"), true);
+  assert.strictEqual(loginContent.includes("/merchant/login"), true);
+
+  const merchantLoginPath = path.join(process.cwd(), "src/app/merchant/login/page.tsx");
+  const mLoginContent = fs.readFileSync(merchantLoginPath, "utf-8");
+  assert.strictEqual(mLoginContent.includes("Register Store"), true);
+  assert.strictEqual(mLoginContent.includes("Already Registered? Log In"), true);
+  assert.strictEqual(mLoginContent.includes("register-merchant-button"), true);
+  assert.strictEqual(mLoginContent.includes("/seller"), true);
+});
+
+it("Product Image Upload: Merchant can upload custom photos for items", () => {
+  const productsPagePath = path.join(process.cwd(), "src/app/seller/products/page.tsx");
+  const content = fs.readFileSync(productsPagePath, "utf-8");
+
+  assert.strictEqual(content.includes("product-image-upload-button"), true);
+  assert.strictEqual(content.includes("product-image-file-input"), true);
+  assert.strictEqual(content.includes("handleProductImageUpload"), true);
+  assert.strictEqual(content.includes("product-image-preview"), true);
+});
+
+it("Machine Learning: Adaptive self-learning sales engine and merchant suggestions", () => {
+  const mlEnginePath = path.join(process.cwd(), "src/lib/mlSalesEngine.ts");
+  assert.strictEqual(fs.existsSync(mlEnginePath), true);
+  const mlContent = fs.readFileSync(mlEnginePath, "utf-8");
+
+  assert.strictEqual(mlContent.includes("trainMLSalesModel"), true);
+  assert.strictEqual(mlContent.includes("productVelocities"), true);
+  assert.strictEqual(mlContent.includes("basketCoOccurrences"), true);
+  assert.strictEqual(mlContent.includes("hourlyRushDistribution"), true);
+
+  const sellerDashboardPath = path.join(process.cwd(), "src/app/seller/page.tsx");
+  const dashContent = fs.readFileSync(sellerDashboardPath, "utf-8");
+  assert.strictEqual(dashContent.includes("Self-Trained Machine Learning Sales Intelligence"), true);
+  assert.strictEqual(dashContent.includes("trainMLSalesModel"), true);
+  assert.strictEqual(dashContent.includes("handleApplySuggestion"), true);
+});
+
+it("Map4Me Pinpoint: Accurate location picker for Home, Office, Others delivery", () => {
+  const mapPickerPath = path.join(process.cwd(), "src/components/Map4MePicker.tsx");
+  assert.strictEqual(fs.existsSync(mapPickerPath), true);
+  const mapContent = fs.readFileSync(mapPickerPath, "utf-8");
+
+  assert.strictEqual(mapContent.includes("map4me-picker"), true);
+  assert.strictEqual(mapContent.includes("map4me-canvas"), true);
+  assert.strictEqual(mapContent.includes("map4me-gps-button"), true);
+  assert.strictEqual(mapContent.includes("Home"), true);
+  assert.strictEqual(mapContent.includes("Office"), true);
+  assert.strictEqual(mapContent.includes("Others"), true);
+
+  const accountPath = path.join(process.cwd(), "src/app/account/page.tsx");
+  const accountContent = fs.readFileSync(accountPath, "utf-8");
+  assert.strictEqual(accountContent.includes("Map4MePicker"), true);
+
+  const checkoutPath = path.join(process.cwd(), "src/components/CheckoutModal.tsx");
+  const checkoutContent = fs.readFileSync(checkoutPath, "utf-8");
+  assert.strictEqual(checkoutContent.includes("Map4MePicker"), true);
+});
+
+it("Notification System & User Recommendations: Alert for new stores/products and interest-based suggestions", () => {
+  const notifPath = path.join(process.cwd(), "src/lib/notificationSystem.ts");
+  assert.strictEqual(fs.existsSync(notifPath), true);
+  const notifContent = fs.readFileSync(notifPath, "utf-8");
+  assert.strictEqual(notifContent.includes("notifyNewStore"), true);
+  assert.strictEqual(notifContent.includes("notifyNewProduct"), true);
+
+  const navPath = path.join(process.cwd(), "src/components/Navbar.tsx");
+  const navContent = fs.readFileSync(navPath, "utf-8");
+  assert.strictEqual(navContent.includes("NotificationCenter"), true);
+
+  const homePath = path.join(process.cwd(), "src/app/page.tsx");
+  const homeContent = fs.readFileSync(homePath, "utf-8");
+  assert.strictEqual(homeContent.includes("computePersonalizedRecommendations"), true);
+  assert.strictEqual(homeContent.includes("recordUserSearchQuery"), true);
+  assert.strictEqual(homeContent.includes("Recommended For You"), true);
+});
+
+// ----------------------------------------------------------------------
 // FINAL SUMMARY
 // ----------------------------------------------------------------------
 console.log(bold("\n=================================================================="));

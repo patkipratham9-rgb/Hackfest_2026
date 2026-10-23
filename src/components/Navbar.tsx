@@ -24,6 +24,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { LocationModal } from "@/components/LocationModal";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 export function Navbar() {
   const {
@@ -139,6 +140,9 @@ export function Navbar() {
           >
             <User className="w-4 h-4 text-forest-700" />
           </motion.button>
+
+          {/* Notifications Center */}
+          <NotificationCenter />
 
           {/* Cart Button */}
           <motion.button

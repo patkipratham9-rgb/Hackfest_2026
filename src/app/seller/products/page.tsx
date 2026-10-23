@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import { useSeller } from "@/context/SellerContext";
 import { ProductCategory, Product } from "@/types";
@@ -14,6 +14,7 @@ import {
   approveAIProductListingAction,
 } from "@/actions/marketplaceActions";
 import type { ProductListingDraft } from "@/lib/aiProvider";
+import { notifyNewProduct } from "@/lib/notificationSystem";
 import {
   Package,
   Plus,
@@ -34,6 +35,7 @@ import {
   AlertCircle,
   Archive,
   ShieldCheck,
+  UploadCloud,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -84,6 +86,30 @@ export default function SellerProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [formData, setFormData] = useState(DEFAULT_FORM_STATE);
+  const productImageInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingProductImage, setIsUploadingProductImage] = useState(false);
+
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size exceeds 5MB limit.");
+      return;
+    }
+
+    setIsUploadingProductImage(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setFormData((prev) => ({ ...prev, imageUrl: base64 }));
+      setIsUploadingProductImage(false);
+    };
+    reader.onerror = () => {
+      setIsUploadingProductImage(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Checkpoint CP-PI02: Delete confirmation state
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -329,6 +355,7 @@ export default function SellerProductsPage() {
         };
         addProduct(newProduct);
         createProductAction(newProduct, userRole).catch(console.warn);
+        notifyNewProduct(formData.name.trim(), activeStore.name || "Local Merchant", parsedPrice);
         setSuccessAlert(`Added "${formData.name.trim()}" to catalog!`);
       }
 
@@ -1167,33 +1194,76 @@ export default function SellerProductsPage() {
                   </div>
                 </div>
 
-                {/* Product Image URL & Live Preview */}
-                <div>
-                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                    Product Image URL
-                  </label>
+                {/* Product Image Upload & Live Preview */}
+                <div className="p-3.5 rounded-2xl bg-cream-100 border border-cream-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block">
+                      Product Photo / Image Upload *
+                    </label>
+                    <span className="text-[10px] text-forest-500 font-medium">JPEG, PNG, WebP (Max 5MB)</span>
+                  </div>
+
                   <input
-                    type="url"
-                    data-testid="product-image-input"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                    ref={productImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    data-testid="product-image-file-input"
+                    onChange={handleProductImageUpload}
+                    className="hidden"
                   />
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      data-testid="product-image-upload-button"
+                      onClick={() => productImageInputRef.current?.click()}
+                      disabled={isUploadingProductImage}
+                      className="px-3.5 py-2 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5 text-terracotta-400" />
+                      <span>{isUploadingProductImage ? "Processing Image..." : "Upload Product Image"}</span>
+                    </button>
+
+                    {formData.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                        className="px-2.5 py-2 rounded-xl bg-cream-200 hover:bg-rose-100 text-forest-700 hover:text-rose-700 text-xs font-bold transition-colors cursor-pointer"
+                        title="Remove Image"
+                      >
+                        Remove Image
+                      </button>
+                    )}
+                  </div>
+
                   {formData.imageUrl && (
                     <div
                       data-testid="product-image-preview"
-                      className="mt-2 relative w-24 h-24 rounded-xl overflow-hidden border border-cream-300 bg-cream-200"
+                      className="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-forest-800/20 bg-cream-200 shadow-xs"
                     >
                       <Image
                         src={formData.imageUrl}
                         alt="Product Preview"
                         fill
-                        sizes="100px"
+                        sizes="120px"
                         className="object-cover"
                       />
                     </div>
                   )}
+
+                  <div>
+                    <label className="text-[10px] text-forest-600 block mb-1">
+                      Direct Photo URL (Optional alternative)
+                    </label>
+                    <input
+                      type="url"
+                      data-testid="product-image-input"
+                      value={formData.imageUrl}
+                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 bg-white border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                    />
+                  </div>
                 </div>
 
                 {/* Tags & Bestseller Toggle */}
