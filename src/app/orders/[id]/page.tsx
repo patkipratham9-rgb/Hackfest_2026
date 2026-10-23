@@ -30,34 +30,59 @@ interface OrderTrackingStep {
   icon: React.ElementType;
 }
 
-const STEPS: OrderTrackingStep[] = [
+// Checkpoint 4.3: Four official order statuses with exact labels:
+// Placed → Packed → Ready for Pickup → Completed
+const TRACKING_STEPS: OrderTrackingStep[] = [
   {
     key: "placed",
-    title: "Order Placed",
-    desc: "Sent to shop counter",
+    title: "Placed",
+    desc: "Received at counter",
     icon: Store,
   },
   {
     key: "packed",
-    title: "Packed Fresh",
-    desc: "Stock reserved & bagged",
+    title: "Packed",
+    desc: "Reserved & bagged",
     icon: Package,
   },
   {
     key: "ready",
     title: "Ready for Pickup",
-    desc: "Counter pickup ready",
+    desc: "Awaiting your arrival",
     icon: Clock,
   },
   {
     key: "completed",
-    title: "Order Collected",
+    title: "Completed",
     desc: "Picked up & verified",
     icon: CheckCircle2,
   },
 ];
 
 const ORDER_FLOW: OrderStatus[] = ["placed", "packed", "ready", "completed"];
+
+const STATUS_HEADLINES: Record<OrderStatus, { headline: string; detail: string }> = {
+  placed: {
+    headline: "Order Placed & Confirmed",
+    detail: "Order received by merchant counter • Preparing fresh",
+  },
+  packed: {
+    headline: "Order Packed & Bagged",
+    detail: "Merchant has reserved and packed your items fresh",
+  },
+  ready: {
+    headline: "Ready for Pickup at Counter!",
+    detail: "Your package is waiting at the counter • Present code to collect",
+  },
+  completed: {
+    headline: "Order Completed 🎉",
+    detail: "Items picked up and verified with artisan store",
+  },
+  cancelled: {
+    headline: "Order Cancelled",
+    detail: "This order was cancelled by customer or store",
+  },
+};
 
 export default function OrderTrackingPage({
   params,
@@ -128,7 +153,7 @@ export default function OrderTrackingPage({
             <li>The order was created in another browser or incognito window.</li>
           </ul>
 
-          {/* If there are existing known orders, show quick links */}
+          {/* Quick links to active orders if present */}
           {orders.length > 0 && (
             <div className="pt-2 border-t border-cream-200 mt-2">
               <span className="text-[11px] font-bold text-forest-900 block mb-1.5">
@@ -174,12 +199,17 @@ export default function OrderTrackingPage({
   }
 
   const currentStepIndex = Math.max(0, ORDER_FLOW.indexOf(order.status));
+  const statusInfo = STATUS_HEADLINES[order.status] || STATUS_HEADLINES.placed;
 
   const advanceStatus = () => {
     if (currentStepIndex < ORDER_FLOW.length - 1) {
       const nextStatus = ORDER_FLOW[currentStepIndex + 1];
       updateOrderStatus(order.id, nextStatus);
     }
+  };
+
+  const setExplicitStatus = (status: OrderStatus) => {
+    updateOrderStatus(order.id, status);
   };
 
   const resetStatus = () => {
@@ -233,24 +263,24 @@ export default function OrderTrackingPage({
             </div>
 
             <AnimatePresence mode="wait">
-              <motion.h1
+              <motion.div
                 key={order.status}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950 mt-1"
+                className="mt-1"
               >
-                {order.status === "ready"
-                  ? "Your order is ready at the counter!"
-                  : order.status === "packed"
-                  ? "Store is packing your items fresh"
-                  : order.status === "completed"
-                  ? "Order successfully picked up 🎉"
-                  : "Order received by merchant"}
-              </motion.h1>
+                <h1
+                  data-testid="order-status-headline"
+                  className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950"
+                >
+                  {statusInfo.headline}
+                </h1>
+                <p className="text-xs text-forest-600 mt-0.5">{statusInfo.detail}</p>
+              </motion.div>
             </AnimatePresence>
 
-            <p className="text-xs text-forest-600 mt-1 flex items-center gap-1">
+            <p className="text-xs text-forest-600 mt-2 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-terracotta-500" />
               <span>
                 Pickup Slot:{" "}
@@ -281,15 +311,20 @@ export default function OrderTrackingPage({
           </motion.div>
         </div>
 
-        {/* 4-Step Visual Progress Bar */}
-        <div data-testid="order-progress-timeline" className="pt-6">
+        {/* Checkpoint 4.3: 4-Step Visual Progress Bar */}
+        <div
+          data-testid="order-progress-timeline"
+          data-active-step={order.status}
+          className="pt-6"
+        >
           <div className="relative">
             {/* Progress line */}
             <div className="absolute top-5 left-6 right-6 h-1 bg-cream-200 -z-0">
               <motion.div
+                data-testid="order-progress-bar"
                 initial={{ width: 0 }}
                 animate={{
-                  width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%`,
+                  width: `${(currentStepIndex / (TRACKING_STEPS.length - 1)) * 100}%`,
                 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="h-full bg-terracotta-500"
@@ -297,15 +332,22 @@ export default function OrderTrackingPage({
             </div>
 
             <div className="grid grid-cols-4 gap-2 relative z-10">
-              {STEPS.map((step, idx) => {
+              {TRACKING_STEPS.map((step, idx) => {
                 const isPassed = idx <= currentStepIndex;
+                const isCompleted = idx < currentStepIndex;
                 const isCurrent = idx === currentStepIndex;
+                const isPending = idx > currentStepIndex;
                 const StepIcon = step.icon;
+
+                const stepState = isCurrent ? "active" : isCompleted ? "completed" : "pending";
 
                 return (
                   <div
                     key={step.key}
                     data-testid={`timeline-step-${step.key}`}
+                    data-status={stepState}
+                    data-active={isCurrent ? "true" : "false"}
+                    data-completed={isCompleted ? "true" : "false"}
                     className="flex flex-col items-center text-center"
                   >
                     <motion.div
@@ -325,25 +367,44 @@ export default function OrderTrackingPage({
                         isPassed
                           ? "bg-terracotta-500 text-white shadow-warm"
                           : "bg-cream-200 text-forest-400 border border-cream-300"
-                      }`}
+                      } ${isCurrent ? "ring-4 ring-terracotta-200" : ""}`}
                     >
                       <StepIcon className="w-4 h-4" />
-                      {isPassed && idx < currentStepIndex && (
-                        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-forest-800 text-cream-100 flex items-center justify-center">
+                      {isCompleted && (
+                        <div
+                          data-testid={`timeline-step-${step.key}-check`}
+                          className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-forest-800 text-cream-100 flex items-center justify-center shadow-xs"
+                        >
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
                     </motion.div>
+
+                    {/* Step Title Label */}
                     <span
-                      className={`text-[11px] font-bold mt-2 ${
-                        isPassed ? "text-forest-950" : "text-forest-400"
+                      data-testid={`timeline-step-${step.key}-label`}
+                      className={`text-[11px] mt-2 transition-colors ${
+                        isCurrent
+                          ? "font-extrabold text-forest-950 underline decoration-terracotta-500 decoration-2 underline-offset-2"
+                          : isCompleted
+                          ? "font-bold text-forest-800"
+                          : "font-medium text-forest-400"
                       }`}
                     >
                       {step.title}
                     </span>
+
+                    {/* Step Sub-label Description */}
                     <span className="text-[9px] text-forest-500 hidden sm:block mt-0.5">
                       {step.desc}
                     </span>
+
+                    {/* Active Step Badge for screen readers / mobile */}
+                    {isCurrent && (
+                      <span className="mt-1 text-[8px] font-extrabold uppercase tracking-wider text-terracotta-700 bg-terracotta-100 px-1.5 py-0.2 rounded">
+                        Current
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -355,33 +416,59 @@ export default function OrderTrackingPage({
       {/* Interactive Hackathon Simulation Bar */}
       <motion.div
         whileHover={{ scale: 1.01 }}
-        className="p-4 rounded-2xl bg-forest-900 text-cream-100 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-warm"
+        className="p-4 rounded-2xl bg-forest-900 text-cream-100 space-y-3 shadow-warm"
       >
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-terracotta-400 animate-pulse" />
-          <span className="text-xs font-semibold">
-            Demo Simulator: Advance merchant order state in real time
-          </span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-terracotta-400 animate-pulse" />
+            <span className="text-xs font-semibold">
+              Live Progress Simulator: Step through order states in real time
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.95 }}
+              data-testid="order-advance-status-button"
+              onClick={advanceStatus}
+              disabled={currentStepIndex >= TRACKING_STEPS.length - 1}
+              className="flex-1 sm:flex-none px-3.5 py-1.5 bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              Advance to Next Step →
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              data-testid="order-reset-status-button"
+              onClick={resetStatus}
+              className="px-2.5 py-1.5 bg-forest-800 hover:bg-forest-700 text-cream-200 rounded-xl text-xs font-medium cursor-pointer"
+            >
+              Reset
+            </motion.button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.95 }}
-            data-testid="order-advance-status-button"
-            onClick={advanceStatus}
-            disabled={currentStepIndex >= STEPS.length - 1}
-            className="flex-1 sm:flex-none px-3.5 py-1.5 bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-          >
-            Advance to Next Step →
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            data-testid="order-reset-status-button"
-            onClick={resetStatus}
-            className="px-2.5 py-1.5 bg-forest-800 hover:bg-forest-700 text-cream-200 rounded-xl text-xs font-medium cursor-pointer"
-          >
-            Reset
-          </motion.button>
+
+        {/* Step Jump Pills for quick testing of any specific status */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-forest-800 text-[11px]">
+          <span className="text-forest-400 font-medium">Jump to status:</span>
+          {TRACKING_STEPS.map((step) => {
+            const isCurrent = order.status === step.key;
+            return (
+              <button
+                key={step.key}
+                type="button"
+                data-testid={`jump-to-status-${step.key}`}
+                onClick={() => setExplicitStatus(step.key)}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                  isCurrent
+                    ? "bg-terracotta-500 text-white shadow-xs"
+                    : "bg-forest-800 hover:bg-forest-700 text-cream-200"
+                }`}
+              >
+                {step.title}
+              </button>
+            );
+          })}
         </div>
       </motion.div>
 
