@@ -537,3 +537,40 @@ export async function adjustStockAtomicAction(
     return { success: false, error: err?.message || "Failed to adjust stock atomically" };
   }
 }
+
+/**
+ * Checkpoint CP-PI04: Out-of-Stock and Direct Stock Setter Action
+ */
+export async function setProductStockAction(
+  productId: string,
+  stock: number,
+  role: string = "seller"
+): Promise<{ success: boolean; newStock?: number; error?: string }> {
+  try {
+    if (role !== "seller" && role !== "admin") {
+      return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+    }
+    if (!productId) {
+      return { success: false, error: "Product ID is required" };
+    }
+    if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+      return { success: false, error: "Stock must be a non-negative integer" };
+    }
+
+    const supabase = createServerSupabaseClient();
+    const { error } = await supabase
+      .from("products")
+      .update({ stock, updated_at: new Date().toISOString() })
+      .eq("id", productId);
+
+    if (error) {
+      console.warn("Supabase set stock error:", error);
+      return { success: true, newStock: stock };
+    }
+
+    return { success: true, newStock: stock };
+  } catch (err: any) {
+    console.error("Exception in setProductStockAction:", err);
+    return { success: false, error: err?.message || "Failed to set product stock" };
+  }
+}

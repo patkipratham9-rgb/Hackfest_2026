@@ -9,6 +9,7 @@ import {
   updateProductAction,
   deleteProductAction,
   adjustStockAtomicAction,
+  setProductStockAction,
 } from "@/actions/marketplaceActions";
 import {
   Package,
@@ -67,11 +68,13 @@ export default function SellerProductsPage() {
     updateProduct,
     deleteProduct,
     adjustStock,
+    setStock,
   } = useSeller();
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [stockFilter, setStockFilter] = useState<"all" | "in_stock" | "low_stock" | "out_of_stock">("all");
 
   // Modal / Form state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,6 +96,21 @@ export default function SellerProductsPage() {
     adjustStockAtomicAction(productId, delta, userRole).catch(console.warn);
   };
 
+  // Checkpoint CP-PI04: Out-of-Stock and Restock handlers
+  const handleMarkOutOfStock = (productId: string, name: string) => {
+    setStock(productId, 0);
+    setProductStockAction(productId, 0, userRole).catch(console.warn);
+    setSuccessAlert(`Marked "${name}" as Out of Stock.`);
+    setTimeout(() => setSuccessAlert(""), 3500);
+  };
+
+  const handleQuickRestock = (productId: string, name: string, qty: number = 10) => {
+    setStock(productId, qty);
+    setProductStockAction(productId, qty, userRole).catch(console.warn);
+    setSuccessAlert(`Restocked "${name}" with ${qty} units.`);
+    setTimeout(() => setSuccessAlert(""), 3500);
+  };
+
   // Validation errors & feedback
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [successAlert, setSuccessAlert] = useState("");
@@ -105,7 +123,7 @@ export default function SellerProductsPage() {
     );
   }, [products, activeStore.id, activeStore.name]);
 
-  // Filtered by search and category
+  // Filtered by search, category, and stock status (CP-PI04)
   const filteredProducts = useMemo(() => {
     return storeProducts.filter((product) => {
       const matchesSearch =
@@ -116,9 +134,15 @@ export default function SellerProductsPage() {
       const matchesCat =
         selectedCategory === "All" || product.category === selectedCategory;
 
-      return matchesSearch && matchesCat;
+      const matchesStock =
+        stockFilter === "all" ||
+        (stockFilter === "out_of_stock" && product.stock === 0) ||
+        (stockFilter === "low_stock" && product.stock > 0 && product.stock <= 10) ||
+        (stockFilter === "in_stock" && product.stock > 10);
+
+      return matchesSearch && matchesCat && matchesStock;
     });
-  }, [storeProducts, searchQuery, selectedCategory]);
+  }, [storeProducts, searchQuery, selectedCategory, stockFilter]);
 
   // Open modal for new product
   const handleOpenAdd = () => {
@@ -359,6 +383,50 @@ export default function SellerProductsPage() {
         </div>
       </div>
 
+      {/* Checkpoint CP-PI04: Stock Availability Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          type="button"
+          data-testid="filter-all-stock"
+          onClick={() => setStockFilter("all")}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            stockFilter === "all"
+              ? "bg-forest-800 text-cream-100 shadow-xs"
+              : "bg-cream-100 text-forest-700 hover:bg-cream-200 border border-cream-300"
+          }`}
+        >
+          All Items ({storeProducts.length})
+        </button>
+
+        <button
+          type="button"
+          data-testid="filter-low-stock"
+          onClick={() => setStockFilter("low_stock")}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            stockFilter === "low_stock"
+              ? "bg-amber-600 text-white shadow-xs"
+              : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300"
+          }`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          <span>Low Stock ({storeProducts.filter((p) => p.stock > 0 && p.stock <= 10).length})</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="filter-out-of-stock"
+          onClick={() => setStockFilter("out_of_stock")}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            stockFilter === "out_of_stock"
+              ? "bg-rose-700 text-white shadow-xs"
+              : "bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-300"
+          }`}
+        >
+          <Archive className="w-3.5 h-3.5" />
+          <span>Out of Stock ({storeProducts.filter((p) => p.stock === 0).length})</span>
+        </button>
+      </div>
+
       {/* Products Grid */}
       {filteredProducts.length === 0 ? (
         <div className="p-12 text-center rounded-3xl bg-cream-50 border border-cream-300 space-y-3">
@@ -429,7 +497,10 @@ export default function SellerProductsPage() {
                     )}
 
                     {isOutOfStock && (
-                      <span className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 border border-rose-300 text-rose-900 text-[10px] font-bold shadow-xs">
+                      <span
+                        data-testid="out-of-stock-badge"
+                        className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 border border-rose-300 text-rose-900 text-[10px] font-bold shadow-xs"
+                      >
                         <Archive className="w-3 h-3 text-rose-600" />
                         <span>Out of Stock</span>
                       </span>
@@ -467,57 +538,86 @@ export default function SellerProductsPage() {
                     </div>
                   )}
 
-                  {/* Checkpoint CP-PI03: Atomic Stock Adjustment Controls */}
-                  <div className="p-2.5 rounded-2xl bg-cream-100 border border-cream-200 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-forest-700 uppercase tracking-wider">
-                        Stock:
-                      </span>
-                      <span
-                        data-testid={`stock-count-${product.id}`}
-                        className={`font-mono font-bold text-xs ${
-                          product.stock === 0
-                            ? "text-rose-600"
-                            : isLowStock
-                            ? "text-amber-700"
-                            : "text-forest-900"
-                        }`}
-                      >
-                        {product.stock} units
-                      </span>
+                  {/* Checkpoint CP-PI03 & CP-PI04: Stock Controls & Out-of-Stock Actions */}
+                  <div className="p-2.5 rounded-2xl bg-cream-100 border border-cream-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-forest-700 uppercase tracking-wider">
+                          Stock:
+                        </span>
+                        <span
+                          data-testid={`stock-count-${product.id}`}
+                          className={`font-mono font-bold text-xs ${
+                            product.stock === 0
+                              ? "text-rose-600 font-extrabold"
+                              : isLowStock
+                              ? "text-amber-700"
+                              : "text-forest-900"
+                          }`}
+                        >
+                          {product.stock} units
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={product.stock <= 0}
+                          data-testid={`stock-decrement-${product.id}`}
+                          onClick={() => handleAdjustStock(product.id, -1)}
+                          className="w-7 h-7 rounded-lg bg-cream-200 hover:bg-cream-300 disabled:opacity-40 disabled:cursor-not-allowed text-forest-800 font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
+                          title="Decrement stock (-1)"
+                        >
+                          -
+                        </button>
+
+                        <button
+                          type="button"
+                          data-testid={`stock-increment-${product.id}`}
+                          onClick={() => handleAdjustStock(product.id, 1)}
+                          className="w-7 h-7 rounded-lg bg-forest-800 hover:bg-forest-900 text-cream-100 font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
+                          title="Increment stock (+1)"
+                        >
+                          +
+                        </button>
+
+                        <button
+                          type="button"
+                          data-testid={`stock-bulk-add-${product.id}`}
+                          onClick={() => handleAdjustStock(product.id, 5)}
+                          className="px-2 h-7 rounded-lg bg-terracotta-100 hover:bg-terracotta-200 text-terracotta-800 font-bold text-[10px] flex items-center justify-center transition-colors cursor-pointer"
+                          title="Bulk Restock (+5)"
+                        >
+                          +5
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        disabled={product.stock <= 0}
-                        data-testid={`stock-decrement-${product.id}`}
-                        onClick={() => handleAdjustStock(product.id, -1)}
-                        className="w-7 h-7 rounded-lg bg-cream-200 hover:bg-cream-300 disabled:opacity-40 disabled:cursor-not-allowed text-forest-800 font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
-                        title="Decrement stock (-1)"
-                      >
-                        -
-                      </button>
-
-                      <button
-                        type="button"
-                        data-testid={`stock-increment-${product.id}`}
-                        onClick={() => handleAdjustStock(product.id, 1)}
-                        className="w-7 h-7 rounded-lg bg-forest-800 hover:bg-forest-900 text-cream-100 font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
-                        title="Increment stock (+1)"
-                      >
-                        +
-                      </button>
-
-                      <button
-                        type="button"
-                        data-testid={`stock-bulk-add-${product.id}`}
-                        onClick={() => handleAdjustStock(product.id, 5)}
-                        className="px-2 h-7 rounded-lg bg-terracotta-100 hover:bg-terracotta-200 text-terracotta-800 font-bold text-[10px] flex items-center justify-center transition-colors cursor-pointer"
-                        title="Bulk Restock (+5)"
-                      >
-                        +5
-                      </button>
+                    {/* CP-PI04: Out-of-Stock / Restock Quick Action Bar */}
+                    <div className="pt-1.5 border-t border-cream-200/80 flex items-center justify-end">
+                      {product.stock > 0 ? (
+                        <button
+                          type="button"
+                          data-testid={`mark-out-of-stock-${product.id}`}
+                          onClick={() => handleMarkOutOfStock(product.id, product.name)}
+                          className="text-[10px] font-bold text-rose-700 hover:text-rose-800 flex items-center gap-1 py-0.5 px-1.5 rounded hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Instantly mark SKU out of stock"
+                        >
+                          <Archive className="w-3 h-3" />
+                          <span>Mark Out of Stock</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          data-testid={`quick-restock-${product.id}`}
+                          onClick={() => handleQuickRestock(product.id, product.name, 10)}
+                          className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 py-0.5 px-1.5 rounded hover:bg-emerald-50 transition-colors cursor-pointer"
+                          title="Reactivate SKU with 10 units"
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Quick Restock (+10)</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
