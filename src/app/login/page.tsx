@@ -229,11 +229,14 @@ export default function LoginPage() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-forest-900 text-cream-50 shadow-md">
           <ShoppingBag className="w-8 h-8 text-terracotta-400" />
         </div>
+        <div className="inline-block px-2.5 py-0.5 rounded-full bg-cream-200 text-forest-700 text-[11px] font-bold">
+          Shopper Application
+        </div>
         <h1 className="font-serif font-extrabold text-2xl text-forest-950">
-          Shopper Application • Account &amp; Login
+          Your city’s hyperlocal digital marketplace.
         </h1>
-        <p className="text-xs text-forest-600 max-w-xs mx-auto">
-          Explore authentic corner shops, discover fresh goods, and order for express pickup in Hubballi.
+        <p className="text-xs text-forest-600 max-w-sm mx-auto font-medium">
+          Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.
         </p>
       </div>
 

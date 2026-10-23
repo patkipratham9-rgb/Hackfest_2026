@@ -235,10 +235,10 @@ export default function MerchantLoginPage() {
           <Store className="w-7 h-7" />
         </div>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold text-forest-950">
-          Merchant Partner Portal
+          Your city’s hyperlocal digital marketplace.
         </h1>
-        <p className="text-xs text-forest-600 max-w-sm mx-auto">
-          Create your store account, upload products, track live sales, and get self-learning ML suggestions.
+        <p className="text-xs text-forest-600 max-w-sm mx-auto font-medium">
+          Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers. Merchant Partner Portal.
         </p>
       </div>
 

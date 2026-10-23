@@ -73,6 +73,7 @@ export interface CartItem {
 }
 
 export type OrderStatus = "placed" | "packed" | "ready" | "completed" | "cancelled";
+export type DeliveryOption = "delivery" | "pickup";
 
 export interface Order {
   id: string;
@@ -91,6 +92,10 @@ export interface Order {
   paymentStatus: "paid" | "pending";
   pickupTime: string;
   pickupCode: string;
+  deliveryOption?: DeliveryOption;
+  deliveryAddress?: UserAddress | { label: string; street: string; locality: string; pincode: string; landmark?: string };
+  cashfreeOrderId?: string;
+  cashfreePaymentId?: string;
   createdAt: string;
   packedAt?: string;
   readyAt?: string;

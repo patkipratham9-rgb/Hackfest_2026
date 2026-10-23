@@ -115,7 +115,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendOtp = (phone: string) => {
-    return requestPhoneOtp(phone);
+    // Synchronous immediate response using security engine
+    const localRes = requestPhoneOtp(phone);
+    // Background async dispatch to API for multi-client verification
+    try {
+      fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      }).catch(() => {});
+    } catch {}
+    return localRes;
   };
 
   const signup = async (data: {
@@ -201,9 +211,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithPhoneOtp = async (phone: string, otp: string, role: UserRole = "customer") => {
-    const verification = verifyPhoneOtp(phone, otp);
-    if (!verification.success) {
-      return { success: false, message: verification.message };
+    // 1. First verify through API endpoint if in browser environment
+    if (typeof window !== "undefined" && typeof fetch === "function") {
+      try {
+        const res = await fetch("/api/auth/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, otp, role }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          return {
+            success: false,
+            message: data.message || "Invalid OTP code. Please check and try again.",
+          };
+        }
+      } catch (networkErr) {
+        // Fall back to local security engine if API route is unreachable
+        const localVerification = verifyPhoneOtp(phone, otp);
+        if (!localVerification.success) {
+          return { success: false, message: localVerification.message };
+        }
+      }
+    } else {
+      const localVerification = verifyPhoneOtp(phone, otp);
+      if (!localVerification.success) {
+        return { success: false, message: localVerification.message };
+      }
     }
 
     const phoneValidation = validatePhoneNumber(phone);
@@ -211,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const loggedInUser: UserProfile = {
       id: user?.id || `user_${Date.now()}`,
-      name: user?.name || "Hubballi Shopper",
+      name: user?.name || (role === "seller" ? "Hubballi Merchant" : "Hubballi Shopper"),
       number: phoneValidation.cleanNumber,
       email: user?.email,
       role,

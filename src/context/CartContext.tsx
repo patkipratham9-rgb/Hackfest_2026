@@ -37,6 +37,11 @@ interface CartContextType {
     customerPhone: string;
     pickupTime: string;
     paymentMethod: "upi" | "counter";
+    deliveryOption?: "delivery" | "pickup";
+    deliveryAddress?: any;
+    cashfreeOrderId?: string;
+    cashfreePaymentId?: string;
+    paymentStatus?: "paid" | "pending";
     items?: CartItem[];
   }) => Order | null;
   updateOrderStatus: (
@@ -315,6 +320,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     customerPhone: string;
     pickupTime: string;
     paymentMethod: "upi" | "counter";
+    deliveryOption?: "delivery" | "pickup";
+    deliveryAddress?: any;
+    cashfreeOrderId?: string;
+    cashfreePaymentId?: string;
+    paymentStatus?: "paid" | "pending";
     items?: CartItem[];
   }): Order | null => {
     const orderItems = data.items && data.items.length > 0 ? data.items : cart;
@@ -345,9 +355,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       total: orderTotal,
       status: "placed",
       paymentMethod: data.paymentMethod,
-      paymentStatus: data.paymentMethod === "upi" ? "paid" : "pending",
+      paymentStatus: data.paymentStatus || (data.paymentMethod === "upi" ? "paid" : "pending"),
       pickupTime: data.pickupTime,
       pickupCode: `LL-${pickupDigits}`,
+      deliveryOption: data.deliveryOption || "pickup",
+      deliveryAddress: data.deliveryAddress,
+      cashfreeOrderId: data.cashfreeOrderId,
+      cashfreePaymentId: data.cashfreePaymentId,
       createdAt: new Date().toISOString(),
     };
 

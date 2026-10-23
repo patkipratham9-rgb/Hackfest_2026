@@ -207,12 +207,12 @@ export default function HomePage() {
           </div>
 
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-cream-50 leading-[1.15]">
-            Real Neighborhood Goods.
-            <span className="block text-terracotta-400 italic">No Markups. Ready in 15 Mins.</span>
+            Your city’s hyperlocal digital marketplace.
+            <span className="block text-terracotta-400 italic font-serif">Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.</span>
           </h1>
 
           <p className="text-sm sm:text-base text-cream-200/90 max-w-xl leading-relaxed">
-            Support independent local vendors in Hubballi-Dharwad. Place your order online, skip the queues, and pick up fresh at the shop counter.
+            Support independent local vendors in Hubli-Dharwad. Choose <strong>Home Delivery</strong> or express <strong>Counter Pick-up</strong> with zero markups.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3">

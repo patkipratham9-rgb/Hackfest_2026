@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { CartDrawer } from "@/components/CartDrawer";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import { ProfilePanel } from "@/components/ProfilePanel";
+import { LocalLoopAssistantBot } from "@/components/LocalLoopAssistantBot";
 import { Footer } from "@/components/Footer";
 
 export const viewport: Viewport = {
@@ -67,6 +68,7 @@ export default function RootLayout({
             <CartDrawer />
             <CheckoutModal />
             <ProfilePanel />
+            <LocalLoopAssistantBot />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5 pb-24 sm:pb-12 w-full overflow-x-hidden">
               {children}
             </main>
