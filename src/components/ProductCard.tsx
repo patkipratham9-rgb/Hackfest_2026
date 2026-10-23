@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Product } from "@/types";
 import { useCart } from "@/context/CartContext";
-import { Plus, Check, AlertCircle, Heart } from "lucide-react";
+import { Plus, Minus, Check, AlertCircle, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductCardProps {
@@ -11,7 +11,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { cart, addToCart } = useCart();
+  const { cart, addToCart, updateQuantity } = useCart();
   const [isSaved, setIsSaved] = useState(false);
   const cartItem = cart.find((i) => i.product.id === product.id);
   const qtyInCart = cartItem?.quantity || 0;
@@ -122,44 +122,62 @@ export function ProductCard({ product }: ProductCardProps) {
           </span>
         </div>
 
-        {/* Add Button */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => addToCart(product)}
-          className={`relative overflow-hidden flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
-            qtyInCart > 0
-              ? "bg-forest-700 text-cream-100 hover:bg-forest-800"
-              : "bg-terracotta-500 text-white hover:bg-terracotta-600 shadow-warm"
-          }`}
-          aria-label={`Add ${product.name} to cart`}
-        >
-          <AnimatePresence mode="wait">
-            {qtyInCart > 0 ? (
-              <motion.div
-                key="added"
-                initial={{ opacity: 0, y: 8, rotate: -20 }}
-                animate={{ opacity: 1, y: 0, rotate: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="flex items-center gap-1.5"
-              >
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                <span>Added ({qtyInCart})</span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="add"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                className="flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                <span>Add</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        {/* Add / Stepper Button */}
+        {qtyInCart > 0 ? (
+          <div
+            data-testid={`cart-stepper-${product.id}`}
+            className="flex items-center gap-2 bg-forest-800 text-cream-100 rounded-xl px-2.5 py-1.5 shadow-xs border border-forest-900"
+          >
+            <motion.button
+              whileTap={{ scale: 0.8 }}
+              data-testid={`qty-minus-${product.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateQuantity(product.id, -1);
+              }}
+              className="text-cream-200 hover:text-terracotta-400 p-0.5 transition-colors"
+              aria-label="Decrease quantity"
+            >
+              <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+            </motion.button>
+            <motion.span
+              key={qtyInCart}
+              initial={{ scale: 1.3 }}
+              animate={{ scale: 1 }}
+              data-testid={`qty-count-${product.id}`}
+              className="text-xs font-bold text-cream-100 min-w-[14px] text-center"
+            >
+              {qtyInCart}
+            </motion.span>
+            <motion.button
+              whileTap={{ scale: 0.8 }}
+              data-testid={`qty-plus-${product.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateQuantity(product.id, 1);
+              }}
+              className="text-cream-200 hover:text-terracotta-400 p-0.5 transition-colors"
+              aria-label="Increase quantity"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            </motion.button>
+          </div>
+        ) : (
+          <motion.button
+            data-testid={`add-to-cart-${product.id}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              addToCart(product);
+            }}
+            className="relative overflow-hidden flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-warm bg-terracotta-500 hover:bg-terracotta-600 text-white"
+            aria-label={`Add ${product.name} to cart`}
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            <span>Add</span>
+          </motion.button>
+        )}
       </div>
     </motion.div>
   );
