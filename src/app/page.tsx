@@ -13,7 +13,7 @@ import { Sparkles, MapPin, Store as StoreIcon, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
-  const { activeArea } = useCart();
+  const { activeArea, addToCart } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("All");
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
@@ -63,6 +63,7 @@ export default function HomePage() {
     >
       {/* Hero Banner Section */}
       <motion.section
+        data-testid="home-hero-banner"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -88,6 +89,7 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-2xl">
           <motion.div
+            data-testid="home-overline"
             initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -97,7 +99,10 @@ export default function HomePage() {
             <span>Hubballi-Dharwad Hyperlocal Beta</span>
           </motion.div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold tracking-tight text-cream-50 leading-[1.15]">
+          <h1
+            data-testid="home-title"
+            className="font-serif text-3xl sm:text-5xl font-extrabold tracking-tight text-cream-50 leading-[1.15]"
+          >
             A corner shop. <br />
             <span className="text-terracotta-400">A whole city</span> of buyers.
           </h1>
@@ -106,8 +111,19 @@ export default function HomePage() {
             Skip algorithm-driven markups. Buy fresh filter coffee, authentic Dharwad pedha, and hand-poured diyas right from the craftsperson two lanes away.
           </p>
 
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <a
+              href="/categories"
+              data-testid="hero-explore-cta"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs font-bold shadow-warm transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Explore Catalog Aisles</span>
+            </a>
+          </div>
+
           {/* Search bar inside Hero */}
-          <div className="mt-6 max-w-lg">
+          <div className="mt-5 max-w-lg">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
@@ -116,6 +132,91 @@ export default function HomePage() {
           </div>
         </div>
       </motion.section>
+
+      {/* Quick Reorder Strip */}
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <h2
+            data-testid="home-reorder-heading"
+            className="text-xl font-serif font-bold text-forest-950"
+          >
+            Order it again
+          </h2>
+          <span className="text-xs text-forest-600">One tap to re-add</span>
+        </div>
+        <div
+          data-testid="home-reorder-strip"
+          className="flex gap-3 overflow-x-auto no-scrollbar pb-1"
+        >
+          {MOCK_PRODUCTS.slice(0, 4).map((p) => (
+            <button
+              key={p.id}
+              data-testid={`reorder-action-button-${p.id}`}
+              onClick={() => addToCart(p)}
+              className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-cream-50 border border-cream-300 hover:border-terracotta-400 shadow-xs shrink-0 text-left transition-all"
+            >
+              <img
+                src={p.imageUrl}
+                alt={p.name}
+                className="w-10 h-10 rounded-xl object-cover bg-cream-200"
+              />
+              <div>
+                <p className="text-xs font-bold text-forest-950 truncate max-w-[120px]">
+                  {p.name}
+                </p>
+                <p className="text-[11px] font-semibold text-terracotta-600">
+                  ₹{p.price}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Trending Crafts */}
+      <section className="space-y-3">
+        <h2
+          data-testid="home-trending-heading"
+          className="text-xl font-serif font-bold text-forest-950"
+        >
+          Shop by Craft
+        </h2>
+        <div
+          data-testid="home-trending-grid"
+          className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+        >
+          <a
+            href="/categories"
+            data-testid="trending-card-ceramics"
+            className="p-3.5 rounded-2xl bg-cream-50 border border-cream-300 hover:border-terracotta-400 block group transition-all"
+          >
+            <p className="text-xs font-bold text-forest-950 group-hover:text-terracotta-600">
+              Handcrafted Ceramics
+            </p>
+            <p className="text-[11px] text-forest-500 mt-0.5">18 items</p>
+          </a>
+          <a
+            href="/categories"
+            data-testid="trending-card-linens"
+            className="p-3.5 rounded-2xl bg-cream-50 border border-cream-300 hover:border-terracotta-400 block group transition-all"
+          >
+            <p className="text-xs font-bold text-forest-950 group-hover:text-terracotta-600">
+              Woven Home Linens
+            </p>
+            <p className="text-[11px] text-forest-500 mt-0.5">12 items</p>
+          </a>
+          <a
+            href="/categories"
+            data-testid="trending-card-botanicals"
+            className="p-3.5 rounded-2xl bg-cream-50 border border-cream-300 hover:border-terracotta-400 block group transition-all col-span-2 sm:col-span-1"
+          >
+            <p className="text-xs font-bold text-forest-950 group-hover:text-terracotta-600">
+              Organic Pantry & Botanicals
+            </p>
+            <p className="text-[11px] text-forest-500 mt-0.5">24 items</p>
+          </a>
+        </div>
+      </section>
 
       {/* Discovery Filters: Area and Categories */}
       <section className="space-y-3">
@@ -238,6 +339,7 @@ export default function HomePage() {
 
       {/* Meena's Story Banner (deck alignment) */}
       <motion.section
+        data-testid="home-story-card"
         whileHover={{ scale: 1.01 }}
         transition={{ duration: 0.3 }}
         className="p-6 sm:p-8 rounded-3xl bg-cream-200/80 border border-cream-300 flex flex-col sm:flex-row items-center gap-6"

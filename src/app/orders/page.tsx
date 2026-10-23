@@ -35,11 +35,16 @@ export default function OrdersAgainPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-forest-800 text-cream-100 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-            <RotateCcw className="w-3 h-3 text-terracotta-400" />
-            <span>Orders Again & History</span>
-          </div>
-          <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950">
+          <p
+            data-testid="orders-again-overline"
+            className="text-[11px] font-bold uppercase tracking-[0.2em] text-terracotta-600 mb-1"
+          >
+            Orders Again & History
+          </p>
+          <h1
+            data-testid="orders-again-title"
+            className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950"
+          >
             Past Orders & Instant Reorder
           </h1>
           <p className="text-xs text-forest-600 mt-0.5">
@@ -59,6 +64,7 @@ export default function OrdersAgainPage() {
       {/* Orders List or Empty State */}
       {orders.length === 0 ? (
         <motion.div
+          data-testid="orders-again-empty-state"
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           className="p-12 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-4 shadow-warm"
@@ -75,12 +81,36 @@ export default function OrdersAgainPage() {
             </p>
           </div>
           <Link
-            href="/"
+            href="/categories"
+            data-testid="orders-again-empty-cta"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl text-xs font-bold shadow-warm transition-all"
           >
             <Sparkles className="w-4 h-4" />
             <span>Discover Local Stores</span>
           </Link>
+
+          {/* Quick steps explainer */}
+          <ol
+            data-testid="orders-again-steps"
+            className="space-y-3 rounded-2xl bg-cream-100 p-4 text-left max-w-md mx-auto mt-4"
+          >
+            <li className="flex items-start gap-3">
+              <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-forest-800 text-[11px] font-bold text-cream-100">
+                1
+              </span>
+              <p className="text-xs text-forest-700">
+                <span className="font-bold text-forest-900">Order once:</span> Pick up your fresh coffee, sweets or pantry items.
+              </p>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-forest-800 text-[11px] font-bold text-cream-100">
+                2
+              </span>
+              <p className="text-xs text-forest-700">
+                <span className="font-bold text-forest-900">Tap to repeat:</span> Hit Reorder in 1-Tap anytime to refill your cart.
+              </p>
+            </li>
+          </ol>
         </motion.div>
       ) : (
         <div className="space-y-4">

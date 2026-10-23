@@ -13,34 +13,42 @@ export function BottomNav() {
 
   const navTabs = [
     {
+      id: "home",
       label: "Home",
       href: "/",
       icon: Compass,
       isActive: pathname === "/",
     },
     {
+      id: "categories",
       label: "Categories",
       href: "/categories",
       icon: LayoutGrid,
       isActive: pathname.startsWith("/categories"),
     },
     {
+      id: "orders-again",
       label: "Orders Again",
-      href: "/orders",
+      href: "/orders-again",
       icon: RotateCcw,
       isActive: pathname.startsWith("/orders"),
       badgeCount: reorderableCount,
     },
     {
+      id: "recent-explored",
       label: "Recent Explored",
-      href: "/recent",
+      href: "/recent-explored",
       icon: History,
       isActive: pathname.startsWith("/recent"),
     },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-cream-50/95 backdrop-blur-lg border-t border-cream-300 pb-safe shadow-floating">
+    <nav
+      data-testid="bottom-tab-navigation"
+      aria-label="Primary"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-cream-50/95 backdrop-blur-lg border-t border-cream-300 pb-safe shadow-floating"
+    >
       <div className="max-w-md mx-auto flex items-center justify-around h-16 px-2">
         {navTabs.map((tab) => {
           const Icon = tab.icon;
@@ -48,8 +56,10 @@ export function BottomNav() {
 
           return (
             <Link
-              key={tab.href}
+              key={tab.id}
               href={tab.href}
+              data-testid={`tab-button-${tab.id}`}
+              aria-current={isActive ? "page" : undefined}
               scroll={true}
               className="relative flex-1 flex flex-col items-center justify-center h-full py-1 group transition-colors tap-bounce"
             >
@@ -70,7 +80,7 @@ export function BottomNav() {
                   }`}
                 />
 
-                {/* Small Terracotta Counter on Orders Again */}
+                {/* Terracotta Counter Badge */}
                 {Boolean(tab.badgeCount && tab.badgeCount > 0) && (
                   <motion.span
                     initial={{ scale: 0 }}

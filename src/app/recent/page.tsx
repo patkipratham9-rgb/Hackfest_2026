@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { ProductCard } from "@/components/ProductCard";
-import { History, Sparkles, Trash2, ArrowLeft } from "lucide-react";
+import { History, Sparkles, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function RecentExploredPage() {
@@ -15,11 +15,16 @@ export default function RecentExploredPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-forest-800 text-cream-100 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-            <History className="w-3 h-3 text-terracotta-400" />
-            <span>Browsing History</span>
-          </div>
-          <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950">
+          <p
+            data-testid="recent-explored-overline"
+            className="text-[11px] font-bold uppercase tracking-[0.2em] text-terracotta-600 mb-1"
+          >
+            Browsing History
+          </p>
+          <h1
+            data-testid="recent-explored-title"
+            className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950"
+          >
             Recent Explored
           </h1>
           <p className="text-xs text-forest-600 mt-0.5">
@@ -41,6 +46,7 @@ export default function RecentExploredPage() {
       {/* Grid or Empty State */}
       {recentlyViewed.length === 0 ? (
         <motion.div
+          data-testid="recent-explored-empty-state"
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           className="p-12 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-4 shadow-warm"
@@ -58,11 +64,18 @@ export default function RecentExploredPage() {
           </div>
           <Link
             href="/categories"
+            data-testid="recent-explored-cta"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl text-xs font-bold shadow-warm transition-all"
           >
             <Sparkles className="w-4 h-4" />
             <span>Browse Categories</span>
           </Link>
+          <p
+            data-testid="recent-explored-privacy-note"
+            className="text-[11px] text-forest-500 mt-3"
+          >
+            Your browsing history is kept locally on this device.
+          </p>
         </motion.div>
       ) : (
         <div className="space-y-4">

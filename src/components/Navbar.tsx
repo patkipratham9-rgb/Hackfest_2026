@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { MapPin, ShoppingBag, ChevronDown, Sparkles, User } from "lucide-react";
+import { MapPin, ShoppingBag, ChevronDown, Sparkles, User, Search } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { NeighborhoodArea } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,7 +24,12 @@ export function Navbar() {
     <header className="sticky top-0 z-40 bg-cream-100/90 backdrop-blur-md border-b border-cream-300 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
+        <Link
+          href="/"
+          data-testid="brand-header-mark"
+          aria-label="Localloop home"
+          className="flex items-center gap-2 group flex-shrink-0"
+        >
           <div className="w-9 h-9 rounded-xl bg-forest-700 flex items-center justify-center text-cream-100 font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
             <span className="font-serif">L</span>
             <span className="w-2 h-2 rounded-full bg-terracotta-500 -ml-0.5 mt-1.5" />
@@ -96,13 +101,32 @@ export function Navbar() {
             <span>Hyperlocal AI Routing</span>
           </div>
 
+          {/* Search Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+            data-testid="header-search-button"
+            aria-label="Search the market"
+            onClick={() => {
+              const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+              if (searchInput) {
+                searchInput.focus();
+                searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+            }}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 transition-colors border border-cream-300 shadow-xs"
+          >
+            <Search className="w-4 h-4 text-forest-700" />
+          </motion.button>
+
           {/* User Profile Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.9 }}
+            data-testid="header-user-details-button"
             onClick={() => setIsProfileOpen(true)}
             className="flex items-center justify-center w-10 h-10 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 transition-colors border border-cream-300 shadow-xs"
-            aria-label="View Profile & App Details"
+            aria-label="Open user and application details"
             title="Profile & Application Details"
           >
             <User className="w-4 h-4 text-forest-700" />
