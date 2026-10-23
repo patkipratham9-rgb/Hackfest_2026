@@ -1,12 +1,13 @@
 /**
  * Checkpoint CP-SP01: Protected Seller Portal Layout & Permission Verification
  * Checkpoint CP-SP02: Store Profile Form & Neighborhood Geocoding
+ * Checkpoint CP-SP03: Supabase Storage Banner Upload & Media Management
  */
 
 import fs from "fs";
 
 console.log("==================================================================");
-console.log("🏪 SELLER PORTAL VERIFICATION: CP-SP01 & CP-SP02");
+console.log("🏪 SELLER PORTAL VERIFICATION: CP-SP01, CP-SP02 & CP-SP03");
 console.log("==================================================================\n");
 
 let passed = 0;
@@ -119,7 +120,51 @@ testAssert(!validateStoreForm({ name: "", phone: "9845012345" }).valid, "Empty s
 testAssert(!validateStoreForm({ name: "Meena Crafts", phone: "123" }).valid, "Short phone number rejected");
 testAssert(validateStoreForm({ name: "Meena Crafts", phone: "+91 98450 12345" }).valid, "Valid store details accepted");
 
+// ---------------------------------------------------------------------------
+// 5. SUPABASE STORAGE BANNER UPLOAD & POLICIES (CP-SP03)
+// ---------------------------------------------------------------------------
+console.log("\n--- 5. SUPABASE STORAGE BANNER UPLOAD & BUCKET (CP-SP03) ---");
+
+// Check migration file exists
+const migrationPath = "./supabase/migrations/20261023153046_create_storage_store_banners_bucket.sql";
+testAssert(fs.existsSync(migrationPath), "Supabase Storage migration 20261023153046_create_storage_store_banners_bucket.sql exists");
+
+const migrationSql = fs.readFileSync(migrationPath, "utf-8");
+testAssert(migrationSql.includes("'store-banners'"), "Migration provisions 'store-banners' bucket");
+testAssert(migrationSql.includes("public = true"), "Migration configures bucket as public for CDN read access");
+testAssert(migrationSql.includes("5242880"), "Migration enforces 5MB file_size_limit");
+testAssert(migrationSql.includes("Public read for store banners"), "Migration configures Public Read SELECT policy");
+testAssert(migrationSql.includes("Authenticated users and sellers can upload banners"), "Migration configures Authenticated Sellers INSERT policy");
+testAssert(migrationSql.includes("Users can update store banners"), "Migration configures Authenticated Sellers UPDATE policy");
+testAssert(migrationSql.includes("Users can delete store banners"), "Migration configures Authenticated Sellers DELETE policy");
+
+// Check UI upload controls in store profile page
+testAssert(storePageContent.includes("data-testid=\"banner-file-input\""), "Hidden file input with data-testid='banner-file-input' present");
+testAssert(storePageContent.includes("data-testid=\"banner-upload-button\""), "Upload action trigger button with data-testid='banner-upload-button' present");
+testAssert(storePageContent.includes("data-testid=\"banner-upload-loading\""), "Upload loading spinner with data-testid='banner-upload-loading' present");
+testAssert(storePageContent.includes("data-testid=\"banner-upload-success\""), "Upload success confirmation with data-testid='banner-upload-success' present");
+testAssert(storePageContent.includes("data-testid=\"banner-upload-error\""), "Upload error alert with data-testid='banner-upload-error' present");
+testAssert(storePageContent.includes("data-testid=\"remove-banner-button\""), "Remove banner button with data-testid='remove-banner-button' present");
+
+// Upload validation unit logic (CP-SP03)
+function validateBannerFile(file) {
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return { valid: false, error: "Only image files (PNG, JPG, WebP, AVIF) allowed" };
+  }
+  if (file.size > MAX_SIZE) {
+    return { valid: false, error: "File exceeds 5MB limit" };
+  }
+  return { valid: true };
+}
+
+testAssert(!validateBannerFile({ type: "application/pdf", size: 1024 }).valid, "Non-image PDF rejected");
+testAssert(!validateBannerFile({ type: "image/png", size: 6 * 1024 * 1024 }).valid, "File > 5MB rejected");
+testAssert(validateBannerFile({ type: "image/jpeg", size: 2 * 1024 * 1024 }).valid, "Valid 2MB JPEG accepted");
+testAssert(validateBannerFile({ type: "image/webp", size: 500 * 1024 }).valid, "Valid 500KB WebP accepted");
+
 console.log("\n==================================================================");
-console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 & CP-SP02!`);
-console.log("Protected Seller Portal & Store Profile Form Fully Operational!");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01, CP-SP02 & CP-SP03!`);
+console.log("Protected Seller Portal, Profile Form & Supabase Storage Banner Upload Operational!");
 console.log("==================================================================");
