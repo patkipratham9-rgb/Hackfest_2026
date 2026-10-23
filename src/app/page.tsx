@@ -10,7 +10,7 @@ import { StoreCard } from "@/components/StoreCard";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductCategory } from "@/types";
 import { Sparkles, MapPin, Store as StoreIcon, Heart } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
   const { activeArea } = useCart();
@@ -55,18 +55,47 @@ export default function HomePage() {
   const activeStoreObj = MOCK_STORES.find((s) => s.id === selectedStoreId);
 
   return (
-    <div className="space-y-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-8"
+    >
       {/* Hero Banner Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-forest-800 text-cream-100 p-6 sm:p-10 shadow-warm-lg">
-        {/* Background decorative circles */}
-        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-forest-700/50 blur-2xl pointer-events-none" />
-        <div className="absolute right-1/4 -bottom-16 w-80 h-80 rounded-full bg-terracotta-600/20 blur-3xl pointer-events-none" />
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-3xl bg-forest-800 text-cream-100 p-6 sm:p-10 shadow-warm-lg"
+      >
+        {/* Animated background decorative circles */}
+        <motion.div
+          animate={{
+            scale: [1, 1.15, 1],
+            rotate: [0, 10, 0],
+          }}
+          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+          className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-forest-700/50 blur-2xl pointer-events-none"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.25, 1],
+            x: [0, 15, 0],
+          }}
+          transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
+          className="absolute right-1/4 -bottom-16 w-80 h-80 rounded-full bg-terracotta-600/20 blur-3xl pointer-events-none"
+        />
 
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100/10 backdrop-blur-md border border-cream-100/20 text-cream-200 text-xs font-semibold mb-4">
+          <motion.div
+            initial={{ opacity: 0, x: -15 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100/10 backdrop-blur-md border border-cream-100/20 text-cream-200 text-xs font-semibold mb-4"
+          >
             <span className="w-2 h-2 rounded-full bg-terracotta-500 animate-pulse" />
             <span>Hubballi-Dharwad Hyperlocal Beta</span>
-          </div>
+          </motion.div>
 
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold tracking-tight text-cream-50 leading-[1.15]">
             A corner shop. <br />
@@ -86,7 +115,7 @@ export default function HomePage() {
             />
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Discovery Filters: Area and Categories */}
       <section className="space-y-3">
@@ -101,23 +130,31 @@ export default function HomePage() {
       </section>
 
       {/* Store Filter Reset notice if store is selected */}
-      {selectedStoreId && activeStoreObj && (
-        <div className="flex items-center justify-between p-3.5 bg-terracotta-50 border border-terracotta-200 rounded-2xl">
-          <div className="flex items-center gap-2">
-            <StoreIcon className="w-4 h-4 text-terracotta-600" />
-            <span className="text-xs font-bold text-forest-950">
-              Viewing only products from:{" "}
-              <span className="text-terracotta-700">{activeStoreObj.name}</span>
-            </span>
-          </div>
-          <button
-            onClick={() => setSelectedStoreId(null)}
-            className="text-xs font-bold text-terracotta-600 hover:text-terracotta-800 underline"
+      <AnimatePresence>
+        {selectedStoreId && activeStoreObj && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center justify-between p-3.5 bg-terracotta-50 border border-terracotta-200 rounded-2xl"
           >
-            Show All Stores
-          </button>
-        </div>
-      )}
+            <div className="flex items-center gap-2">
+              <StoreIcon className="w-4 h-4 text-terracotta-600" />
+              <span className="text-xs font-bold text-forest-950">
+                Viewing only products from:{" "}
+                <span className="text-terracotta-700">{activeStoreObj.name}</span>
+              </span>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSelectedStoreId(null)}
+              className="text-xs font-bold text-terracotta-600 hover:text-terracotta-800 underline"
+            >
+              Show All Stores
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Featured Neighborhood Stores Section */}
       <section className="space-y-4">
@@ -143,7 +180,10 @@ export default function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <motion.div
+            layout
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+          >
             {filteredStores.map((store) => (
               <StoreCard
                 key={store.id}
@@ -156,7 +196,7 @@ export default function HomePage() {
                 }}
               />
             ))}
-          </div>
+          </motion.div>
         )}
       </section>
 
@@ -183,16 +223,25 @@ export default function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <motion.div
+            layout
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </section>
 
       {/* Meena's Story Banner (deck alignment) */}
-      <section className="p-6 sm:p-8 rounded-3xl bg-cream-200/80 border border-cream-300 flex flex-col sm:flex-row items-center gap-6">
+      <motion.section
+        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.3 }}
+        className="p-6 sm:p-8 rounded-3xl bg-cream-200/80 border border-cream-300 flex flex-col sm:flex-row items-center gap-6"
+      >
         <div className="w-16 h-16 rounded-2xl bg-terracotta-500 text-white flex items-center justify-center flex-shrink-0 shadow-warm">
           <Heart className="w-8 h-8 fill-white/20" />
         </div>
@@ -204,7 +253,7 @@ export default function HomePage() {
             LocalLoop bridges the gap between artisan craft and local demand. Zero commissions that gouge sellers, zero hidden fees for customers.
           </p>
         </div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }

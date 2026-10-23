@@ -17,8 +17,9 @@ import {
   Sparkles,
   QrCode,
   ShieldCheck,
+  Check,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface OrderTrackingStep {
   key: OrderStatus;
@@ -104,12 +105,17 @@ export default function OrderTrackingPage({
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="max-w-2xl mx-auto space-y-6"
+    >
       {/* Top back navigation */}
       <div className="flex items-center justify-between">
         <Link
           href="/orders"
-          className="inline-flex items-center gap-1 text-xs font-bold text-forest-700 hover:text-terracotta-600"
+          className="inline-flex items-center gap-1 text-xs font-bold text-forest-700 hover:text-terracotta-600 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>All Orders</span>
@@ -134,15 +140,25 @@ export default function OrderTrackingPage({
                 })}
               </span>
             </div>
-            <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950 mt-1">
-              {order.status === "ready"
-                ? "Your order is ready at the counter!"
-                : order.status === "packed"
-                ? "Meena is packing your items fresh"
-                : order.status === "completed"
-                ? "Order successfully picked up"
-                : "Order received by merchant"}
-            </h1>
+
+            <AnimatePresence mode="wait">
+              <motion.h1
+                key={order.status}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950 mt-1"
+              >
+                {order.status === "ready"
+                  ? "Your order is ready at the counter!"
+                  : order.status === "packed"
+                  ? "Meena is packing your items fresh"
+                  : order.status === "completed"
+                  ? "Order successfully picked up 🎉"
+                  : "Order received by merchant"}
+              </motion.h1>
+            </AnimatePresence>
+
             <p className="text-xs text-forest-600 mt-1 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-terracotta-500" />
               <span>Pickup: {order.pickupTime}</span>
@@ -150,7 +166,10 @@ export default function OrderTrackingPage({
           </div>
 
           {/* Pickup Verification Token Code */}
-          <div className="bg-cream-200/90 border border-cream-300 rounded-2xl p-3 text-center sm:text-right flex-shrink-0">
+          <motion.div
+            whileHover={{ scale: 1.04 }}
+            className="bg-cream-200/90 border border-cream-300 rounded-2xl p-3 text-center sm:text-right flex-shrink-0 shadow-xs"
+          >
             <span className="text-[10px] font-bold text-forest-600 uppercase tracking-widest block">
               Pickup Token Code
             </span>
@@ -160,7 +179,7 @@ export default function OrderTrackingPage({
             <span className="text-[10px] text-forest-500 block">
               Show this code at counter
             </span>
-          </div>
+          </motion.div>
         </div>
 
         {/* 4-Step Visual Progress Bar */}
@@ -187,16 +206,30 @@ export default function OrderTrackingPage({
                 return (
                   <div key={step.key} className="flex flex-col items-center text-center">
                     <motion.div
-                      animate={{
-                        scale: isCurrent ? 1.15 : 1,
+                      animate={
+                        isCurrent
+                          ? {
+                              scale: [1, 1.15, 1],
+                            }
+                          : { scale: 1 }
+                      }
+                      transition={{
+                        repeat: isCurrent ? Infinity : 0,
+                        duration: 2,
+                        ease: "easeInOut",
                       }}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                         isPassed
                           ? "bg-terracotta-500 text-white shadow-warm"
                           : "bg-cream-200 text-forest-400 border border-cream-300"
                       }`}
                     >
                       <StepIcon className="w-4 h-4" />
+                      {isPassed && idx < currentStepIndex && (
+                        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-forest-800 text-cream-100 flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </div>
+                      )}
                     </motion.div>
                     <span
                       className={`text-[11px] font-bold mt-2 ${
@@ -217,7 +250,10 @@ export default function OrderTrackingPage({
       </div>
 
       {/* Interactive Hackathon Simulation Bar */}
-      <div className="p-4 rounded-2xl bg-forest-900 text-cream-100 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-warm">
+      <motion.div
+        whileHover={{ scale: 1.01 }}
+        className="p-4 rounded-2xl bg-forest-900 text-cream-100 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-warm"
+      >
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-terracotta-400 animate-pulse" />
           <span className="text-xs font-semibold">
@@ -225,21 +261,24 @@ export default function OrderTrackingPage({
           </span>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.95 }}
             onClick={advanceStatus}
             disabled={currentStepIndex >= STEPS.length - 1}
             className="flex-1 sm:flex-none px-3.5 py-1.5 bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
           >
             Advance to Next Step →
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={resetStatus}
             className="px-2.5 py-1.5 bg-forest-800 hover:bg-forest-700 text-cream-200 rounded-xl text-xs font-medium"
           >
             Reset
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Pickup Store Details Card */}
       <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-3">
@@ -257,13 +296,15 @@ export default function OrderTrackingPage({
             </p>
           </div>
 
-          <a
+          <motion.a
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
             href="tel:+919845012345"
             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest-700 text-cream-100 text-xs font-bold hover:bg-forest-800 transition-colors flex-shrink-0"
           >
             <Phone className="w-3.5 h-3.5" />
             <span>Call Merchant</span>
-          </a>
+          </motion.a>
         </div>
       </div>
 
@@ -289,7 +330,7 @@ export default function OrderTrackingPage({
                   </span>
                 </div>
               </div>
-              <span className="font-bold text-forest-950">
+              <span className="font-bold text-forest-950 font-serif">
                 ₹{product.price * quantity}
               </span>
             </div>
@@ -323,6 +364,6 @@ export default function OrderTrackingPage({
           </span>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

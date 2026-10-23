@@ -27,18 +27,27 @@ export function CategoryTabs({
       {CATEGORIES.map(({ label, emoji }) => {
         const isSelected = activeCategory === label;
         return (
-          <button
+          <motion.button
             key={label}
+            whileHover={{ scale: 1.04, y: -1 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => onSelectCategory(label)}
-            className={`relative flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-semibold flex-shrink-0 transition-all border ${
+            className={`relative flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-semibold flex-shrink-0 transition-colors border ${
               isSelected
-                ? "bg-terracotta-500 text-white border-terracotta-600 shadow-warm"
+                ? "text-white border-terracotta-600 shadow-warm"
                 : "bg-cream-100 text-forest-800 border-cream-300 hover:border-terracotta-300 hover:bg-cream-200"
             }`}
           >
-            <span>{emoji}</span>
-            <span>{label}</span>
-          </button>
+            {isSelected && (
+              <motion.div
+                layoutId="active-category-pill"
+                className="absolute inset-0 bg-terracotta-500 rounded-2xl"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10 text-sm">{emoji}</span>
+            <span className="relative z-10">{label}</span>
+          </motion.button>
         );
       })}
     </div>
