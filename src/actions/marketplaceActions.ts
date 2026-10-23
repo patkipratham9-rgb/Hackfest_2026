@@ -493,3 +493,47 @@ export async function deleteProductAction(
     return { success: false, error: err?.message || "Failed to delete product" };
   }
 }
+
+/**
+ * Checkpoint CP-PI03: Atomic Stock Adjustment Server Action
+ */
+export async function adjustStockAtomicAction(
+  productId: string,
+  delta: number,
+  role: string = "seller"
+): Promise<{ success: boolean; newStock?: number; previousStock?: number; error?: string }> {
+  try {
+    // 1. Role permission enforcement
+    if (role !== "seller" && role !== "admin") {
+      return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+    }
+
+    if (!productId) {
+      return { success: false, error: "Product ID is required" };
+    }
+
+    if (isNaN(delta) || !Number.isInteger(delta)) {
+      return { success: false, error: "Delta must be a valid integer" };
+    }
+
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase.rpc("adjust_product_stock_atomic", {
+      p_product_id: productId,
+      p_delta: delta,
+    });
+
+    if (error) {
+      console.warn("RPC adjust_product_stock_atomic error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      newStock: data?.new_stock,
+      previousStock: data?.previous_stock,
+    };
+  } catch (err: any) {
+    console.error("Exception in adjustStockAtomicAction:", err);
+    return { success: false, error: err?.message || "Failed to adjust stock atomically" };
+  }
+}

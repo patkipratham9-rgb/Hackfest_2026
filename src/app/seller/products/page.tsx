@@ -8,6 +8,7 @@ import {
   createProductAction,
   updateProductAction,
   deleteProductAction,
+  adjustStockAtomicAction,
 } from "@/actions/marketplaceActions";
 import {
   Package,
@@ -58,7 +59,15 @@ const DEFAULT_FORM_STATE = {
 };
 
 export default function SellerProductsPage() {
-  const { activeStore, products, userRole, addProduct, updateProduct, deleteProduct } = useSeller();
+  const {
+    activeStore,
+    products,
+    userRole,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    adjustStock,
+  } = useSeller();
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,6 +80,18 @@ export default function SellerProductsPage() {
 
   // Checkpoint CP-PI02: Delete confirmation state
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  // Checkpoint CP-PI03: Atomic stock adjustment handler
+  const handleAdjustStock = (productId: string, delta: number) => {
+    const result = adjustStock(productId, delta);
+    if (!result.success) {
+      setSuccessAlert("Cannot decrement stock below zero.");
+      setTimeout(() => setSuccessAlert(""), 3000);
+      return;
+    }
+    // Background server action
+    adjustStockAtomicAction(productId, delta, userRole).catch(console.warn);
+  };
 
   // Validation errors & feedback
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -445,6 +466,60 @@ export default function SellerProductsPage() {
                       ))}
                     </div>
                   )}
+
+                  {/* Checkpoint CP-PI03: Atomic Stock Adjustment Controls */}
+                  <div className="p-2.5 rounded-2xl bg-cream-100 border border-cream-200 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-forest-700 uppercase tracking-wider">
+                        Stock:
+                      </span>
+                      <span
+                        data-testid={`stock-count-${product.id}`}
+                        className={`font-mono font-bold text-xs ${
+                          product.stock === 0
+                            ? "text-rose-600"
+                            : isLowStock
+                            ? "text-amber-700"
+                            : "text-forest-900"
+                        }`}
+                      >
+                        {product.stock} units
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={product.stock <= 0}
+                        data-testid={`stock-decrement-${product.id}`}
+                        onClick={() => handleAdjustStock(product.id, -1)}
+                        className="w-7 h-7 rounded-lg bg-cream-200 hover:bg-cream-300 disabled:opacity-40 disabled:cursor-not-allowed text-forest-800 font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
+                        title="Decrement stock (-1)"
+                      >
+                        -
+                      </button>
+
+                      <button
+                        type="button"
+                        data-testid={`stock-increment-${product.id}`}
+                        onClick={() => handleAdjustStock(product.id, 1)}
+                        className="w-7 h-7 rounded-lg bg-forest-800 hover:bg-forest-900 text-cream-100 font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
+                        title="Increment stock (+1)"
+                      >
+                        +
+                      </button>
+
+                      <button
+                        type="button"
+                        data-testid={`stock-bulk-add-${product.id}`}
+                        onClick={() => handleAdjustStock(product.id, 5)}
+                        className="px-2 h-7 rounded-lg bg-terracotta-100 hover:bg-terracotta-200 text-terracotta-800 font-bold text-[10px] flex items-center justify-center transition-colors cursor-pointer"
+                        title="Bulk Restock (+5)"
+                      >
+                        +5
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Footer with Price & Actions */}

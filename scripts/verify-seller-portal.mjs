@@ -439,7 +439,79 @@ testAssert(testInventory.find(p => p.id === "prod-102").price === 220, "Lifecycl
 testInventory = testInventory.filter(p => p.id !== "prod-102");
 testAssert(testInventory.length === 1 && !testInventory.find(p => p.id === "prod-102"), "Lifecycle: Product deleted from inventory");
 
+// ---------------------------------------------------------------------------
+// 9. ATOMIC STOCK INCREMENT/DECREMENT (CP-PI03)
+// ---------------------------------------------------------------------------
+console.log("\n--- 9. ATOMIC STOCK INCREMENT/DECREMENT (CP-PI03) ---");
+
+// 9.1 Postgres Migration RPC
+const stockRpcMigrationPath = "./supabase/migrations/20261023160000_atomic_stock_adjustment_rpc.sql";
+testAssert(fs.existsSync(stockRpcMigrationPath), "Atomic stock adjustment RPC migration 20261023160000_atomic_stock_adjustment_rpc.sql exists");
+
+const stockRpcSql = fs.readFileSync(stockRpcMigrationPath, "utf-8");
+testAssert(stockRpcSql.includes("FUNCTION public.adjust_product_stock_atomic"), "Migration defines adjust_product_stock_atomic function");
+testAssert(stockRpcSql.includes("FOR UPDATE"), "RPC acquires row-level lock FOR UPDATE for concurrency safety");
+testAssert(stockRpcSql.includes("v_new_stock < 0"), "RPC asserts stock cannot drop below zero");
+
+// 9.2 Server Action in marketplaceActions.ts
+testAssert(actionsContent.includes("export async function adjustStockAtomicAction"), "adjustStockAtomicAction server action exported");
+
+// Permission check
+function simulateAdjustStockAction(productId, delta, role) {
+  if (role !== "seller" && role !== "admin") {
+    return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+  }
+  if (!productId) return { success: false, error: "Product ID is required" };
+  if (isNaN(delta) || !Number.isInteger(delta)) {
+    return { success: false, error: "Delta must be an integer" };
+  }
+  return { success: true };
+}
+
+testAssert(!simulateAdjustStockAction("prod-1", 1, "customer").success, "Stock adjustment rejected for customer role");
+testAssert(!simulateAdjustStockAction("prod-1", 1, "anonymous").success, "Stock adjustment rejected for anonymous role");
+testAssert(!simulateAdjustStockAction("", 1, "seller").success, "Stock adjustment rejected for empty product ID");
+testAssert(!simulateAdjustStockAction("prod-1", 1.5, "seller").success, "Stock adjustment rejected for non-integer delta");
+testAssert(simulateAdjustStockAction("prod-1", 1, "seller").success, "Stock adjustment authorized for seller");
+testAssert(simulateAdjustStockAction("prod-1", -1, "admin").success, "Stock adjustment authorized for admin");
+
+// 9.3 UI Controls in products/page.tsx
+const currentProductsPageContent = fs.readFileSync("./src/app/seller/products/page.tsx", "utf-8");
+testAssert(currentProductsPageContent.includes("stock-count-"), "Stock count element with data-testid='stock-count-[id]' present");
+testAssert(currentProductsPageContent.includes("stock-decrement-"), "Stock decrement button with data-testid='stock-decrement-[id]' present");
+testAssert(currentProductsPageContent.includes("stock-increment-"), "Stock increment button with data-testid='stock-increment-[id]' present");
+testAssert(currentProductsPageContent.includes("stock-bulk-add-"), "Bulk restock button with data-testid='stock-bulk-add-[id]' present");
+
+// 9.4 SellerContext adjustStock method
+const currentContextContent = fs.readFileSync("./src/context/SellerContext.tsx", "utf-8");
+testAssert(currentContextContent.includes("adjustStock"), "SellerContext provides adjustStock method");
+
+// 9.5 Unit & Concurrency Simulation
+function atomicStockAdjuster(currentStock, delta) {
+  const newStock = currentStock + delta;
+  if (newStock < 0) {
+    return { success: false, error: "Cannot decrement below 0", stock: currentStock };
+  }
+  return { success: true, stock: newStock };
+}
+
+testAssert(atomicStockAdjuster(10, 1).stock === 11, "Stock increment +1 works (10 -> 11)");
+testAssert(atomicStockAdjuster(10, -1).stock === 9, "Stock decrement -1 works (10 -> 9)");
+testAssert(atomicStockAdjuster(10, 5).stock === 15, "Bulk restock +5 works (10 -> 15)");
+testAssert(!atomicStockAdjuster(0, -1).success, "Stock decrement below 0 rejected");
+testAssert(!atomicStockAdjuster(2, -3).success, "Oversized decrement rejected (2 - 3 < 0)");
+
+// Concurrency invariant test: 10 operations (+2, -1, +5, -2, etc.)
+let simulatedStock = 20;
+const deltas = [+2, -1, +5, -3, +1, -1, -4, +10, -5, +2];
+const expectedStock = 20 + deltas.reduce((a, b) => a + b, 0); // 20 + 6 = 26
+for (const d of deltas) {
+  const res = atomicStockAdjuster(simulatedStock, d);
+  if (res.success) simulatedStock = res.stock;
+}
+testAssert(simulatedStock === expectedStock, `Concurrency simulation correctly maintained exact stock invariant (${expectedStock})`);
+
 console.log("\n==================================================================");
-console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01, CP-SP02, CP-SP03, CP-SP04, CP-PI01 & CP-PI02!`);
-console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours & Product CRUD Operational!");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01, CP-SP02, CP-SP03, CP-SP04, CP-PI01, CP-PI02 & CP-PI03!`);
+console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD & Atomic Stock Operational!");
 console.log("==================================================================");

@@ -28,6 +28,7 @@ interface SellerContextType {
   addProduct: (product: Omit<Product, "id">) => Product;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
+  adjustStock: (productId: string, delta: number) => { success: boolean; newStock: number };
 }
 
 const DEFAULT_SELLER: SellerProfile = {
@@ -144,6 +145,33 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const adjustStock = (productId: string, delta: number): { success: boolean; newStock: number } => {
+    let resultNewStock = 0;
+    let allowed = false;
+
+    setProducts((prev) => {
+      const target = prev.find((p) => p.id === productId);
+      if (!target) return prev;
+
+      const calcStock = target.stock + delta;
+      if (calcStock < 0) {
+        resultNewStock = target.stock;
+        allowed = false;
+        return prev;
+      }
+
+      allowed = true;
+      resultNewStock = calcStock;
+      const next = prev.map((p) => (p.id === productId ? { ...p, stock: calcStock } : p));
+      try {
+        localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    return { success: allowed, newStock: resultNewStock };
+  };
+
   const isAuthorizedSeller = userRole === "seller" || userRole === "admin";
 
   const seller: SellerProfile = {
@@ -166,6 +194,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         addProduct,
         updateProduct,
         deleteProduct,
+        adjustStock,
       }}
     >
       {children}
