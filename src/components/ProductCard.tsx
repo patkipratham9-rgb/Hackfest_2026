@@ -11,7 +11,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { cart, addToCart, updateQuantity } = useCart();
+  const { cart, addToCart, updateQuantity, isLoaded } = useCart();
   const [isSaved, setIsSaved] = useState(false);
   const cartItem = cart.find((i) => i.product.id === product.id);
   const qtyInCart = cartItem?.quantity || 0;
@@ -123,7 +123,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Add / Stepper Button */}
-        {qtyInCart > 0 ? (
+        {isLoaded && qtyInCart > 0 ? (
           <div
             data-testid={`cart-stepper-${product.id}`}
             className="flex items-center gap-2 bg-forest-800 text-cream-100 rounded-xl px-2.5 py-1.5 shadow-xs border border-forest-900"

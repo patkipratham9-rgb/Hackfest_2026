@@ -7,6 +7,7 @@ import { MOCK_PRODUCTS } from "@/data/mockData";
 
 interface CartContextType {
   cart: CartItem[];
+  isLoaded: boolean;
   orders: Order[];
   activeArea: NeighborhoodArea;
   setActiveArea: (area: NeighborhoodArea) => void;
@@ -58,7 +59,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-      if (savedCart) setCart(JSON.parse(savedCart));
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed)) {
+          const validItems: CartItem[] = parsed.filter(
+            (item: any) =>
+              item &&
+              item.product &&
+              typeof item.product.id === "string" &&
+              typeof item.product.price === "number" &&
+              typeof item.quantity === "number" &&
+              item.quantity > 0
+          );
+          setCart(validItems);
+        }
+      }
 
       const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
       if (savedOrders) {
@@ -214,6 +229,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => {
     setCart([]);
+    try {
+      localStorage.removeItem(CART_STORAGE_KEY);
+    } catch (e) {
+      console.warn("Error removing cart storage:", e);
+    }
   };
 
   // One-tap reorder action
@@ -325,6 +345,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider
       value={{
         cart,
+        isLoaded,
         orders,
         activeArea,
         setActiveArea,

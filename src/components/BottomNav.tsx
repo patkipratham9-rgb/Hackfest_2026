@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { reorderableCount } = useCart();
+  const { reorderableCount, isLoaded } = useCart();
 
   const navTabs = [
     {
@@ -81,8 +81,9 @@ export function BottomNav() {
                 />
 
                 {/* Terracotta Counter Badge */}
-                {Boolean(tab.badgeCount && tab.badgeCount > 0) && (
+                {Boolean(isLoaded && tab.badgeCount && tab.badgeCount > 0) && (
                   <motion.span
+                    suppressHydrationWarning
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-terracotta-500 text-white text-[10px] font-extrabold flex items-center justify-center border border-cream-50 shadow-xs"

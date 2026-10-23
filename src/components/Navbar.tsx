@@ -17,7 +17,7 @@ const AREAS: NeighborhoodArea[] = [
 ];
 
 export function Navbar() {
-  const { totalItems, setIsCartOpen, activeArea, setActiveArea, setIsProfileOpen } = useCart();
+  const { totalItems, setIsCartOpen, activeArea, setActiveArea, setIsProfileOpen, isLoaded } = useCart();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
@@ -141,10 +141,12 @@ export function Navbar() {
             aria-label="View Shopping Cart"
           >
             <ShoppingBag className="w-4 h-4 text-cream-100" />
-            {totalItems > 0 && (
+            {isLoaded && totalItems > 0 && (
               <motion.span
+                suppressHydrationWarning
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
+                data-testid="navbar-cart-badge"
                 className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-terracotta-500 text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-cream-100 shadow-xs"
               >
                 {totalItems}
