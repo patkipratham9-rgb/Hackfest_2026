@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import {
   X,
@@ -12,6 +13,7 @@ import {
   Code2,
   Sparkles,
   ExternalLink,
+  ChevronRight,
   Bell,
   Heart,
   Store,
@@ -156,6 +158,26 @@ export function ProfilePanel() {
                     </div>
                   </div>
                 </div>
+
+                {/* Seller Portal Link */}
+                <Link
+                  href="/seller"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-forest-800 hover:bg-forest-900 text-cream-100 transition-colors group shadow-warm"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Store className="w-4 h-4 text-terracotta-400 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <span className="text-xs font-bold text-cream-50 block leading-tight">
+                        Seller Studio Portal
+                      </span>
+                      <span className="text-[10px] text-cream-300">
+                        Manage shop counter, live orders & inventory
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-terracotta-400 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
 
                 {/* GitHub Repository Link */}
                 <a
