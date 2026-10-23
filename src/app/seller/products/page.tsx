@@ -5,6 +5,11 @@ import Image from "next/image";
 import { useSeller } from "@/context/SellerContext";
 import { ProductCategory, Product } from "@/types";
 import {
+  createProductAction,
+  updateProductAction,
+  deleteProductAction,
+} from "@/actions/marketplaceActions";
+import {
   Package,
   Plus,
   AlertTriangle,
@@ -53,7 +58,7 @@ const DEFAULT_FORM_STATE = {
 };
 
 export default function SellerProductsPage() {
-  const { activeStore, products, addProduct, updateProduct, deleteProduct } = useSeller();
+  const { activeStore, products, userRole, addProduct, updateProduct, deleteProduct } = useSeller();
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,6 +68,9 @@ export default function SellerProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [formData, setFormData] = useState(DEFAULT_FORM_STATE);
+
+  // Checkpoint CP-PI02: Delete confirmation state
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   // Validation errors & feedback
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -165,7 +173,7 @@ export default function SellerProductsPage() {
     setTimeout(() => {
       if (editingProductId) {
         // Update existing product
-        updateProduct(editingProductId, {
+        const updates = {
           name: formData.name.trim(),
           description: formData.description.trim(),
           price: parsedPrice,
@@ -176,11 +184,13 @@ export default function SellerProductsPage() {
           imageUrl: formData.imageUrl.trim() || DEFAULT_FORM_STATE.imageUrl,
           isBestseller: formData.isBestseller,
           tags: parsedTags,
-        });
+        };
+        updateProduct(editingProductId, updates);
+        updateProductAction(editingProductId, updates, userRole).catch(console.warn);
         setSuccessAlert(`Updated "${formData.name.trim()}" successfully!`);
       } else {
         // Add new product
-        addProduct({
+        const newProduct = {
           storeId: activeStore.id,
           storeName: activeStore.name,
           name: formData.name.trim(),
@@ -193,7 +203,9 @@ export default function SellerProductsPage() {
           imageUrl: formData.imageUrl.trim() || DEFAULT_FORM_STATE.imageUrl,
           isBestseller: formData.isBestseller,
           tags: parsedTags,
-        });
+        };
+        addProduct(newProduct);
+        createProductAction(newProduct, userRole).catch(console.warn);
         setSuccessAlert(`Added "${formData.name.trim()}" to catalog!`);
       }
 
@@ -203,13 +215,15 @@ export default function SellerProductsPage() {
     }, 300);
   };
 
-  // Handle Delete
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to remove "${name}" from your catalog?`)) {
-      deleteProduct(id);
-      setSuccessAlert(`Removed "${name}" from inventory.`);
-      setTimeout(() => setSuccessAlert(""), 3500);
-    }
+  // Handle Delete (CP-PI02)
+  const handleConfirmDelete = () => {
+    if (!productToDelete) return;
+    const toDelete = productToDelete;
+    setProductToDelete(null);
+    deleteProduct(toDelete.id);
+    deleteProductAction(toDelete.id, userRole).catch(console.warn);
+    setSuccessAlert(`Removed "${toDelete.name}" from catalog.`);
+    setTimeout(() => setSuccessAlert(""), 4000);
   };
 
   // Handle Reset Form
@@ -464,8 +478,8 @@ export default function SellerProductsPage() {
                     <button
                       type="button"
                       data-testid={`delete-product-${product.id}`}
-                      onClick={() => handleDelete(product.id, product.name)}
-                      className="p-2 rounded-xl bg-cream-200 hover:bg-rose-100 text-rose-700 transition-colors"
+                      onClick={() => setProductToDelete(product)}
+                      className="p-2 rounded-xl bg-cream-200 hover:bg-rose-100 text-rose-700 transition-colors cursor-pointer"
                       title="Delete Product"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-rose-600" />
@@ -809,6 +823,61 @@ export default function SellerProductsPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal (CP-PI02) */}
+      <AnimatePresence>
+        {productToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setProductToDelete(null)}
+              className="absolute inset-0 bg-forest-950/70 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              data-testid="delete-confirm-modal"
+              className="relative w-full max-w-sm bg-cream-50 rounded-3xl border border-cream-300 shadow-2xl p-6 space-y-4 text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6 stroke-[2.5]" />
+              </div>
+
+              <div>
+                <h3 className="font-serif font-extrabold text-xl text-forest-950">
+                  Delete Product SKU?
+                </h3>
+                <p className="text-xs text-forest-600 mt-1">
+                  Are you sure you want to remove <span className="font-bold text-forest-900">&quot;{productToDelete.name}&quot;</span> from your catalog? This will unlist it from shopper discovery immediately.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button
+                  type="button"
+                  data-testid="cancel-delete-button"
+                  onClick={() => setProductToDelete(null)}
+                  className="w-1/2 px-4 py-2.5 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="confirm-delete-button"
+                  onClick={handleConfirmDelete}
+                  className="w-1/2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-warm cursor-pointer"
+                >
+                  Delete SKU
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
