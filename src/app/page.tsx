@@ -18,19 +18,39 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("All");
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
 
-  // Filter stores based on active area and search
+  // Combined filter: stores matching activeArea, selectedCategory, and live searchQuery
   const filteredStores = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
     return MOCK_STORES.filter((store) => {
+      // 1. Area filter
       const matchesArea = activeArea === "All" || store.area === activeArea;
+
+      // 2. Category filter
       const matchesCategory =
         selectedCategory === "All" || store.category === selectedCategory;
-      const matchesSearch =
-        searchQuery === "" ||
-        store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.lane.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.tagline.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesArea && (selectedCategory === "All" ? true : matchesCategory) && matchesSearch;
+      // 3. Search query: checks store name, lane, tagline, category, area, or products in stock
+      const hasMatchingProduct =
+        q !== "" &&
+        MOCK_PRODUCTS.some(
+          (p) =>
+            p.storeId === store.id &&
+            (p.name.toLowerCase().includes(q) ||
+              p.description.toLowerCase().includes(q) ||
+              p.tags?.some((t) => t.toLowerCase().includes(q)))
+        );
+
+      const matchesSearch =
+        q === "" ||
+        store.name.toLowerCase().includes(q) ||
+        store.lane.toLowerCase().includes(q) ||
+        store.tagline.toLowerCase().includes(q) ||
+        store.category.toLowerCase().includes(q) ||
+        store.area.toLowerCase().includes(q) ||
+        hasMatchingProduct;
+
+      return matchesArea && matchesCategory && matchesSearch;
     });
   }, [activeArea, selectedCategory, searchQuery]);
 
@@ -218,9 +238,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Discovery Filters: Area and Categories */}
-      <section className="space-y-3">
+      {/* Discovery Filters: Live Search, Neighborhood & Categories */}
+      <section className="space-y-4 bg-cream-50/90 p-4 sm:p-5 rounded-3xl border border-cream-300 shadow-warm">
+        <div className="flex items-center justify-between pb-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-terracotta-500 animate-pulse" />
+            <span className="text-xs font-bold text-forest-900 uppercase tracking-wider">
+              Market Filters & Search
+            </span>
+          </div>
+          {(searchQuery || activeArea !== "All" || selectedCategory !== "All") && (
+            <button
+              data-testid="reset-filters-btn"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveArea("All");
+                setSelectedCategory("All");
+                setSelectedStoreId(null);
+              }}
+              className="text-xs font-bold text-terracotta-600 hover:text-terracotta-800 transition-colors underline"
+            >
+              Reset all filters
+            </button>
+          )}
+        </div>
+
+        {/* Live Search input */}
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Live search by store, pedha, coffee, diyas, groceries..."
+        />
+
+        {/* Area Pills */}
         <AreaPills />
+
+        {/* Category Tabs */}
         <CategoryTabs
           activeCategory={selectedCategory}
           onSelectCategory={(cat) => {
@@ -278,31 +331,79 @@ export default function HomePage() {
           <span className="text-xs font-medium text-forest-600 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-terracotta-500" />
             <span>
-              {selectedCategory !== "All"
-                ? `${selectedCategory} • `
-                : ""}
-              {activeArea === "All" ? "Across City" : activeArea}
+              {selectedCategory !== "All" ? `${selectedCategory} • ` : ""}
+              {activeArea === "All" ? "Across Hubballi" : activeArea}
             </span>
           </span>
         </div>
 
+        {/* Empty-Results State for Stores */}
         {filteredStores.length === 0 ? (
-          <div className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3">
-            <p className="text-sm text-forest-600 font-medium">
-              No {selectedCategory !== "All" ? selectedCategory.toLowerCase() : "corner"} shops found {activeArea !== "All" ? `in ${activeArea}` : "matching your filters"}.
-            </p>
-            <div className="flex items-center justify-center gap-2">
+          <motion.div
+            data-testid="stores-empty-state"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3 shadow-warm"
+          >
+            <div className="w-12 h-12 rounded-full bg-cream-200 flex items-center justify-center mx-auto text-forest-500">
+              <StoreIcon className="w-6 h-6 text-terracotta-500" />
+            </div>
+            <div>
+              <h3 className="font-serif font-bold text-base text-forest-950">
+                No stores found
+              </h3>
+              <p className="text-xs text-forest-600 max-w-md mx-auto mt-1 leading-relaxed">
+                {searchQuery
+                  ? `No stores matching "${searchQuery}"`
+                  : "No stores found"}
+                {selectedCategory !== "All" ? ` under "${selectedCategory}"` : ""}
+                {activeArea !== "All" ? ` in "${activeArea}"` : ""}.
+              </p>
+            </div>
+
+            {/* Quick Action Reset Filters */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              {searchQuery && (
+                <button
+                  data-testid="clear-search-filter"
+                  onClick={() => setSearchQuery("")}
+                  className="px-3 py-1.5 bg-cream-200 hover:bg-cream-300 text-forest-800 text-xs font-semibold rounded-xl transition-colors"
+                >
+                  Clear search &quot;{searchQuery}&quot;
+                </button>
+              )}
+              {selectedCategory !== "All" && (
+                <button
+                  data-testid="clear-category-filter"
+                  onClick={() => setSelectedCategory("All")}
+                  className="px-3 py-1.5 bg-cream-200 hover:bg-cream-300 text-forest-800 text-xs font-semibold rounded-xl transition-colors"
+                >
+                  All Categories
+                </button>
+              )}
+              {activeArea !== "All" && (
+                <button
+                  data-testid="clear-area-filter"
+                  onClick={() => setActiveArea("All")}
+                  className="px-3 py-1.5 bg-cream-200 hover:bg-cream-300 text-forest-800 text-xs font-semibold rounded-xl transition-colors"
+                >
+                  All Hubballi
+                </button>
+              )}
               <button
+                data-testid="reset-all-filters-btn"
                 onClick={() => {
+                  setSearchQuery("");
                   setActiveArea("All");
                   setSelectedCategory("All");
+                  setSelectedStoreId(null);
                 }}
                 className="px-4 py-2 bg-terracotta-500 text-white text-xs font-bold rounded-xl shadow-warm hover:bg-terracotta-600 transition-colors"
               >
-                Show All Stores
+                Reset All Filters
               </button>
             </div>
-          </div>
+          </motion.div>
         ) : (
           <motion.div
             layout
@@ -342,10 +443,24 @@ export default function HomePage() {
         </div>
 
         {filteredProducts.length === 0 ? (
-          <div className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300">
+          <div
+            data-testid="products-empty-state"
+            className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3 shadow-warm"
+          >
             <p className="text-sm text-forest-600 font-medium">
-              No products found. Try picking a different category or clearing the search.
+              No products found matching your current filter combination.
             </p>
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setActiveArea("All");
+                setSelectedCategory("All");
+                setSelectedStoreId(null);
+              }}
+              className="px-4 py-2 bg-terracotta-500 text-white text-xs font-bold rounded-xl shadow-warm hover:bg-terracotta-600 transition-colors"
+            >
+              Reset Filters & Browse All Goods
+            </button>
           </div>
         ) : (
           <motion.div

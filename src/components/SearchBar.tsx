@@ -15,12 +15,13 @@ export function SearchBar({
   placeholder = "Search shops, filter coffee, pedha, handlooms...",
 }: SearchBarProps) {
   return (
-    <div className="relative w-full">
+    <div data-testid="search-bar" className="relative w-full">
       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-forest-500">
         <Search className="w-4 h-4" />
       </div>
       <input
         type="text"
+        data-testid="search-input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -28,8 +29,9 @@ export function SearchBar({
       />
       {value && (
         <button
+          data-testid="clear-search-btn"
           onClick={() => onChange("")}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center text-forest-400 hover:text-forest-700"
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-forest-400 hover:text-forest-700 transition-colors"
           aria-label="Clear search"
         >
           <X className="w-4 h-4" />
