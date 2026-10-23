@@ -23,6 +23,7 @@ interface SellerContextType {
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
   toggleStoreOpen: () => void;
+  updateStoreProfile: (updates: Partial<Store>) => void;
 }
 
 const DEFAULT_SELLER: SellerProfile = {
@@ -36,6 +37,7 @@ const DEFAULT_SELLER: SellerProfile = {
 };
 
 const SELLER_ROLE_STORAGE_KEY = "localloop_user_role_v1";
+const SELLER_STORE_STORAGE_KEY = "localloop_seller_store_v1";
 
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
@@ -50,6 +52,14 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       if (savedRole && (savedRole === "customer" || savedRole === "seller" || savedRole === "admin")) {
         setUserRoleState(savedRole as UserRole);
       }
+
+      const savedStore = localStorage.getItem(SELLER_STORE_STORAGE_KEY);
+      if (savedStore) {
+        const parsed = JSON.parse(savedStore);
+        if (parsed && parsed.name) {
+          setActiveStore((prev) => ({ ...prev, ...parsed }));
+        }
+      }
     } catch {}
     setIsLoaded(true);
   }, []);
@@ -62,10 +72,29 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleStoreOpen = () => {
-    setActiveStore((prev) => ({
-      ...prev,
-      isOpen: !prev.isOpen,
-    }));
+    setActiveStore((prev) => {
+      const updated = {
+        ...prev,
+        isOpen: !prev.isOpen,
+      };
+      try {
+        localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const updateStoreProfile = (updates: Partial<Store>) => {
+    setActiveStore((prev) => {
+      const updated = {
+        ...prev,
+        ...updates,
+      };
+      try {
+        localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   const isAuthorizedSeller = userRole === "seller" || userRole === "admin";
@@ -73,6 +102,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   const seller: SellerProfile = {
     ...DEFAULT_SELLER,
     role: userRole,
+    storeName: activeStore.name,
   };
 
   return (
@@ -84,6 +114,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         userRole,
         setUserRole,
         toggleStoreOpen,
+        updateStoreProfile,
       }}
     >
       {children}

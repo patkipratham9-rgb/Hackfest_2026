@@ -129,6 +129,13 @@ function SellerPortalProtectedShell({
       icon: TrendingUp,
       isActive: pathname.startsWith("/seller/growth"),
     },
+    {
+      id: "store",
+      title: "Store Profile",
+      href: "/seller/store",
+      icon: Store,
+      isActive: pathname.startsWith("/seller/store"),
+    },
   ];
 
   return (
