@@ -15,7 +15,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isSaved, setIsSaved] = useState(false);
   const cartItem = cart.find((i) => i.product.id === product.id);
   const qtyInCart = cartItem?.quantity || 0;
-  const isLowStock = product.stock <= 4;
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock <= 5;
+  const isCritical = product.stock === 1;
 
   return (
     <motion.div
@@ -77,15 +79,30 @@ export function ProductCard({ product }: ProductCardProps) {
             </motion.div>
           )}
 
-          {/* Low Stock Warning */}
-          {isLowStock && (
-            <motion.div
-              animate={{ scale: [1, 1.03, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="absolute bottom-2.5 left-2.5 bg-amber-600/90 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-xs"
+          {/* Out of Stock & Low Stock Warnings (Checkpoint CP-PI05) */}
+          {isOutOfStock && (
+            <div
+              data-testid="out-of-stock-badge"
+              data-stock={product.stock}
+              className="absolute bottom-2.5 left-2.5 bg-rose-700/95 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-xs"
             >
               <AlertCircle className="w-3 h-3" />
-              <span>Only {product.stock} left</span>
+              <span>Out of Stock</span>
+            </div>
+          )}
+
+          {isLowStock && (
+            <motion.div
+              data-testid="low-stock-badge"
+              data-stock={product.stock}
+              animate={{ scale: isCritical ? [1, 1.05, 1] : [1, 1.02, 1] }}
+              transition={{ repeat: Infinity, duration: isCritical ? 1.2 : 2 }}
+              className={`absolute bottom-2.5 left-2.5 ${
+                isCritical ? "bg-rose-600/95 ring-2 ring-amber-300" : "bg-amber-600/90"
+              } backdrop-blur-xs text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-xs`}
+            >
+              <AlertCircle className="w-3 h-3" />
+              <span>{isCritical ? "Only 1 left in stock!" : `Only ${product.stock} left`}</span>
             </motion.div>
           )}
         </div>
@@ -122,8 +139,15 @@ export function ProductCard({ product }: ProductCardProps) {
           </span>
         </div>
 
-        {/* Add / Stepper Button */}
-        {isLoaded && qtyInCart > 0 ? (
+        {/* Add / Stepper / Out-of-Stock Button */}
+        {isOutOfStock ? (
+          <span
+            data-testid={`out-of-stock-btn-${product.id}`}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-cream-200 text-forest-400 border border-cream-300 cursor-not-allowed select-none"
+          >
+            Out of Stock
+          </span>
+        ) : isLoaded && qtyInCart > 0 ? (
           <div
             data-testid={`cart-stepper-${product.id}`}
             className="flex items-center gap-2 bg-forest-800 text-cream-100 rounded-xl px-2.5 py-1.5 shadow-xs border border-forest-900"
@@ -152,11 +176,14 @@ export function ProductCard({ product }: ProductCardProps) {
             <motion.button
               whileTap={{ scale: 0.8 }}
               data-testid={`qty-plus-${product.id}`}
+              disabled={qtyInCart >= product.stock}
               onClick={(e) => {
                 e.stopPropagation();
-                updateQuantity(product.id, 1);
+                if (qtyInCart < product.stock) {
+                  updateQuantity(product.id, 1);
+                }
               }}
-              className="text-cream-200 hover:text-terracotta-400 p-0.5 transition-colors"
+              className="text-cream-200 hover:text-terracotta-400 disabled:opacity-40 disabled:cursor-not-allowed p-0.5 transition-colors"
               aria-label="Increase quantity"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />

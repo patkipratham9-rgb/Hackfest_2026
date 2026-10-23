@@ -351,6 +351,43 @@ export default function SellerProductsPage() {
         )}
       </AnimatePresence>
 
+      {/* Checkpoint CP-PI05: Low-Stock Alert Banner for Seller */}
+      {storeProducts.filter((p) => p.stock > 0 && p.stock <= 10).length > 0 && (
+        <div
+          data-testid="low-stock-alert-banner"
+          className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-200 border border-amber-300 text-amber-800 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 text-amber-700" />
+            </div>
+            <div>
+              <p className="font-bold text-xs flex items-center gap-1.5">
+                <span>Low Stock Inventory Alert</span>
+                <span
+                  data-testid="low-stock-counter"
+                  className="px-1.5 py-0.5 rounded-full bg-amber-200 border border-amber-300 text-amber-900 text-[10px] font-extrabold"
+                >
+                  {storeProducts.filter((p) => p.stock > 0 && p.stock <= 10).length} SKUs Low
+                </span>
+              </p>
+              <p className="text-[11px] text-amber-800 mt-0.5">
+                Handcrafted inventory is running low on {storeProducts.filter((p) => p.stock > 0 && p.stock <= 10).map((p) => p.name).slice(0, 2).join(", ")}. Restock to prevent missed customer orders.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            data-testid="view-low-stock-btn"
+            onClick={() => setStockFilter("low_stock")}
+            className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer shrink-0 self-end sm:self-auto"
+          >
+            Filter Low Stock
+          </button>
+        </div>
+      )}
+
       {/* Search & Category Filter Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-cream-50 p-3 rounded-2xl border border-cream-300">
         <div className="relative w-full sm:w-80">
@@ -485,20 +522,26 @@ export default function SellerProductsPage() {
                       {product.category}
                     </span>
 
-                    {/* Stock Alert Badge */}
+                    {/* Stock Alert Badge (Checkpoint CP-PI05) */}
                     {isLowStock && (
                       <span
                         data-testid="low-stock-badge"
-                        className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-bold shadow-xs"
+                        data-stock={product.stock}
+                        className={`absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold shadow-xs ${
+                          product.stock === 1
+                            ? "bg-amber-100 border border-amber-400 text-amber-950 ring-1 ring-amber-400 animate-pulse"
+                            : "bg-amber-100 border border-amber-300 text-amber-900"
+                        }`}
                       >
                         <AlertTriangle className="w-3 h-3 text-amber-600" />
-                        <span>Low Stock</span>
+                        <span>{product.stock === 1 ? "Only 1 left!" : `Low Stock (${product.stock})`}</span>
                       </span>
                     )}
 
                     {isOutOfStock && (
                       <span
                         data-testid="out-of-stock-badge"
+                        data-stock={product.stock}
                         className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 border border-rose-300 text-rose-900 text-[10px] font-bold shadow-xs"
                       >
                         <Archive className="w-3 h-3 text-rose-600" />
@@ -885,6 +928,16 @@ export default function SellerProductsPage() {
                       >
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>{errors.stock}</span>
+                      </p>
+                    )}
+                    {/* Checkpoint CP-PI05: Low-Stock Threshold Warning in Modal */}
+                    {formData.stock !== "" && parseInt(formData.stock, 10) > 0 && parseInt(formData.stock, 10) <= 10 && (
+                      <p
+                        data-testid="modal-low-stock-warning"
+                        className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                        <span>Stock &le; 10 triggers low-stock badges for shoppers & dashboard alerts.</span>
                       </p>
                     )}
                   </div>
