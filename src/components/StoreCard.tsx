@@ -20,6 +20,7 @@ export function StoreCard({ store, onSelect, isSelected }: StoreCardProps) {
       data-testid="store-card"
       data-store-id={store.id}
       data-store-area={store.area}
+      data-store-category={store.category}
       whileHover={{ y: -5, scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
@@ -100,7 +101,10 @@ export function StoreCard({ store, onSelect, isSelected }: StoreCardProps) {
             </span>
           </div>
 
-          <span className="text-[11px] font-medium text-forest-600 bg-cream-200/80 px-2.5 py-0.5 rounded-md">
+          <span
+            data-testid="store-category-tag"
+            className="text-[11px] font-medium text-forest-600 bg-cream-200/80 px-2.5 py-0.5 rounded-md"
+          >
             {store.category}
           </span>
         </div>

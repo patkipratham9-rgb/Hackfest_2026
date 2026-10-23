@@ -262,7 +262,11 @@ export default function HomePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950">
-              {activeArea === "All" ? "Corner Shops Nearby" : `Corner Shops in ${activeArea}`}
+              {selectedCategory !== "All"
+                ? `${selectedCategory} Stores`
+                : activeArea === "All"
+                ? "Corner Shops Nearby"
+                : `Corner Shops in ${activeArea}`}
             </h2>
             <span
               data-testid="store-count-badge"
@@ -273,21 +277,31 @@ export default function HomePage() {
           </div>
           <span className="text-xs font-medium text-forest-600 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-terracotta-500" />
-            <span>{activeArea === "All" ? "Within Hubballi" : `In ${activeArea}`}</span>
+            <span>
+              {selectedCategory !== "All"
+                ? `${selectedCategory} • `
+                : ""}
+              {activeArea === "All" ? "Across City" : activeArea}
+            </span>
           </span>
         </div>
 
         {filteredStores.length === 0 ? (
-          <div className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-2">
+          <div className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3">
             <p className="text-sm text-forest-600 font-medium">
-              No corner shops found in {activeArea} matching this category.
+              No {selectedCategory !== "All" ? selectedCategory.toLowerCase() : "corner"} shops found {activeArea !== "All" ? `in ${activeArea}` : "matching your filters"}.
             </p>
-            <button
-              onClick={() => setActiveArea("All")}
-              className="px-4 py-2 bg-terracotta-500 text-white text-xs font-bold rounded-xl shadow-warm hover:bg-terracotta-600 transition-colors"
-            >
-              Show All Hubballi Stores
-            </button>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => {
+                  setActiveArea("All");
+                  setSelectedCategory("All");
+                }}
+                className="px-4 py-2 bg-terracotta-500 text-white text-xs font-bold rounded-xl shadow-warm hover:bg-terracotta-600 transition-colors"
+              >
+                Show All Stores
+              </button>
+            </div>
           </div>
         ) : (
           <motion.div

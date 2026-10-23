@@ -8,12 +8,15 @@ export type NeighborhoodArea =
 
 export type ProductCategory =
   | "All"
+  | "Grocery"
+  | "Bakery"
+  | "Produce"
+  | "Household"
   | "Sweets & Snacks"
   | "Handloom & Crafts"
   | "Filter Coffee & Tea"
   | "Fresh Produce"
-  | "Spices & Pantry"
-  | "Bakery";
+  | "Spices & Pantry";
 
 export interface Store {
   id: string;
