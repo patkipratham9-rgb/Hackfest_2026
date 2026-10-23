@@ -2,6 +2,7 @@
 
 import React, { use } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { OrderStatus } from "@/types";
 import {
@@ -17,6 +18,8 @@ import {
   QrCode,
   ShieldCheck,
   Check,
+  Search,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -62,7 +65,7 @@ export default function OrderTrackingPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const { getOrderById, updateOrderStatus, isLoaded } = useCart();
+  const { orders, getOrderById, updateOrderStatus, isLoaded } = useCart();
   const orderId = resolvedParams.id;
 
   const order = getOrderById(orderId);
@@ -82,29 +85,91 @@ export default function OrderTrackingPage({
     );
   }
 
+  // Checkpoint 4.2: Useful Not-Found State for unknown IDs
   if (!order) {
     return (
-      <div
+      <motion.div
         data-testid="order-not-found"
-        className="max-w-md mx-auto text-center py-16 space-y-4"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md mx-auto text-center py-12 px-4 space-y-5"
       >
-        <div className="w-16 h-16 rounded-full bg-cream-300 flex items-center justify-center mx-auto text-forest-700">
-          <Package className="w-8 h-8" />
+        <div className="w-20 h-20 rounded-full bg-cream-200 border-2 border-cream-300 flex items-center justify-center mx-auto text-forest-600 shadow-warm">
+          <Package className="w-10 h-10 stroke-[1.5]" />
         </div>
-        <h2 className="font-serif font-bold text-2xl text-forest-950">
-          Order Not Found
-        </h2>
-        <p className="text-xs text-forest-600">
-          We could not find an order with ID <span className="font-mono">{orderId}</span>.
-        </p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-terracotta-500 text-white rounded-xl text-xs font-bold"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Marketplace</span>
-        </Link>
-      </div>
+
+        <div className="space-y-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-terracotta-600">
+            Lookup Notice
+          </span>
+          <h2 className="font-serif font-extrabold text-2xl text-forest-950">
+            Order Not Found
+          </h2>
+          <p className="text-xs text-forest-600 max-w-sm mx-auto leading-relaxed">
+            We could not find an active or completed order matching identifier{" "}
+            <span
+              data-testid="not-found-order-id"
+              className="font-mono font-bold text-forest-950 bg-cream-200 px-1.5 py-0.5 rounded border border-cream-300"
+            >
+              {orderId}
+            </span>
+            .
+          </p>
+        </div>
+
+        {/* Helpful Suggestions */}
+        <div className="bg-cream-100 p-4 rounded-2xl border border-cream-300 text-left text-xs space-y-2 text-forest-700">
+          <p className="font-bold text-forest-900 flex items-center gap-1.5">
+            <Search className="w-3.5 h-3.5 text-terracotta-600" />
+            <span>Why might this happen?</span>
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-[11px] text-forest-600 pl-1">
+            <li>The order link or ID was mistyped.</li>
+            <li>The order was created in another browser or incognito window.</li>
+          </ul>
+
+          {/* If there are existing known orders, show quick links */}
+          {orders.length > 0 && (
+            <div className="pt-2 border-t border-cream-200 mt-2">
+              <span className="text-[11px] font-bold text-forest-900 block mb-1.5">
+                Active orders found in your session:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {orders.slice(0, 3).map((o) => (
+                  <Link
+                    key={o.id}
+                    href={`/orders/${o.id}`}
+                    className="inline-flex items-center gap-1 font-mono text-[11px] font-bold px-2 py-1 rounded-lg bg-cream-50 hover:bg-terracotta-50 hover:text-terracotta-700 border border-cream-300 transition-colors"
+                  >
+                    <span>{o.id}</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+          <Link
+            href="/orders"
+            data-testid="view-all-orders-link"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-forest-800 hover:bg-forest-900 text-cream-100 rounded-xl text-xs font-bold transition-all shadow-xs"
+          >
+            <Package className="w-3.5 h-3.5" />
+            <span>View All Orders</span>
+          </Link>
+          <Link
+            href="/"
+            data-testid="back-to-home-link"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-cream-200 hover:bg-cream-300 text-forest-900 rounded-xl text-xs font-bold transition-all"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Marketplace</span>
+          </Link>
+        </div>
+      </motion.div>
     );
   }
 
@@ -138,7 +203,7 @@ export default function OrderTrackingPage({
           <span>All Orders</span>
         </Link>
         <span className="text-[11px] font-semibold text-forest-500">
-          ID:{" "}
+          Order ID:{" "}
           <span data-testid="order-id" className="font-mono text-forest-800 font-bold">
             {order.id}
           </span>
@@ -217,7 +282,7 @@ export default function OrderTrackingPage({
         </div>
 
         {/* 4-Step Visual Progress Bar */}
-        <div className="pt-6">
+        <div data-testid="order-progress-timeline" className="pt-6">
           <div className="relative">
             {/* Progress line */}
             <div className="absolute top-5 left-6 right-6 h-1 bg-cream-200 -z-0">
@@ -238,7 +303,11 @@ export default function OrderTrackingPage({
                 const StepIcon = step.icon;
 
                 return (
-                  <div key={step.key} className="flex flex-col items-center text-center">
+                  <div
+                    key={step.key}
+                    data-testid={`timeline-step-${step.key}`}
+                    className="flex flex-col items-center text-center"
+                  >
                     <motion.div
                       animate={
                         isCurrent
@@ -325,8 +394,16 @@ export default function OrderTrackingPage({
 
         <div className="p-3.5 rounded-2xl bg-cream-100 border border-cream-200 flex flex-col sm:flex-row justify-between gap-3">
           <div className="space-y-1">
-            <h4 className="font-bold text-sm text-forest-900">{order.storeName}</h4>
-            <p className="text-xs text-forest-600 flex items-center gap-1.5">
+            <h4
+              data-testid="order-store-name"
+              className="font-bold text-sm text-forest-900"
+            >
+              {order.storeName}
+            </h4>
+            <p
+              data-testid="order-store-address"
+              className="text-xs text-forest-600 flex items-center gap-1.5"
+            >
               <MapPin className="w-3.5 h-3.5 text-terracotta-500 flex-shrink-0" />
               <span>
                 {order.storeLane}, {order.storeArea} (Hubballi)
@@ -337,6 +414,7 @@ export default function OrderTrackingPage({
           <motion.a
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
+            data-testid="order-call-merchant-button"
             href="tel:+919845012345"
             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest-700 text-cream-100 text-xs font-bold hover:bg-forest-800 transition-colors flex-shrink-0 cursor-pointer"
           >
@@ -360,11 +438,21 @@ export default function OrderTrackingPage({
               className="py-2.5 flex justify-between items-center text-xs"
             >
               <div className="flex items-center gap-3">
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="w-10 h-10 object-cover rounded-lg bg-cream-200"
-                />
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-cream-300">
+                  {product.imageUrl ? (
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-forest-400">
+                      <Package className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
                 <div>
                   <span className="font-bold text-forest-900 block">{product.name}</span>
                   <span className="text-[11px] text-forest-500">
@@ -409,7 +497,10 @@ export default function OrderTrackingPage({
               </strong>
             </span>
           </span>
-          <span className="font-semibold text-forest-800">
+          <span
+            data-testid="order-payment-status"
+            className="font-semibold text-forest-800"
+          >
             Status: {order.paymentStatus === "paid" ? "Verified" : "Due on pickup"}
           </span>
         </div>
