@@ -4,8 +4,8 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useSeller } from "@/context/SellerContext";
 import { useCart } from "@/context/CartContext";
-import { Order, OrderStatus } from "@/types";
-import { MOCK_PRODUCTS } from "@/data/mockData";
+import { Order, OrderStatus, Product } from "@/types";
+
 import {
   ShoppingBag,
   Clock,
@@ -39,7 +39,7 @@ import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { markOrderPackedAction, markOrderReadyAction, verifyAndCompleteOrderAction } from "@/actions/marketplaceActions";
 
 export default function SellerOrdersPage() {
-  const { activeStore } = useSeller();
+  const { activeStore, products } = useSeller();
   const { orders, updateOrderStatus, createOrder } = useCart();
 
   // Search & Filters
@@ -219,7 +219,21 @@ export default function SellerOrdersPage() {
 
   // Simulate incoming new order for hackathon presentation
   const handleSimulateNewOrder = () => {
-    const randomProduct = MOCK_PRODUCTS[Math.floor(Math.random() * MOCK_PRODUCTS.length)];
+    const sampleProd: Product =
+      products.length > 0
+        ? products[Math.floor(Math.random() * products.length)]
+        : {
+            id: "prod-demo-1",
+            storeId: activeStore.id,
+            storeName: activeStore.name || "My Store",
+            name: "Fresh Order Item",
+            description: "Direct customer order",
+            price: 150,
+            category: "Household",
+            stock: 10,
+            unit: "1 pack",
+            imageUrl: "",
+          };
     const mockCustNames = [
       "Sunil Joshi",
       "Kavita Kulkarni",
@@ -239,7 +253,7 @@ export default function SellerOrdersPage() {
       items: [
         {
           product: {
-            ...randomProduct,
+            ...sampleProd,
             storeId: activeStore.id,
             storeName: activeStore.name,
           },
@@ -604,6 +618,19 @@ export default function SellerOrdersPage() {
             onClick={() => {
               const randomOrderNumber = Math.floor(1000 + Math.random() * 9000);
               const randomPin = `LL-${Math.floor(100 + Math.random() * 900)}`;
+              const fallbackProduct: Product = products.length > 0 ? products[0] : {
+                id: "prod-sim-1",
+                storeId: activeStore.id,
+                storeName: activeStore.name || "My Store",
+                name: "Store Item",
+                description: "Counter purchase",
+                price: 180,
+                category: "Household",
+                stock: 10,
+                unit: "1 item",
+                imageUrl: "",
+              };
+
               const simOrder: Order = {
                 id: `ORD-LL-${randomOrderNumber}`,
                 storeId: activeStore.id,
@@ -614,13 +641,13 @@ export default function SellerOrdersPage() {
                 customerPhone: "+91 98451 99887",
                 items: [
                   {
-                    product: MOCK_PRODUCTS[0],
+                    product: fallbackProduct,
                     quantity: 1,
                   },
                 ],
-                subtotal: MOCK_PRODUCTS[0].price,
+                subtotal: fallbackProduct.price,
                 platformFee: 15,
-                total: MOCK_PRODUCTS[0].price + 15,
+                total: fallbackProduct.price + 15,
                 status: "placed",
                 paymentMethod: "counter",
                 paymentStatus: "pending",

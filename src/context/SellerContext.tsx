@@ -32,26 +32,45 @@ interface SellerContextType {
   setStock: (productId: string, newStock: number) => { success: boolean; newStock: number };
 }
 
+const EMPTY_STORE: Store = {
+  id: "store-manual-01",
+  name: "",
+  tagline: "",
+  category: "Household",
+  area: "Vidyanagar",
+  lane: "",
+  distance: "0.5 km",
+  rating: 5.0,
+  reviewCount: 0,
+  isOpen: true,
+  openingHours: "8:00 AM - 9:00 PM",
+  imageUrl: "",
+  bannerUrl: "",
+  phone: "+91 98450 12345",
+  verified: true,
+};
+
 const DEFAULT_SELLER: SellerProfile = {
   id: "seller-user-01",
-  fullName: "Meena Kulkarni",
+  fullName: "Merchant Partner",
   phone: "+91 98450 12345",
-  email: "meena.crafts@localloop.in",
+  email: "partner@localloop.in",
   role: "seller",
-  storeId: "store-1",
-  storeName: "Meena's Diyas & Filter Coffee",
+  storeId: "store-manual-01",
+  storeName: "",
 };
 
 const SELLER_ROLE_STORAGE_KEY = "localloop_user_role_v1";
 const SELLER_STORE_STORAGE_KEY = "localloop_seller_store_v1";
 const SELLER_PRODUCTS_STORAGE_KEY = "localloop_seller_products_v1";
+const REGISTERED_STORES_KEY = "localloop_registered_stores_v1";
 
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
 export function SellerProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRoleState] = useState<UserRole>("seller");
-  const [activeStore, setActiveStore] = useState<Store>(MOCK_STORES[0]);
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [activeStore, setActiveStore] = useState<Store>(MOCK_STORES[0] || EMPTY_STORE);
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS || []);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -108,6 +127,17 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       };
       try {
         localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
+        if (updated.name && updated.name.trim() !== "") {
+          const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
+          let storeList: Store[] = rawRegistered ? JSON.parse(rawRegistered) : [];
+          const existingIdx = storeList.findIndex((s) => s.id === updated.id);
+          if (existingIdx >= 0) {
+            storeList[existingIdx] = updated;
+          } else {
+            storeList.unshift(updated);
+          }
+          localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(storeList));
+        }
       } catch {}
       return updated;
     });

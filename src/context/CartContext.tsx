@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { CartItem, Product, Order, OrderStatus, NeighborhoodArea } from "@/types";
 import { placeOrderAtomicAction, updateOrderStatusAction } from "@/actions/marketplaceActions";
 import { recordStoreAnalyticsEvent } from "@/lib/analyticsTracker";
-import { MOCK_PRODUCTS } from "@/data/mockData";
+
 
 interface CartContextType {
   cart: CartItem[];
@@ -12,6 +12,12 @@ interface CartContextType {
   orders: Order[];
   activeArea: NeighborhoodArea;
   setActiveArea: (area: NeighborhoodArea) => void;
+  userLocation: string;
+  setUserLocation: (location: string) => void;
+  isLocating: boolean;
+  requestCurrentLocation: () => Promise<{ success: boolean; location?: string; error?: string }>;
+  isLocationModalOpen: boolean;
+  setIsLocationModalOpen: (open: boolean) => void;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, delta: number) => void;
@@ -51,11 +57,15 @@ const CART_STORAGE_KEY = "localloop_cart_v1";
 const ORDERS_STORAGE_KEY = "localloop_orders_v1";
 const AREA_STORAGE_KEY = "localloop_area_v1";
 const RECENT_STORAGE_KEY = "localloop_recent_v1";
+const LOCATION_STORAGE_KEY = "localloop_user_location_v1";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeArea, setActiveAreaState] = useState<NeighborhoodArea>("All");
+  const [userLocation, setUserLocationState] = useState<string>("");
+  const [isLocating, setIsLocating] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -86,80 +96,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (savedOrders) {
         setOrders(JSON.parse(savedOrders));
       } else {
-        const initialOrder1: Order = {
-          id: "ORD-LL-8921",
-          storeId: "11111111-1111-1111-1111-111111111111",
-          storeName: "Meena's Diyas & Filter Coffee",
-          storeArea: "Vidyanagar",
-          storeLane: "2nd Cross, Near KIMS Circle",
-          customerName: "Pratham Patki",
-          customerPhone: "+91 98451 22334",
-          items: [
-            {
-              product: MOCK_PRODUCTS[0],
-              quantity: 2,
-            },
-            {
-              product: MOCK_PRODUCTS[1],
-              quantity: 1,
-            },
-          ],
-          subtotal: 600,
-          platformFee: 15,
-          total: 615,
-          status: "completed",
-          paymentMethod: "upi",
-          paymentStatus: "paid",
-          pickupTime: "Today at 5:30 PM",
-          pickupCode: "LL-482",
-          createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
-        };
-
-        const initialOrder2: Order = {
-          id: "ORD-LL-5412",
-          storeId: "22222222-2222-2222-2222-222222222222",
-          storeName: "Mishra Authentic Dharwad Pedha",
-          storeArea: "Station Road",
-          storeLane: "Opp. Railway Station Gate 2",
-          customerName: "Pratham Patki",
-          customerPhone: "+91 98451 22334",
-          items: [
-            {
-              product: MOCK_PRODUCTS[3],
-              quantity: 1,
-            },
-            {
-              product: MOCK_PRODUCTS[4],
-              quantity: 2,
-            },
-          ],
-          subtotal: 480,
-          platformFee: 15,
-          total: 495,
-          status: "packed",
-          paymentMethod: "upi",
-          paymentStatus: "paid",
-          pickupTime: "Today at 7:00 PM",
-          pickupCode: "LL-719",
-          createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-        };
-
-        const seeded = [initialOrder2, initialOrder1];
-        setOrders(seeded);
-        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(seeded));
+        setOrders([]);
       }
 
       const savedArea = localStorage.getItem(AREA_STORAGE_KEY);
       if (savedArea) setActiveAreaState(savedArea as NeighborhoodArea);
 
+      const savedLocation = localStorage.getItem(LOCATION_STORAGE_KEY);
+      if (savedLocation) setUserLocationState(savedLocation);
+
       const savedRecent = localStorage.getItem(RECENT_STORAGE_KEY);
       if (savedRecent) {
         setRecentlyViewed(JSON.parse(savedRecent));
       } else {
-        // Seed initial recently explored items
-        const initialRecent = [MOCK_PRODUCTS[0], MOCK_PRODUCTS[1], MOCK_PRODUCTS[3], MOCK_PRODUCTS[5]];
-        setRecentlyViewed(initialRecent);
-        localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(initialRecent));
+        setRecentlyViewed([]);
       }
     } catch (e) {
       console.warn("Storage sync error:", e);
@@ -167,6 +117,46 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setIsLoaded(true);
     }
   }, []);
+
+  const setUserLocation = (loc: string) => {
+    setUserLocationState(loc);
+    try {
+      localStorage.setItem(LOCATION_STORAGE_KEY, loc);
+    } catch {}
+  };
+
+  const requestCurrentLocation = async (): Promise<{ success: boolean; location?: string; error?: string }> => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      return { success: false, error: "Geolocation is not supported by your browser." };
+    }
+
+    setIsLocating(true);
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setIsLocating(false);
+          const lat = position.coords.latitude.toFixed(4);
+          const lng = position.coords.longitude.toFixed(4);
+          const locStr = `Current GPS (${lat}° N, ${lng}° E • Hubballi)`;
+          setUserLocation(locStr);
+          resolve({ success: true, location: locStr });
+        },
+        (error) => {
+          setIsLocating(false);
+          let errorMsg = "Unable to retrieve your location.";
+          if (error.code === error.PERMISSION_DENIED) {
+            errorMsg = "Location access was denied. Please allow location in your browser or enter your address manually.";
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            errorMsg = "Location information is unavailable.";
+          } else if (error.code === error.TIMEOUT) {
+            errorMsg = "Location request timed out. Please try again or enter manually.";
+          }
+          resolve({ success: false, error: errorMsg });
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    });
+  };
 
   // Save cart to localStorage
   useEffect(() => {
@@ -440,6 +430,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         orders,
         activeArea,
         setActiveArea,
+        userLocation,
+        setUserLocation,
+        isLocating,
+        requestCurrentLocation,
+        isLocationModalOpen,
+        setIsLocationModalOpen,
         addToCart,
         removeFromCart,
         updateQuantity,

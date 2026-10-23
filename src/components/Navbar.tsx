@@ -22,22 +22,19 @@ import {
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { NeighborhoodArea } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
-
-const AREAS: NeighborhoodArea[] = [
-  "All",
-  "Vidyanagar",
-  "Gokul Road",
-  "CBT",
-  "Station Road",
-  "Unkal Lake",
-];
+import { LocationModal } from "@/components/LocationModal";
 
 export function Navbar() {
-  const { totalItems, setIsCartOpen, activeArea, setActiveArea, setIsProfileOpen, isLoaded } = useCart();
+  const {
+    totalItems,
+    setIsCartOpen,
+    userLocation,
+    setIsLocationModalOpen,
+    setIsProfileOpen,
+    isLoaded,
+  } = useCart();
   const { user, isAuthenticated, activeAppMode, switchRole } = useAuth();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -64,54 +61,19 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Neighborhood Selector Pill (Desktop & Tablet) */}
+        {/* Location Selector Pill (Desktop & Tablet) */}
         <div className="relative hidden xs:block">
           <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream-200 border border-cream-300 hover:border-terracotta-300 text-xs font-semibold text-forest-800 transition-colors shadow-xs"
-            aria-label="Select Neighborhood"
+            onClick={() => setIsLocationModalOpen(true)}
+            data-testid="nav-location-btn"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream-200 border border-cream-300 hover:border-terracotta-400 text-xs font-semibold text-forest-800 transition-colors shadow-xs"
+            aria-label="Set Delivery Location"
           >
-            <MapPin className="w-3.5 h-3.5 text-terracotta-500" />
-            <span className="truncate max-w-[110px] sm:max-w-none">
-              {activeArea === "All" ? "Everywhere in City" : activeArea}
+            <MapPin className="w-3.5 h-3.5 text-terracotta-500 flex-shrink-0" />
+            <span className="truncate max-w-[130px] sm:max-w-[190px]">
+              {userLocation || "Add / Share Location"}
             </span>
-            <ChevronDown className="w-3 h-3 text-forest-500" />
           </button>
-
-          <AnimatePresence>
-            {isDropdownOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.96 }}
-                transition={{ duration: 0.15 }}
-                className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-48 bg-cream-50 rounded-2xl shadow-floating border border-cream-300 py-1.5 z-50 overflow-hidden"
-              >
-                <div className="px-3 py-1 text-[11px] font-semibold text-forest-500 tracking-wider uppercase">
-                  Select Neighborhood
-                </div>
-                {AREAS.map((area) => (
-                  <button
-                    key={area}
-                    onClick={() => {
-                      setActiveArea(area);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs font-medium flex items-center justify-between transition-colors ${
-                      activeArea === area
-                        ? "bg-terracotta-100 text-terracotta-800 font-bold"
-                        : "text-forest-900 hover:bg-cream-200"
-                    }`}
-                  >
-                    <span>{area === "All" ? "All Neighborhoods" : area}</span>
-                    {activeArea === area && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-terracotta-500" />
-                    )}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* Right Actions: AI Badge, App Switcher, Profile, Cart, Mobile Menu */}
@@ -256,6 +218,22 @@ export function Navbar() {
 
             {/* Mobile Nav Links */}
             <nav className="grid grid-cols-2 gap-2 text-xs font-bold text-forest-900">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsLocationModalOpen(true);
+                }}
+                className="col-span-2 p-3 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center justify-between border border-cream-200 text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-terracotta-600" />
+                  <span className="truncate max-w-[200px]">{userLocation || "Add / Share Location"}</span>
+                </div>
+                <span className="text-[10px] bg-terracotta-100 text-terracotta-800 px-2 py-0.5 rounded-full font-bold">
+                  {userLocation ? "Change" : "Set"}
+                </span>
+              </button>
               <Link
                 href="/"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -336,6 +314,7 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+      <LocationModal />
     </header>
   );
 }
