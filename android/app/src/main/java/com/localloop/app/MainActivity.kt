@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var cameraImageUri: Uri? = null
+    private var initialPath: String = "/"
 
     // Activity Result Launcher for File Chooser (Camera & Gallery for Seller Banner / Product Uploads)
     private val fileChooserLauncher = registerForActivityResult(
@@ -69,6 +70,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Read flavor initial path from AndroidManifest meta-data ("/" for User App, "/seller" for Merchant App)
+        readInitialPath()
+
         setupSwipeRefresh()
         setupWebView()
         setupBackButtonHandler()
@@ -76,6 +80,18 @@ class MainActivity : AppCompatActivity() {
         checkPermissions()
 
         loadCurrentServerUrl()
+    }
+
+    private fun readInitialPath() {
+        try {
+            val appInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            val path = appInfo.metaData?.getString("com.localloop.app.INITIAL_PATH")
+            if (!path.isNullOrBlank()) {
+                initialPath = path
+            }
+        } catch (_: Exception) {
+            initialPath = "/"
+        }
     }
 
     private fun checkPermissions() {
@@ -110,14 +126,19 @@ class MainActivity : AppCompatActivity() {
         webSettings.loadWithOverviewMode = true
         webSettings.setSupportZoom(false)
 
+        // Security Hardening: Disable dangerous file access from file URLs
+        webSettings.allowFileAccessFromFileURLs = false
+        webSettings.allowUniversalAccessFromFileURLs = false
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             CookieManager.getInstance().setAcceptThirdPartyCookies(binding.webView, true)
         }
 
-        // Custom User Agent identifier
+        // Custom User Agent identifier with Flavor tag
+        val flavorTag = if (initialPath.contains("seller")) "MerchantPartner" else "Shopper"
         val defaultUserAgent = webSettings.userAgentString
-        webSettings.userAgentString = "$defaultUserAgent LocalLoopAndroid/1.0.0"
+        webSettings.userAgentString = "$defaultUserAgent LocalLoopAndroid/1.0.0 ($flavorTag)"
 
         // Expose Native Bridge
         binding.webView.addJavascriptInterface(WebAppInterface(this), "LocalLoopNative")
@@ -171,6 +192,25 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                // Security check: Whitelist external navigation
+                val host = uri.host?.lowercase(Locale.ROOT) ?: ""
+                val isInternal = host == "localhost" ||
+                        host == "10.0.2.2" ||
+                        host == "127.0.0.1" ||
+                        host.startsWith("192.168.") ||
+                        host.endsWith("localloop.vercel.app") ||
+                        host.endsWith("supabase.co") ||
+                        host.endsWith("cashfree.com")
+
+                if (!isInternal && (scheme == "http" || scheme == "https")) {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        return true
+                    } catch (_: Exception) {
+                        return false
+                    }
+                }
+
                 // Internal app URLs stay inside WebView
                 return false
             }
@@ -212,6 +252,8 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         takePictureIntent = null
                     }
+                } else {
+                    takePictureIntent = null
                 }
 
                 val contentSelectionIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
@@ -219,12 +261,15 @@ class MainActivity : AppCompatActivity() {
                     type = "image/*"
                 }
 
-                val intentArray: Array<Intent?> = takePictureIntent?.let { arrayOf(it) } ?: arrayOfNulls(0)
+                val intentList = ArrayList<Intent>()
+                takePictureIntent?.let { intentList.add(it) }
 
                 val chooserIntent = Intent(Intent.ACTION_CHOOSER).apply {
                     putExtra(Intent.EXTRA_INTENT, contentSelectionIntent)
                     putExtra(Intent.EXTRA_TITLE, "Upload Store Banner or Product Image")
-                    putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray)
+                    if (intentList.isNotEmpty()) {
+                        putExtra(Intent.EXTRA_INITIAL_INTENTS, intentList.toTypedArray())
+                    }
                 }
 
                 fileChooserLauncher.launch(chooserIntent)
@@ -268,15 +313,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadCurrentServerUrl() {
-        val targetUrl = AppConfig.getTargetUrl(this)
-        binding.txtCurrentTargetUrl.text = targetUrl
+        val baseTargetUrl = AppConfig.getTargetUrl(this)
+        val fullUrl = if (initialPath == "/" || initialPath.isBlank()) {
+            baseTargetUrl
+        } else {
+            "$baseTargetUrl$initialPath"
+        }
+
+        binding.txtCurrentTargetUrl.text = fullUrl
 
         // Update floating pill text
-        val uri = Uri.parse(targetUrl)
+        val uri = Uri.parse(baseTargetUrl)
         val hostDisplay = uri.host ?: "LocalLoop"
-        binding.txtPillHost.text = "$hostDisplay:${uri.port.takeIf { it > 0 } ?: 3000}"
+        val appLabel = if (initialPath.contains("seller")) "Merchant" else "Shopper"
+        binding.txtPillHost.text = "$appLabel ($hostDisplay)"
 
-        binding.webView.loadUrl(targetUrl)
+        binding.webView.loadUrl(fullUrl)
     }
 
     private fun showErrorScreen(failingUrl: String?) {

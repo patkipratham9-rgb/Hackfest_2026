@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <style name="Theme.LocalLoop" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Brand Colors -->
         <item name="colorPrimary">@color/localloop_terracotta</item>
         <item name="colorPrimaryDark">@color/localloop_terracotta_dark</item>
         <item name="colorSecondary">@color/localloop_terracotta</item>
         <item name="android:windowBackground">@color/localloop_cream</item>
-        
+
         <!-- Status Bar & Navigation Bar Colors matching Warm Cream & Terracotta -->
         <item name="android:statusBarColor">@color/localloop_cream</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">@color/localloop_cream</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
+
+    <style name="Theme.Localloop.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.Localloop.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.Localloop.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

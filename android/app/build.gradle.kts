@@ -8,13 +8,31 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.localloop.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    flavorDimensions += "appType"
+
+    productFlavors {
+        create("user") {
+            dimension = "appType"
+            applicationId = "com.localloop.user"
+            versionNameSuffix = "-shopper"
+            manifestPlaceholders["appName"] = "LocalLoop Shopper"
+            manifestPlaceholders["initialPath"] = "/"
+        }
+        create("merchant") {
+            dimension = "appType"
+            applicationId = "com.localloop.merchant"
+            versionNameSuffix = "-partner"
+            manifestPlaceholders["appName"] = "LocalLoop Partner"
+            manifestPlaceholders["initialPath"] = "/seller"
+        }
     }
 
     buildTypes {
@@ -38,6 +56,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 

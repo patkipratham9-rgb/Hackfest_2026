@@ -197,3 +197,44 @@ export interface AIBusinessRecommendation {
   applied?: boolean;
   appliedAt?: string;
 }
+
+// ==========================================
+// USER, ADDRESS, AUTH & APPLICATION PROFILES
+// ==========================================
+
+export type AddressType = "Primary" | "Home" | "Office" | "Others";
+
+export interface UserAddress {
+  id: string;
+  label: AddressType;
+  street: string;
+  landmark?: string;
+  locality: NeighborhoodArea | string;
+  city: string; // "Hubballi-Dharwad"
+  pincode: string;
+  isDefault: boolean;
+}
+
+export type UserRole = "customer" | "seller" | "admin";
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  number: string; // 10-digit phone
+  email?: string; // Optional email field
+  role: UserRole;
+  storeId?: string; // Associated merchant store (if seller)
+  storeName?: string;
+  addresses: UserAddress[];
+  emailPermissionsGranted?: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AuthSession {
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  token?: string;
+  loginMethod?: "phone_otp" | "email_permission" | "guest";
+}
+

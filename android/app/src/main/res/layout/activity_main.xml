@@ -34,44 +34,44 @@
         android:id="@+id/layoutError"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/localloop_cream"
         android:gravity="center"
         android:orientation="vertical"
         android:padding="28dp"
-        android:background="@color/localloop_cream"
         android:visibility="gone">
 
         <TextView
             android:id="@+id/txtErrorTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:gravity="center"
             android:text="@string/connection_error_title"
             android:textColor="@color/localloop_terracotta"
             android:textSize="20sp"
-            android:textStyle="bold"
-            android:gravity="center" />
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/txtErrorMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
             android:text="@string/connection_error_message"
             android:textColor="@color/localloop_muted"
-            android:textSize="14sp"
-            android:lineSpacingExtra="4dp"
-            android:gravity="center" />
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/txtCurrentTargetUrl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:background="@drawable/bg_pill_button"
+            android:fontFamily="monospace"
             android:paddingHorizontal="12dp"
             android:paddingVertical="6dp"
-            android:background="@drawable/bg_pill_button"
             android:textColor="@color/localloop_charcoal"
-            android:textSize="12sp"
-            android:fontFamily="monospace" />
+            android:textSize="12sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRetry"
@@ -92,8 +92,8 @@
             android:layout_marginTop="12dp"
             android:text="@string/change_server_button"
             android:textColor="@color/localloop_terracotta"
-            app:strokeColor="@color/localloop_terracotta"
-            app:cornerRadius="24dp" />
+            app:cornerRadius="24dp"
+            app:strokeColor="@color/localloop_terracotta" />
 
     </LinearLayout>
 
@@ -106,16 +106,16 @@
         android:layout_margin="16dp"
         android:background="@drawable/bg_pill_button"
         android:clickable="true"
+        android:elevation="4dp"
         android:focusable="true"
         android:gravity="center_vertical"
-        android:elevation="4dp"
         android:orientation="horizontal">
 
         <ImageView
             android:layout_width="16dp"
             android:layout_height="16dp"
-            android:src="@drawable/ic_server_gear"
-            android:contentDescription="@null" />
+            android:contentDescription="@null"
+            android:src="@drawable/ic_server_gear" />
 
         <TextView
             android:id="@+id/txtPillHost"
@@ -128,5 +128,19 @@
             android:textStyle="bold" />
 
     </LinearLayout>
+
+    <androidx.drawerlayout.widget.DrawerLayout
+        android:id="@+id/drawer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true">
+
+        <include
+            android:id="@+id/app_bar_main"
+            layout="@layout/app_bar_main"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </androidx.drawerlayout.widget.DrawerLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

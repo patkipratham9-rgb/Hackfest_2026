@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "LocalLoop"
 include(":app")
+include(":app")
+ 

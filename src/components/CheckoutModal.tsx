@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   X,
   Clock,
@@ -17,6 +18,7 @@ import {
   CreditCard,
   User,
   Phone,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -83,9 +85,14 @@ export function CheckoutModal() {
     createOrder,
     cart,
   } = useCart();
+  const { user } = useAuth();
 
-  const [customerName, setCustomerName] = useState("Pratham Patki");
-  const [customerPhone, setCustomerPhone] = useState("+91 98451 22334");
+  const [customerName, setCustomerName] = useState(user?.name || "Pratham Patki");
+  const [customerPhone, setCustomerPhone] = useState(
+    user?.number ? `+91 ${user.number}` : "+91 98451 22334"
+  );
+  const defaultAddr = user?.addresses.find((a) => a.isDefault) || user?.addresses[0];
+  const [selectedAddressId, setSelectedAddressId] = useState<string>(defaultAddr?.id || "");
   const [selectedSlotId, setSelectedSlotId] = useState<string>("quick-20");
   const [nameError, setNameError] = useState<string>("");
   const [phoneError, setPhoneError] = useState<string>("");
@@ -388,6 +395,38 @@ export function CheckoutModal() {
                 </motion.div>
               )}
             </div>
+
+            {/* Saved Customer Address Selection (Primary, Home, Office, Others) */}
+            {user && user.addresses && user.addresses.length > 0 && (
+              <div className="space-y-1.5 p-3 rounded-2xl bg-cream-100/80 border border-cream-300">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-forest-900 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-terracotta-600" />
+                    <span>Selected Profile Address</span>
+                  </span>
+                  <span className="text-[10px] text-forest-500 font-medium">
+                    Hubballi Delivery/Pickup Reference
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {user.addresses.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setSelectedAddressId(a.id)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 ${
+                        selectedAddressId === a.id
+                          ? "bg-terracotta-600 text-cream-50 border-terracotta-600 shadow-xs"
+                          : "bg-white text-forest-700 border-cream-300 hover:bg-cream-100"
+                      }`}
+                    >
+                      <span>{a.label}</span>
+                      <span className="text-[10px] opacity-80">({a.locality})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Customer Contact */}
             <div className="space-y-3">

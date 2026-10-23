@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { MapPin, ShoppingBag, ChevronDown, Sparkles, User, Search } from "lucide-react";
+import { MapPin, ShoppingBag, ChevronDown, Sparkles, User, Search, Store } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { NeighborhoodArea } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -18,6 +19,7 @@ const AREAS: NeighborhoodArea[] = [
 
 export function Navbar() {
   const { totalItems, setIsCartOpen, activeArea, setActiveArea, setIsProfileOpen, isLoaded } = useCart();
+  const { user, activeAppMode, switchRole } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
@@ -118,6 +120,32 @@ export function Navbar() {
           >
             <Search className="w-4 h-4 text-forest-700" />
           </motion.button>
+
+          {/* App Mode Switcher Pill */}
+          <Link
+            href={activeAppMode === "shopper" ? "/seller" : "/"}
+            onClick={() => {
+              if (activeAppMode === "shopper") {
+                switchRole("seller");
+              } else {
+                switchRole("customer");
+              }
+            }}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 border border-cream-300 text-xs font-bold transition-all shadow-xs"
+            title={activeAppMode === "shopper" ? "Open Merchant Application" : "Open Shopper Application"}
+          >
+            {activeAppMode === "shopper" ? (
+              <>
+                <Store className="w-3.5 h-3.5 text-terracotta-600" />
+                <span className="text-[11px]">Merchant App</span>
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-3.5 h-3.5 text-forest-700" />
+                <span className="text-[11px]">Shopper App</span>
+              </>
+            )}
+          </Link>
 
           {/* User Profile Button */}
           <motion.button

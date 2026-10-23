@@ -2,7 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   X,
   User,
@@ -12,16 +14,38 @@ import {
   Mail,
   Code2,
   Sparkles,
-  ExternalLink,
   ChevronRight,
-  Bell,
-  Heart,
   Store,
+  ShoppingBag,
+  LogOut,
+  LogIn,
+  Home,
+  Briefcase,
+  Building,
+  Tag,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AddressType } from "@/types";
 
 export function ProfilePanel() {
-  const { isProfileOpen, setIsProfileOpen, activeArea, setActiveArea, orders } = useCart();
+  const router = useRouter();
+  const { isProfileOpen, setIsProfileOpen, activeArea, orders } = useCart();
+  const { user, isAuthenticated, logout, activeAppMode, switchRole, setActiveAppMode } = useAuth();
+
+  const primaryAddress = user?.addresses.find((a) => a.isDefault) || user?.addresses[0];
+
+  const getLabelIcon = (label: AddressType) => {
+    switch (label) {
+      case "Home":
+        return <Home className="w-3 h-3 text-blue-600" />;
+      case "Office":
+        return <Briefcase className="w-3 h-3 text-purple-600" />;
+      case "Primary":
+        return <Tag className="w-3 h-3 text-amber-600" />;
+      default:
+        return <Building className="w-3 h-3 text-forest-600" />;
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -49,11 +73,11 @@ export function ProfilePanel() {
               <div className="p-5 border-b border-cream-300 flex items-center justify-between bg-cream-100">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-2xl bg-forest-800 text-cream-100 flex items-center justify-center font-serif font-bold text-base shadow-xs">
-                    PP
+                    {user?.name ? user.name.slice(0, 2).toUpperCase() : "LL"}
                   </div>
                   <div>
                     <h2 className="font-serif font-bold text-lg text-forest-950">
-                      Profile & Application
+                      User Profile &amp; Apps
                     </h2>
                     <p className="text-xs text-forest-600">LocalLoop Hubballi</p>
                   </div>
@@ -71,36 +95,154 @@ export function ProfilePanel() {
 
               {/* Body Content */}
               <div className="p-5 space-y-5 flex-1">
-                {/* User Profile Card */}
-                <div className="p-4 rounded-2xl bg-cream-100 border border-cream-300 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-forest-500 uppercase tracking-wider">
-                      Shopper Profile
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-forest-800 text-cream-100 text-[10px] font-bold">
-                      Verified Buyer
+                {/* App Switcher Banner */}
+                <div className="p-3.5 rounded-2xl bg-cream-200/80 border border-cream-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-forest-950">
+                    {activeAppMode === "merchant" ? (
+                      <Store className="w-4 h-4 text-terracotta-600" />
+                    ) : (
+                      <ShoppingBag className="w-4 h-4 text-forest-700" />
+                    )}
+                    <span>
+                      {activeAppMode === "merchant"
+                        ? "Merchant Partner Mode"
+                        : "Shopper Consumer Mode"}
                     </span>
                   </div>
 
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center gap-2.5 text-forest-900 font-bold text-sm">
-                      <User className="w-4 h-4 text-terracotta-500" />
-                      <span>Pratham Patki</span>
+                  {activeAppMode === "shopper" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        switchRole("seller");
+                        setIsProfileOpen(false);
+                        router.push("/seller");
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 text-[11px] font-bold"
+                    >
+                      Go to Merchant App
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        switchRole("customer");
+                        setIsProfileOpen(false);
+                        router.push("/");
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-forest-800 hover:bg-forest-900 text-cream-50 text-[11px] font-bold"
+                    >
+                      Go to Shopper App
+                    </button>
+                  )}
+                </div>
+
+                {/* User Information Card */}
+                {user ? (
+                  <div className="p-4 rounded-2xl bg-cream-100 border border-cream-300 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-forest-500 uppercase tracking-wider">
+                        {user.role === "seller" ? "Merchant Profile" : "Shopper Profile"}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-forest-800 text-cream-100 text-[10px] font-bold">
+                        Verified
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2.5 text-forest-700">
-                      <Smartphone className="w-4 h-4 text-forest-500" />
-                      <span>+91 98451 22334</span>
+
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center gap-2.5 text-forest-900 font-bold text-sm">
+                        <User className="w-4 h-4 text-terracotta-500" />
+                        <span>{user.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5 text-forest-700">
+                        <Smartphone className="w-4 h-4 text-forest-500" />
+                        <span>+91 {user.number}</span>
+                      </div>
+                      {user.email ? (
+                        <div className="flex items-center gap-2.5 text-forest-700">
+                          <Mail className="w-4 h-4 text-forest-500" />
+                          <span>{user.email}</span>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-amber-700 italic pl-6">
+                          Email: None added (Optional)
+                        </div>
+                      )}
+                      {primaryAddress && (
+                        <div className="flex items-center gap-2.5 text-forest-700">
+                          <MapPin className="w-4 h-4 text-terracotta-500" />
+                          <span className="truncate">
+                            {primaryAddress.label}: {primaryAddress.street}, {primaryAddress.locality}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2.5 text-forest-700">
-                      <Mail className="w-4 h-4 text-forest-500" />
-                      <span>pratham.patki@kletech.ac.in</span>
-                    </div>
-                    <div className="flex items-center gap-2.5 text-forest-700">
-                      <MapPin className="w-4 h-4 text-terracotta-500" />
-                      <span>Vidyanagar, Hubballi-Dharwad</span>
+
+                    <div className="pt-2 border-t border-cream-200 flex justify-end">
+                      <Link
+                        href="/account"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="text-xs font-bold text-terracotta-700 hover:text-terracotta-800 flex items-center gap-1"
+                      >
+                        <span>Manage Addresses &amp; Profile</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-5 rounded-2xl bg-cream-100 border border-cream-300 text-center space-y-3">
+                    <p className="text-xs text-forest-700 font-medium">
+                      You are browsing as a guest. Sign in to save addresses and track orders.
+                    </p>
+                    <Link
+                      href="/login"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold text-xs shadow-xs"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>Sign In with Phone (OTP)</span>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Addresses Preview (Primary, Home, Office, Others) */}
+                {user && user.addresses.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-forest-900">
+                        Saved Locations ({user.addresses.length})
+                      </span>
+                      <Link
+                        href="/account"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="text-[11px] font-bold text-terracotta-700 hover:underline"
+                      >
+                        + Add New
+                      </Link>
+                    </div>
+                    <div className="space-y-1.5">
+                      {user.addresses.slice(0, 3).map((a) => (
+                        <div
+                          key={a.id}
+                          className="p-2.5 rounded-xl bg-white border border-cream-300 text-xs flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            {getLabelIcon(a.label)}
+                            <span className="font-bold text-forest-900">{a.label}</span>
+                            <span className="text-forest-600 text-[11px] truncate">
+                              • {a.locality}
+                            </span>
+                          </div>
+                          {a.isDefault && (
+                            <span className="text-[10px] font-bold text-terracotta-700 bg-terracotta-50 px-1.5 py-0.5 rounded-sm">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3">
@@ -122,85 +264,54 @@ export function ProfilePanel() {
                   </div>
                 </div>
 
-                {/* Application Details Card */}
+                {/* Team Info Card */}
                 <div className="p-4 rounded-2xl bg-forest-900 text-cream-100 space-y-3 shadow-warm">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-terracotta-400 animate-pulse" />
+                    <Sparkles className="w-4 h-4 text-terracotta-400" />
                     <h3 className="font-serif font-bold text-sm text-cream-50">
-                      LocalLoop Application Details
+                      LocalLoop • Team Digital Titans
                     </h3>
                   </div>
-
                   <p className="text-xs text-cream-200/90 leading-relaxed">
-                    LocalLoop is a hyper-local digital marketplace connecting neighborhood corner shops in Tier-2 Indian cities with citywide shoppers.
+                    Built for Hubballi-Dharwad. Separate consumer &amp; merchant application modes, verified phone OTP, and address book.
                   </p>
-
-                  <div className="pt-2 border-t border-forest-800 space-y-1.5 text-[11px] text-cream-200">
-                    <div className="flex justify-between">
-                      <span className="text-forest-300">Version:</span>
-                      <span className="font-mono text-cream-50 font-semibold">v0.1.0-beta</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-forest-300">Team:</span>
-                      <span className="text-cream-50 font-semibold">Digital Titans</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-forest-300">Members:</span>
-                      <span className="text-cream-50">Pratham P, Srushti D, Aditya A</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-forest-300">College:</span>
-                      <span className="text-cream-50">KLE Technological University</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-forest-300">Database:</span>
-                      <span className="text-terracotta-400 font-semibold">Supabase PostgreSQL (Live)</span>
-                    </div>
+                  <div className="pt-2 border-t border-forest-800 flex justify-between text-[11px] text-cream-200">
+                    <span>Pratham, Srushti, Aditya</span>
+                    <span>Hackfest 2026</span>
                   </div>
                 </div>
-
-                {/* Seller Portal Link */}
-                <Link
-                  href="/seller"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-forest-800 hover:bg-forest-900 text-cream-100 transition-colors group shadow-warm"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Store className="w-4 h-4 text-terracotta-400 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <span className="text-xs font-bold text-cream-50 block leading-tight">
-                        Seller Studio Portal
-                      </span>
-                      <span className="text-[10px] text-cream-300">
-                        Manage shop counter, live orders & inventory
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-terracotta-400 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-
-                {/* GitHub Repository Link */}
-                <a
-                  href="https://github.com/patkipratham9-rgb/Hackfest_2026.git"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-cream-100 border border-cream-300 hover:border-terracotta-400 transition-colors group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Code2 className="w-4 h-4 text-forest-700 group-hover:text-terracotta-600" />
-                    <span className="text-xs font-bold text-forest-900 group-hover:text-terracotta-700">
-                      GitHub Repository
-                    </span>
-                  </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-forest-400 group-hover:text-terracotta-600" />
-                </a>
               </div>
 
               {/* Footer */}
-              <div className="p-4 bg-cream-100 border-t border-cream-300 text-center">
-                <span className="text-[11px] text-forest-500 font-medium">
-                  LocalLoop • Think local. Shop smarter. Grow together.
-                </span>
+              <div className="p-5 border-t border-cream-300 bg-cream-100 flex items-center justify-between">
+                {isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setIsProfileOpen(false);
+                      router.push("/login");
+                    }}
+                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1.5"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="text-xs font-bold text-forest-800 hover:text-terracotta-600 flex items-center gap-1.5"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign In</span>
+                  </Link>
+                )}
+
+                <div className="flex items-center gap-1 text-[11px] text-forest-500 font-mono">
+                  <ShieldCheck className="w-3.5 h-3.5 text-forest-600" />
+                  <span>Secure &amp; Safe</span>
+                </div>
               </div>
             </motion.div>
           </div>
