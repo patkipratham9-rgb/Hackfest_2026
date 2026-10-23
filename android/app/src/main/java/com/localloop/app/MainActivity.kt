@@ -127,7 +127,9 @@ class MainActivity : AppCompatActivity() {
         webSettings.setSupportZoom(false)
 
         // Security Hardening: Disable dangerous file access from file URLs
+        @Suppress("DEPRECATION")
         webSettings.allowFileAccessFromFileURLs = false
+        @Suppress("DEPRECATION")
         webSettings.allowUniversalAccessFromFileURLs = false
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -156,6 +158,8 @@ class MainActivity : AppCompatActivity() {
                 binding.swipeRefresh.isRefreshing = false
             }
 
+            @Deprecated("Deprecated in Android API 23")
+            @Suppress("DEPRECATION")
             override fun onReceivedError(
                 view: WebView?,
                 errorCode: Int,

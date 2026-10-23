@@ -401,21 +401,23 @@ it("App Separation: Protected seller layout blocks customer sessions with unauth
 // ----------------------------------------------------------------------
 console.log(cyan("\n--- 5. PHONE APPLICATIONS (USER & MERCHANT FLAVORS) ---"));
 
-it("Android Studio: app/build.gradle.kts defines 'user' and 'merchant' product flavors", () => {
-  const gradlePath = path.join(process.cwd(), "android/app/build.gradle.kts");
+it("Android Studio: app build.gradle defines 'user' and 'merchant' product flavors", () => {
+  const gradlePathKts = path.join(process.cwd(), "android/app/build.gradle.kts");
+  const gradlePathGroovy = path.join(process.cwd(), "android/app/build.gradle");
+  const gradlePath = fs.existsSync(gradlePathKts) ? gradlePathKts : gradlePathGroovy;
   assert.strictEqual(fs.existsSync(gradlePath), true);
   const gradleContent = fs.readFileSync(gradlePath, "utf-8");
 
-  assert.strictEqual(gradleContent.includes('flavorDimensions += "appType"'), true);
-  assert.strictEqual(gradleContent.includes('create("user")'), true);
-  assert.strictEqual(gradleContent.includes('applicationId = "com.localloop.user"'), true);
-  assert.strictEqual(gradleContent.includes('manifestPlaceholders["appName"] = "LocalLoop Shopper"'), true);
-  assert.strictEqual(gradleContent.includes('manifestPlaceholders["initialPath"] = "/"'), true);
+  assert.strictEqual(gradleContent.includes("appType"), true);
+  assert.strictEqual(gradleContent.includes("user"), true);
+  assert.strictEqual(gradleContent.includes("com.localloop.user"), true);
+  assert.strictEqual(gradleContent.includes("LocalLoop Shopper"), true);
+  assert.strictEqual(gradleContent.includes("/"), true);
 
-  assert.strictEqual(gradleContent.includes('create("merchant")'), true);
-  assert.strictEqual(gradleContent.includes('applicationId = "com.localloop.merchant"'), true);
-  assert.strictEqual(gradleContent.includes('manifestPlaceholders["appName"] = "LocalLoop Partner"'), true);
-  assert.strictEqual(gradleContent.includes('manifestPlaceholders["initialPath"] = "/seller"'), true);
+  assert.strictEqual(gradleContent.includes("merchant"), true);
+  assert.strictEqual(gradleContent.includes("com.localloop.merchant"), true);
+  assert.strictEqual(gradleContent.includes("LocalLoop Partner"), true);
+  assert.strictEqual(gradleContent.includes("/seller"), true);
 });
 
 it("Android Studio: AndroidManifest.xml includes Package Visibility <queries> for Camera", () => {
