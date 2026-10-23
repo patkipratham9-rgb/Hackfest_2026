@@ -13,7 +13,7 @@ import { Sparkles, MapPin, Store as StoreIcon, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
-  const { activeArea, addToCart } = useCart();
+  const { activeArea, setActiveArea, addToCart } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("All");
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
@@ -262,27 +262,37 @@ export default function HomePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950">
-              Corner Shops Nearby
+              {activeArea === "All" ? "Corner Shops Nearby" : `Corner Shops in ${activeArea}`}
             </h2>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cream-300 text-forest-800">
+            <span
+              data-testid="store-count-badge"
+              className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cream-300 text-forest-800"
+            >
               {filteredStores.length}
             </span>
           </div>
           <span className="text-xs font-medium text-forest-600 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-terracotta-500" />
-            <span>Within 3 km radius</span>
+            <span>{activeArea === "All" ? "Within Hubballi" : `In ${activeArea}`}</span>
           </span>
         </div>
 
         {filteredStores.length === 0 ? (
-          <div className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300">
+          <div className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-2">
             <p className="text-sm text-forest-600 font-medium">
-              No corner shops match your filter in this neighborhood.
+              No corner shops found in {activeArea} matching this category.
             </p>
+            <button
+              onClick={() => setActiveArea("All")}
+              className="px-4 py-2 bg-terracotta-500 text-white text-xs font-bold rounded-xl shadow-warm hover:bg-terracotta-600 transition-colors"
+            >
+              Show All Hubballi Stores
+            </button>
           </div>
         ) : (
           <motion.div
             layout
+            data-testid="stores-grid"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
           >
             {filteredStores.map((store) => (

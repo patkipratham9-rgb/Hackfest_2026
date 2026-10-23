@@ -17,6 +17,9 @@ export function StoreCard({ store, onSelect, isSelected }: StoreCardProps) {
   return (
     <motion.div
       layout
+      data-testid="store-card"
+      data-store-id={store.id}
+      data-store-area={store.area}
       whileHover={{ y: -5, scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
@@ -80,7 +83,8 @@ export function StoreCard({ store, onSelect, isSelected }: StoreCardProps) {
             )}
           </div>
           <p className="text-xs text-cream-200/90 line-clamp-1 mt-0.5">
-            {store.lane} • {store.area}
+            <span>{store.lane} • </span>
+            <span data-testid="store-area-tag" className="font-semibold text-cream-100">{store.area}</span>
           </p>
         </div>
       </div>
