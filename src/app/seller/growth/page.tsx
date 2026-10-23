@@ -429,6 +429,12 @@ export default function SellerGrowthPage() {
 
   return (
     <div className="space-y-6">
+      <title>Growth Coach &amp; Traffic Analytics • LocalLoop Partner</title>
+      <meta
+        name="description"
+        content="AI business recommendations, conversion funnels, and Hubballi neighborhood footfall analytics."
+      />
+
       <div className="pb-3 border-b border-cream-300">
         <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600">
           AI Merchant Intelligence

@@ -299,6 +299,12 @@ export default function StoreProfilePage() {
 
   return (
     <div className="space-y-6">
+      <title>Store Presence &amp; Hours • LocalLoop Partner</title>
+      <meta
+        name="description"
+        content="Configure store banner branding, Hubballi lane address, counter phone, and weekly operating hours."
+      />
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>

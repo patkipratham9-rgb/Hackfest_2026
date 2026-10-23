@@ -259,6 +259,12 @@ function OrderTrackingContent({
       transition={{ duration: 0.3 }}
       className="max-w-2xl mx-auto space-y-6"
     >
+      <title>{`Order ${order.id} • Live Tracking • LocalLoop Hubballi`}</title>
+      <meta
+        name="description"
+        content={`Track real-time counter fulfillment progress for order ${order.id} from ${order.storeName}.`}
+      />
+
       {/* Top back navigation */}
       <div className="flex items-center justify-between">
         <Link

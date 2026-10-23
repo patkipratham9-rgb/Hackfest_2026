@@ -452,7 +452,7 @@ export function CheckoutModal() {
                         ? "border-rose-400 focus:ring-2 focus:ring-rose-300"
                         : "border-cream-300 focus:ring-2 focus:ring-terracotta-400"
                     }`}
-                    placeholder="Your name"
+                    placeholder="e.g. Pratham Patki"
                   />
                   {nameError && (
                     <motion.p
@@ -484,7 +484,7 @@ export function CheckoutModal() {
                         ? "border-rose-400 focus:ring-2 focus:ring-rose-300"
                         : "border-cream-300 focus:ring-2 focus:ring-terracotta-400"
                     }`}
-                    placeholder="+91 Phone"
+                    placeholder="e.g. +91 98451 22334"
                   />
                   {phoneError && (
                     <motion.p

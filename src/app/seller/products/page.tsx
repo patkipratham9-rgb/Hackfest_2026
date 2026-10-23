@@ -362,6 +362,12 @@ export default function SellerProductsPage() {
 
   return (
     <div className="space-y-6">
+      <title>Product Catalog &amp; AI Helper • LocalLoop Partner</title>
+      <meta
+        name="description"
+        content="Manage products, atomic stock counts, out-of-stock badges, and AI-assisted catalog autofill."
+      />
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>

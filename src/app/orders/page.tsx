@@ -32,6 +32,12 @@ export default function OrdersAgainPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <title>Past Orders &amp; Instant Reorder • LocalLoop Hubballi</title>
+      <meta
+        name="description"
+        content="Repeat your favorite neighborhood essentials in one tap, or track live pickup progress from local shops in Hubballi."
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>

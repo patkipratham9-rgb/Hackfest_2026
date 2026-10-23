@@ -35,6 +35,12 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <title>Merchant Cockpit • LocalLoop Partner</title>
+      <meta
+        name="description"
+        content="Manage your store fulfillment pipeline, active stock inventory, and AI merchant recommendations."
+      />
+
       {/* Welcome Banner */}
       <div className="p-6 rounded-3xl bg-forest-800 text-cream-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-warm">
         <div className="space-y-1">

@@ -527,6 +527,12 @@ export default function SellerOrdersPage() {
 
   return (
     <div className="space-y-6">
+      <title>Fulfillment Kanban Board • LocalLoop Partner</title>
+      <meta
+        name="description"
+        content="Track and advance store orders across Placed, Packed, Ready, and Completed with counter PIN verification."
+      />
+
       {/* Header & Pipeline Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-cream-300">
         <div>

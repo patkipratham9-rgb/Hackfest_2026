@@ -9,6 +9,7 @@ import {
   CheckCircle,
   ArrowRight,
   Clock,
+  Phone,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -165,14 +166,28 @@ export function StoreCard({ store, onSelect, isSelected }: StoreCardProps) {
           </div>
         </div>
 
-        {/* Browse CTA */}
-        <motion.div
-          className="text-xs font-bold text-terracotta-600 flex items-center gap-1"
-          animate={{ x: isSelected ? 3 : 0 }}
-        >
-          <span>{isSelected ? "Browsing" : "Browse"}</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-        </motion.div>
+        {/* Actions: Direct Call & Browse CTA */}
+        <div className="flex items-center gap-2">
+          {store.phone && (
+            <a
+              href={`tel:${store.phone.replace(/\s+/g, "")}`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-700 hover:text-terracotta-600 transition-colors"
+              title={`Call store at ${store.phone}`}
+              aria-label={`Call ${store.name}`}
+            >
+              <Phone className="w-3.5 h-3.5" />
+            </a>
+          )}
+
+          <motion.div
+            className="text-xs font-bold text-terracotta-600 flex items-center gap-1"
+            animate={{ x: isSelected ? 3 : 0 }}
+          >
+            <span>{isSelected ? "Browsing" : "Browse"}</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   );

@@ -173,6 +173,12 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto py-6 px-4 space-y-6">
+      <title>Sign In (Phone OTP &amp; Email) • LocalLoop Hubballi</title>
+      <meta
+        name="description"
+        content="Sign in to LocalLoop with Phone OTP verification or email permissions for shoppers and merchants."
+      />
+
       {/* Brand Header */}
       <div className="text-center space-y-2">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-terracotta-600 text-cream-50 shadow-md">

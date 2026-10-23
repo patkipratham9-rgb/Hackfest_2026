@@ -95,6 +95,12 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      <title>Aisles &amp; Categories • LocalLoop Hubballi</title>
+      <meta
+        name="description"
+        content="Browse authentic goods across Handcrafted Ceramics, Organic Pantry, Byadagi Spices, and Ilkal Weaves in Hubballi."
+      />
+
       {/* Categories Header */}
       <div className="space-y-1.5 pb-2 border-b border-cream-300">
         <p

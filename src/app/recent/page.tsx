@@ -12,6 +12,12 @@ export default function RecentExploredPage() {
 
   return (
     <div className="space-y-6">
+      <title>Recent Explored • LocalLoop Hubballi</title>
+      <meta
+        name="description"
+        content="Pick up right where you left off — items and stores you recently viewed across Hubballi."
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>

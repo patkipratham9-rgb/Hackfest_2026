@@ -13,6 +13,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { cart, addToCart, updateQuantity, isLoaded } = useCart();
   const [isSaved, setIsSaved] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
   const cartItem = cart.find((i) => i.product.id === product.id);
   const qtyInCart = cartItem?.quantity || 0;
   const isOutOfStock = product.stock === 0;
@@ -197,12 +198,27 @@ export function ProductCard({ product }: ProductCardProps) {
             onClick={(e) => {
               e.stopPropagation();
               addToCart(product);
+              setJustAdded(true);
+              setTimeout(() => setJustAdded(false), 1200);
             }}
-            className="relative overflow-hidden flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-warm bg-terracotta-500 hover:bg-terracotta-600 text-white"
+            className={`relative overflow-hidden flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-warm ${
+              justAdded
+                ? "bg-forest-800 text-cream-50"
+                : "bg-terracotta-500 hover:bg-terracotta-600 text-white"
+            }`}
             aria-label={`Add ${product.name} to cart`}
           >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Add</span>
+            {justAdded ? (
+              <>
+                <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-400" />
+                <span>Added!</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Add</span>
+              </>
+            )}
           </motion.button>
         )}
       </div>

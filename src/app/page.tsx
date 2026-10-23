@@ -81,6 +81,12 @@ export default function HomePage() {
       transition={{ duration: 0.3 }}
       className="space-y-8"
     >
+      <title>LocalLoop • Hubballi's Hyperlocal Digital Marketplace</title>
+      <meta
+        name="description"
+        content="Discover, compare, and order authentic goods from neighborhood corner shops in Hubballi-Dharwad with express counter pickup."
+      />
+
       {/* Hero Banner Section */}
       <motion.section
         data-testid="home-hero-banner"

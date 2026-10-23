@@ -192,6 +192,12 @@ export default function AccountPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-12">
+      <title>Buyer Profile &amp; Address Book • LocalLoop Hubballi</title>
+      <meta
+        name="description"
+        content="Manage your full name, phone number, and address book with Primary, Home, Office, and Other tags."
+      />
+
       {/* Top Bar Navigation */}
       <div className="flex items-center justify-between">
         <h1 className="font-serif font-extrabold text-2xl text-forest-950">
@@ -279,15 +285,27 @@ export default function AccountPage() {
                   {user.role}
                 </span>
               </div>
-              <p className="text-xs text-forest-600 mt-0.5 flex items-center gap-1">
+              <div className="text-xs text-forest-600 mt-0.5 flex items-center gap-1">
                 <Smartphone className="w-3 h-3 text-forest-500" />
-                <span>+91 {user.number}</span>
-              </p>
+                <a
+                  href={`tel:+91${user.number}`}
+                  className="hover:text-terracotta-600 hover:underline font-semibold"
+                  title="Call user number"
+                >
+                  +91 {user.number}
+                </a>
+              </div>
               {user.email ? (
-                <p className="text-xs text-forest-600 mt-0.5 flex items-center gap-1">
+                <div className="text-xs text-forest-600 mt-0.5 flex items-center gap-1">
                   <Mail className="w-3 h-3 text-forest-500" />
-                  <span>{user.email}</span>
-                </p>
+                  <a
+                    href={`mailto:${user.email}`}
+                    className="hover:text-terracotta-600 hover:underline font-semibold"
+                    title="Send email"
+                  >
+                    {user.email}
+                  </a>
+                </div>
               ) : (
                 <p className="text-xs text-amber-700 mt-0.5 italic">
                   Email not set (Optional)

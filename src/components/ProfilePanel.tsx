@@ -156,12 +156,24 @@ export function ProfilePanel() {
                       </div>
                       <div className="flex items-center gap-2.5 text-forest-700">
                         <Smartphone className="w-4 h-4 text-forest-500" />
-                        <span>+91 {user.number}</span>
+                        <a
+                          href={`tel:+91${user.number}`}
+                          className="hover:text-terracotta-600 hover:underline font-semibold"
+                          title="Call user number"
+                        >
+                          +91 {user.number}
+                        </a>
                       </div>
                       {user.email ? (
                         <div className="flex items-center gap-2.5 text-forest-700">
                           <Mail className="w-4 h-4 text-forest-500" />
-                          <span>{user.email}</span>
+                          <a
+                            href={`mailto:${user.email}`}
+                            className="hover:text-terracotta-600 hover:underline font-semibold"
+                            title="Send email"
+                          >
+                            {user.email}
+                          </a>
                         </div>
                       ) : (
                         <div className="text-[11px] text-amber-700 italic pl-6">
