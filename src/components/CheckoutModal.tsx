@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import {
   X,
@@ -12,6 +13,10 @@ import {
   Sparkles,
   AlertCircle,
   Ban,
+  ShoppingBag,
+  CreditCard,
+  User,
+  Phone,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -82,6 +87,8 @@ export function CheckoutModal() {
   const [customerName, setCustomerName] = useState("Pratham Patki");
   const [customerPhone, setCustomerPhone] = useState("+91 98451 22334");
   const [selectedSlotId, setSelectedSlotId] = useState<string>("quick-20");
+  const [nameError, setNameError] = useState<string>("");
+  const [phoneError, setPhoneError] = useState<string>("");
   const [slotError, setSlotError] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "counter">("upi");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,23 +107,51 @@ export function CheckoutModal() {
     setSlotError("");
   };
 
+  const validate = () => {
+    let isValid = true;
+
+    // Name validation
+    if (!customerName.trim()) {
+      setNameError("Please enter your full name for store counter identification.");
+      isValid = false;
+    } else {
+      setNameError("");
+    }
+
+    // Phone validation
+    const digitsOnly = customerPhone.replace(/\D/g, "");
+    if (digitsOnly.length < 10) {
+      setPhoneError("Please enter a valid 10-digit mobile number for pickup SMS.");
+      isValid = false;
+    } else {
+      setPhoneError("");
+    }
+
+    // Slot validation
+    if (!selectedSlot || !selectedSlot.isAvailable) {
+      setSlotError("Please choose an available pickup window before proceeding.");
+      isValid = false;
+    } else {
+      setSlotError("");
+    }
+
+    return isValid;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Checkpoint 3.4: Validate that an available slot is selected
-    if (!selectedSlot || !selectedSlot.isAvailable) {
-      setSlotError("Please choose an available pickup window before proceeding.");
+    if (!validate()) {
       return;
     }
 
-    setSlotError("");
     setIsSubmitting(true);
 
     setTimeout(() => {
       const order = createOrder({
-        customerName,
-        customerPhone,
-        pickupTime: selectedSlot.time,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        pickupTime: selectedSlot!.time,
         paymentMethod,
       });
 
@@ -132,7 +167,7 @@ export function CheckoutModal() {
     <AnimatePresence>
       <div
         data-testid="checkout-modal"
-        className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4"
       >
         {/* Backdrop */}
         <motion.div
@@ -149,10 +184,10 @@ export function CheckoutModal() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden z-10 my-8"
+          className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden z-10 my-4 sm:my-8"
         >
           {/* Header */}
-          <div className="p-5 bg-cream-100 border-b border-cream-300 flex items-center justify-between">
+          <div className="p-4 sm:p-5 bg-cream-100 border-b border-cream-300 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-terracotta-500 text-white shadow-xs">
                 <Store className="w-5 h-5" />
@@ -176,7 +211,92 @@ export function CheckoutModal() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 overflow-y-auto">
+            {/* Checkpoint 3.5: Order Summary Section */}
+            <div
+              data-testid="checkout-order-summary"
+              className="p-4 rounded-2xl bg-cream-100/90 border border-cream-300 space-y-3"
+            >
+              <div className="flex items-center justify-between border-b border-cream-200 pb-2">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-terracotta-600" />
+                  <span className="font-serif font-bold text-sm text-forest-950">
+                    Order Summary
+                  </span>
+                </div>
+                <span className="text-xs font-semibold text-forest-600 bg-cream-200 px-2 py-0.5 rounded-full">
+                  {cart.length} {cart.length === 1 ? "item" : "items"}
+                </span>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                {cart.map((item) => (
+                  <div
+                    key={item.product.id}
+                    className="flex items-center justify-between gap-3 text-xs bg-cream-50 p-2.5 rounded-xl border border-cream-200"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-cream-300">
+                        {item.product.imageUrl ? (
+                          <Image
+                            src={item.product.imageUrl}
+                            alt={item.product.name}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-forest-400">
+                            <Store className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-forest-950 truncate">
+                          {item.product.name}
+                        </p>
+                        <p className="text-[11px] text-forest-500 truncate">
+                          {item.product.storeName}
+                        </p>
+                        <p className="text-[11px] text-terracotta-600 font-medium">
+                          {item.quantity} × ₹{item.product.price}/{item.product.unit}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-bold text-forest-950 text-xs">
+                        ₹{item.product.price * item.quantity}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="pt-2 border-t border-cream-200 space-y-1 text-xs">
+                <div className="flex justify-between text-forest-700">
+                  <span>Cart Subtotal</span>
+                  <span className="font-medium">₹{subtotal}</span>
+                </div>
+                <div className="flex justify-between text-forest-700">
+                  <span className="flex items-center gap-1">
+                    <span>Local Platform Fee</span>
+                    <span className="text-[10px] bg-forest-100 text-forest-800 px-1.5 py-0.2 rounded font-semibold">
+                      Fair Share
+                    </span>
+                  </span>
+                  <span className="font-medium">₹{platformFee}</span>
+                </div>
+                <div className="flex justify-between font-bold text-forest-950 pt-1.5 border-t border-cream-300 text-sm">
+                  <span>Total Due</span>
+                  <span className="font-serif text-terracotta-700 text-base font-bold">
+                    ₹{totalAmount}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Pickup Time Selector */}
             <div data-testid="pickup-time-selector" className="space-y-2">
               <div className="flex items-center justify-between">
@@ -276,40 +396,77 @@ export function CheckoutModal() {
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <span className="text-[11px] font-medium text-forest-600 mb-1 block">
-                    Full Name
+                  <span className="text-[11px] font-medium text-forest-600 mb-1 flex items-center gap-1">
+                    <User className="w-3 h-3 text-forest-500" />
+                    <span>Full Name</span>
                   </span>
                   <input
                     type="text"
-                    required
                     data-testid="customer-name-input"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:ring-2 focus:ring-terracotta-400 focus:outline-none"
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      if (nameError) setNameError("");
+                    }}
+                    className={`w-full px-3 py-2 bg-cream-100 border rounded-xl text-xs text-forest-950 font-medium focus:outline-none transition-colors ${
+                      nameError
+                        ? "border-rose-400 focus:ring-2 focus:ring-rose-300"
+                        : "border-cream-300 focus:ring-2 focus:ring-terracotta-400"
+                    }`}
                     placeholder="Your name"
                   />
+                  {nameError && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -2 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      data-testid="name-error"
+                      className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1"
+                    >
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{nameError}</span>
+                    </motion.p>
+                  )}
                 </div>
                 <div>
-                  <span className="text-[11px] font-medium text-forest-600 mb-1 block">
-                    Phone (for pickup SMS token)
+                  <span className="text-[11px] font-medium text-forest-600 mb-1 flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-forest-500" />
+                    <span>Phone (for pickup SMS token)</span>
                   </span>
                   <input
                     type="tel"
-                    required
                     data-testid="customer-phone-input"
                     value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:ring-2 focus:ring-terracotta-400 focus:outline-none"
+                    onChange={(e) => {
+                      setCustomerPhone(e.target.value);
+                      if (phoneError) setPhoneError("");
+                    }}
+                    className={`w-full px-3 py-2 bg-cream-100 border rounded-xl text-xs text-forest-950 font-medium focus:outline-none transition-colors ${
+                      phoneError
+                        ? "border-rose-400 focus:ring-2 focus:ring-rose-300"
+                        : "border-cream-300 focus:ring-2 focus:ring-terracotta-400"
+                    }`}
                     placeholder="+91 Phone"
                   />
+                  {phoneError && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -2 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      data-testid="phone-error"
+                      className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1"
+                    >
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{phoneError}</span>
+                    </motion.p>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Payment Method Selector */}
             <div>
-              <label className="text-xs font-bold text-forest-900 uppercase tracking-wider mb-2 block">
-                Payment Option
+              <label className="text-xs font-bold text-forest-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 text-terracotta-500" />
+                <span>Payment Method</span>
               </label>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
@@ -319,7 +476,7 @@ export function CheckoutModal() {
                   className={`p-3 rounded-2xl border text-left transition-all ${
                     paymentMethod === "upi"
                       ? "bg-terracotta-50 border-terracotta-500 ring-2 ring-terracotta-400/30"
-                      : "bg-cream-100 border-cream-300 hover:border-terracotta-300"
+                      : "bg-cream-100 border-cream-300 hover:border-terracotta-300 cursor-pointer"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -343,7 +500,7 @@ export function CheckoutModal() {
                   className={`p-3 rounded-2xl border text-left transition-all ${
                     paymentMethod === "counter"
                       ? "bg-forest-50 border-forest-600 ring-2 ring-forest-500/30"
-                      : "bg-cream-100 border-cream-300 hover:border-forest-300"
+                      : "bg-cream-100 border-cream-300 hover:border-forest-300 cursor-pointer"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -362,47 +519,27 @@ export function CheckoutModal() {
               </div>
             </div>
 
-            {/* Summary Box */}
-            <div className="p-3 bg-cream-200/70 rounded-2xl border border-cream-300 space-y-1 text-xs">
-              <div className="flex justify-between text-forest-700">
-                <span>Subtotal ({cart.length} items)</span>
-                <span>₹{subtotal}</span>
-              </div>
-              <div className="flex justify-between text-forest-700">
-                <span>Platform fair fee</span>
-                <span>₹{platformFee}</span>
-              </div>
-              <div className="flex justify-between font-bold text-forest-950 pt-1 border-t border-cream-300 text-sm">
-                <span>Total to Pay</span>
-                <span className="font-serif text-terracotta-700 text-base">
-                  ₹{totalAmount}
-                </span>
-              </div>
-            </div>
-
             {/* Submit Action */}
-            <button
-              type="submit"
-              data-testid="confirm-order-button"
-              disabled={isSubmitting || !isValidSlotSelected}
-              className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all ${
-                !isValidSlotSelected
-                  ? "bg-cream-300 text-forest-500 cursor-not-allowed"
-                  : "bg-forest-700 hover:bg-forest-800 text-cream-100"
-              }`}
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Confirming with Store Counter...</span>
-                </div>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-terracotta-400" />
-                  <span>Confirm Pickup & Generate Token (₹{totalAmount})</span>
-                </>
-              )}
-            </button>
+            <div className="pt-2">
+              <button
+                type="submit"
+                data-testid="confirm-order-button"
+                disabled={isSubmitting}
+                className="w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all bg-forest-700 hover:bg-forest-800 text-cream-100 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Confirming with Store Counter...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-terracotta-400" />
+                    <span>Confirm Pickup & Generate Token (₹{totalAmount})</span>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </motion.div>
       </div>
