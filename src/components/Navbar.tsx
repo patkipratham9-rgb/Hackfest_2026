@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { MapPin, ShoppingBag, ChevronDown, Sparkles } from "lucide-react";
+import { MapPin, ShoppingBag, ChevronDown, Sparkles, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { NeighborhoodArea } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +17,7 @@ const AREAS: NeighborhoodArea[] = [
 ];
 
 export function Navbar() {
-  const { totalItems, setIsCartOpen, activeArea, setActiveArea } = useCart();
+  const { totalItems, setIsCartOpen, activeArea, setActiveArea, setIsProfileOpen } = useCart();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
@@ -89,16 +89,31 @@ export function Navbar() {
           </AnimatePresence>
         </div>
 
-        {/* Right Actions: AI Badge & Cart */}
+        {/* Right Actions: AI Badge, Profile Details Trigger & Cart */}
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-forest-100 text-forest-700 text-[11px] font-semibold border border-forest-200">
             <Sparkles className="w-3 h-3 text-terracotta-500 animate-pulse" />
             <span>Hyperlocal AI Routing</span>
           </div>
 
-          <button
+          {/* User Profile Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsProfileOpen(true)}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 transition-colors border border-cream-300 shadow-xs"
+            aria-label="View Profile & App Details"
+            title="Profile & Application Details"
+          >
+            <User className="w-4 h-4 text-forest-700" />
+          </motion.button>
+
+          {/* Cart Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => setIsCartOpen(true)}
-            className="relative flex items-center justify-center w-10 h-10 rounded-full bg-forest-700 hover:bg-forest-800 text-cream-100 transition-all tap-bounce shadow-sm"
+            className="relative flex items-center justify-center w-10 h-10 rounded-full bg-forest-700 hover:bg-forest-800 text-cream-100 transition-all shadow-sm"
             aria-label="View Shopping Cart"
           >
             <ShoppingBag className="w-4 h-4 text-cream-100" />
@@ -111,7 +126,7 @@ export function Navbar() {
                 {totalItems}
               </motion.span>
             )}
-          </button>
+          </motion.button>
         </div>
       </div>
     </header>

@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
 import { CartDrawer } from "@/components/CartDrawer";
 import { CheckoutModal } from "@/components/CheckoutModal";
+import { ProfilePanel } from "@/components/ProfilePanel";
 
 export const metadata: Metadata = {
   title: "LocalLoop • Your City's Digital Marketplace",
@@ -18,12 +19,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-cream-100 text-forest-950 font-sans antialiased selection:bg-terracotta-200 selection:text-terracotta-900 pb-20 sm:pb-8">
+      <body className="min-h-screen bg-cream-100 text-forest-950 font-sans antialiased selection:bg-terracotta-200 selection:text-terracotta-900 overflow-x-hidden">
         <CartProvider>
           <Navbar />
           <CartDrawer />
           <CheckoutModal />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          <ProfilePanel />
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5 pb-24 sm:pb-12">
             {children}
           </main>
           <BottomNav />

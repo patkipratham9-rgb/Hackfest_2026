@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { CartItem, Product, Order, OrderStatus, NeighborhoodArea } from "@/types";
 import { placeOrderAtomicAction, updateOrderStatusAction } from "@/actions/marketplaceActions";
+import { MOCK_PRODUCTS } from "@/data/mockData";
 
 interface CartContextType {
   cart: CartItem[];
@@ -17,6 +18,11 @@ interface CartContextType {
   setIsCartOpen: (open: boolean) => void;
   isCheckoutOpen: boolean;
   setIsCheckoutOpen: (open: boolean) => void;
+  isProfileOpen: boolean;
+  setIsProfileOpen: (open: boolean) => void;
+  recentlyViewed: Product[];
+  addRecentlyViewed: (product: Product) => void;
+  reorderOrder: (orderId: string) => boolean;
   createOrder: (data: {
     customerName: string;
     customerPhone: string;
@@ -28,6 +34,7 @@ interface CartContextType {
   subtotal: number;
   platformFee: number;
   totalAmount: number;
+  reorderableCount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -35,13 +42,16 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = "localloop_cart_v1";
 const ORDERS_STORAGE_KEY = "localloop_orders_v1";
 const AREA_STORAGE_KEY = "localloop_area_v1";
+const RECENT_STORAGE_KEY = "localloop_recent_v1";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeArea, setActiveAreaState] = useState<NeighborhoodArea>("All");
+  const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load from localStorage on mount
@@ -54,7 +64,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (savedOrders) {
         setOrders(JSON.parse(savedOrders));
       } else {
-        const initialOrder: Order = {
+        const initialOrder1: Order = {
           id: "ORD-LL-8921",
           storeId: "11111111-1111-1111-1111-111111111111",
           storeName: "Meena's Diyas & Filter Coffee",
@@ -64,52 +74,71 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           customerPhone: "+91 98451 22334",
           items: [
             {
-              product: {
-                id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-                storeId: "11111111-1111-1111-1111-111111111111",
-                storeName: "Meena's Diyas & Filter Coffee",
-                name: "Hand-poured Brass-Rim Clay Diyas (Set of 4)",
-                description: "Crafted by hand using red river clay",
-                price: 180,
-                category: "Handloom & Crafts",
-                stock: 8,
-                unit: "set of 4",
-                imageUrl: "https://images.unsplash.com/photo-1604928141064-207cea6f571f?w=600&auto=format&fit=crop&q=80",
-              },
+              product: MOCK_PRODUCTS[0],
               quantity: 2,
             },
             {
-              product: {
-                id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-                storeId: "11111111-1111-1111-1111-111111111111",
-                storeName: "Meena's Diyas & Filter Coffee",
-                name: "Artisanal Filter Coffee Powder (80:20 Roast)",
-                description: "Freshly roasted Chikmagalur plantation peaberry",
-                price: 240,
-                category: "Filter Coffee & Tea",
-                stock: 14,
-                unit: "250g pack",
-                imageUrl: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&auto=format&fit=crop&q=80",
-              },
+              product: MOCK_PRODUCTS[1],
               quantity: 1,
             },
           ],
           subtotal: 600,
           platformFee: 15,
           total: 615,
-          status: "packed",
+          status: "completed",
           paymentMethod: "upi",
           paymentStatus: "paid",
           pickupTime: "Today at 5:30 PM",
           pickupCode: "LL-482",
-          createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
         };
-        setOrders([initialOrder]);
-        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify([initialOrder]));
+
+        const initialOrder2: Order = {
+          id: "ORD-LL-5412",
+          storeId: "22222222-2222-2222-2222-222222222222",
+          storeName: "Mishra Authentic Dharwad Pedha",
+          storeArea: "Station Road",
+          storeLane: "Opp. Railway Station Gate 2",
+          customerName: "Pratham Patki",
+          customerPhone: "+91 98451 22334",
+          items: [
+            {
+              product: MOCK_PRODUCTS[3],
+              quantity: 1,
+            },
+            {
+              product: MOCK_PRODUCTS[4],
+              quantity: 2,
+            },
+          ],
+          subtotal: 480,
+          platformFee: 15,
+          total: 495,
+          status: "packed",
+          paymentMethod: "upi",
+          paymentStatus: "paid",
+          pickupTime: "Today at 7:00 PM",
+          pickupCode: "LL-719",
+          createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+        };
+
+        const seeded = [initialOrder2, initialOrder1];
+        setOrders(seeded);
+        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(seeded));
       }
 
       const savedArea = localStorage.getItem(AREA_STORAGE_KEY);
       if (savedArea) setActiveAreaState(savedArea as NeighborhoodArea);
+
+      const savedRecent = localStorage.getItem(RECENT_STORAGE_KEY);
+      if (savedRecent) {
+        setRecentlyViewed(JSON.parse(savedRecent));
+      } else {
+        // Seed initial recently explored items
+        const initialRecent = [MOCK_PRODUCTS[0], MOCK_PRODUCTS[1], MOCK_PRODUCTS[3], MOCK_PRODUCTS[5]];
+        setRecentlyViewed(initialRecent);
+        localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(initialRecent));
+      }
     } catch (e) {
       console.warn("Storage sync error:", e);
     } finally {
@@ -131,12 +160,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [orders, isLoaded]);
 
+  // Save recently viewed to localStorage
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(recentlyViewed));
+    }
+  }, [recentlyViewed, isLoaded]);
+
   const setActiveArea = (area: NeighborhoodArea) => {
     setActiveAreaState(area);
     localStorage.setItem(AREA_STORAGE_KEY, area);
   };
 
+  const addRecentlyViewed = (product: Product) => {
+    setRecentlyViewed((prev) => {
+      const filtered = prev.filter((p) => p.id !== product.id);
+      return [product, ...filtered].slice(0, 10);
+    });
+  };
+
   const addToCart = (product: Product) => {
+    addRecentlyViewed(product);
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
@@ -172,10 +216,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCart([]);
   };
 
+  // One-tap reorder action
+  const reorderOrder = (orderId: string): boolean => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (!targetOrder || targetOrder.items.length === 0) return false;
+
+    setCart((prev) => {
+      const newCart = [...prev];
+      targetOrder.items.forEach(({ product, quantity }) => {
+        const existingIndex = newCart.findIndex((i) => i.product.id === product.id);
+        if (existingIndex >= 0) {
+          newCart[existingIndex] = {
+            ...newCart[existingIndex],
+            quantity: newCart[existingIndex].quantity + quantity,
+          };
+        } else {
+          newCart.push({ product, quantity });
+        }
+      });
+      return newCart;
+    });
+
+    setIsCartOpen(true);
+    return true;
+  };
+
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const platformFee = totalItems > 0 ? 15 : 0;
   const totalAmount = subtotal + platformFee;
+  const reorderableCount = orders.length;
 
   const createOrder = (data: {
     customerName: string;
@@ -235,7 +305,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       pickupTime: data.pickupTime,
       pickupCode: newOrder.pickupCode,
     }).catch((err) => {
-      console.warn("Supabase atomic order background sync note:", err);
+      console.warn("Supabase atomic order sync note:", err);
     });
 
     return newOrder;
@@ -246,7 +316,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       prev.map((ord) => (ord.id === orderId ? { ...ord, status } : ord))
     );
 
-    // Sync status with Supabase
     updateOrderStatusAction(orderId, status).catch((err) => {
       console.warn("Supabase status sync note:", err);
     });
@@ -267,12 +336,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsCartOpen,
         isCheckoutOpen,
         setIsCheckoutOpen,
+        isProfileOpen,
+        setIsProfileOpen,
+        recentlyViewed,
+        addRecentlyViewed,
+        reorderOrder,
         createOrder,
         updateOrderStatus,
         totalItems,
         subtotal,
         platformFee,
         totalAmount,
+        reorderableCount,
       }}
     >
       {children}
