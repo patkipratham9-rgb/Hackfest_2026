@@ -1158,3 +1158,121 @@ export async function getStoreTrafficDashboardAction(
     };
   }
 }
+
+/**
+ * Checkpoint CP-GC03: Get AI Business Recommendations Server Action
+ * Role-guarded: Only merchant seller or platform admin can query AI growth recommendations
+ */
+export async function getAIBusinessRecommendationsAction(
+  storeId: string,
+  options?: {
+    forceRefresh?: boolean;
+    role?: string;
+    userStoreId?: string;
+    storeName?: string;
+  }
+): Promise<{
+  success: boolean;
+  recommendations?: import("@/types").AIBusinessRecommendation[];
+  generatedAt?: string;
+  error?: string;
+}> {
+  try {
+    const role = options?.role || "seller";
+    if (role !== "seller" && role !== "admin") {
+      return {
+        success: false,
+        error: "Unauthorized: Seller or admin role required to access AI business recommendations",
+      };
+    }
+
+    if (options?.userStoreId && options.userStoreId !== storeId && role !== "admin") {
+      return {
+        success: false,
+        error: "Forbidden: You can only view recommendations for your own store",
+      };
+    }
+
+    if (!storeId || typeof storeId !== "string" || !storeId.trim()) {
+      return { success: false, error: "storeId is required" };
+    }
+
+    const { generateAIBusinessRecommendations } = await import("@/lib/aiProvider");
+    const result = await generateAIBusinessRecommendations(storeId.trim(), {
+      forceRefresh: options?.forceRefresh,
+      storeName: options?.storeName,
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.error || "Failed to generate recommendations" };
+    }
+
+    return {
+      success: true,
+      recommendations: result.recommendations,
+      generatedAt: result.generatedAt,
+    };
+  } catch (err: any) {
+    console.error("Exception in getAIBusinessRecommendationsAction:", err);
+    return {
+      success: false,
+      error: err?.message || "Failed to query AI business recommendations",
+    };
+  }
+}
+
+/**
+ * Checkpoint CP-GC03: Apply AI Business Recommendation Server Action
+ * Marks an insight as implemented by the merchant
+ */
+export async function applyBusinessRecommendationAction(
+  recommendationId: string,
+  storeId: string,
+  options?: {
+    role?: string;
+    userStoreId?: string;
+  }
+): Promise<{
+  success: boolean;
+  appliedAt?: string;
+  recommendationId?: string;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const role = options?.role || "seller";
+    if (role !== "seller" && role !== "admin") {
+      return {
+        success: false,
+        error: "Unauthorized: Merchant permissions required to apply recommendation",
+      };
+    }
+
+    if (options?.userStoreId && options.userStoreId !== storeId && role !== "admin") {
+      return {
+        success: false,
+        error: "Forbidden: You can only apply recommendations for your own store",
+      };
+    }
+
+    if (!recommendationId || typeof recommendationId !== "string" || !recommendationId.trim()) {
+      return { success: false, error: "recommendationId is required" };
+    }
+
+    const { applyBusinessRecommendation } = await import("@/lib/aiProvider");
+    const result = applyBusinessRecommendation(recommendationId.trim(), storeId);
+
+    return {
+      success: true,
+      appliedAt: result.appliedAt,
+      recommendationId: result.recommendationId,
+      message: "Recommendation successfully implemented into store strategy",
+    };
+  } catch (err: any) {
+    console.error("Exception in applyBusinessRecommendationAction:", err);
+    return {
+      success: false,
+      error: err?.message || "Failed to apply business recommendation",
+    };
+  }
+}

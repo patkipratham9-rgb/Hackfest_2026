@@ -166,3 +166,34 @@ export interface TrafficMetrics {
   dailyTrend: DailyTrafficTrend[];
   timeframe: "today" | "7d" | "30d" | "all";
 }
+
+export type RecommendationCategory =
+  | "pricing"
+  | "inventory"
+  | "marketing"
+  | "operational"
+  | "bundling";
+
+export type RecommendationBadge =
+  | "High Impact"
+  | "Loyalty Driver"
+  | "Operational Excellence"
+  | "Quick Win";
+
+export interface AIBusinessRecommendation {
+  id: string;
+  storeId: string;
+  title: string;
+  category: RecommendationCategory;
+  badge: RecommendationBadge;
+  metric: string;
+  impact: string;
+  reasoning: string;
+  actionable: boolean;
+  actionLabel?: string;
+  actionPayload?: Record<string, any>;
+  confidenceScore: number;
+  createdAt: string;
+  applied?: boolean;
+  appliedAt?: string;
+}

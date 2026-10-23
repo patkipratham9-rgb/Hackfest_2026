@@ -27,6 +27,12 @@ import {
   Clock,
   Flame,
   Search,
+  Check,
+  Tag,
+  Layers,
+  PackageCheck,
+  X,
+  Target,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,8 +41,16 @@ import {
   getStoreAnalyticsSummaryAction,
   getStoreTrafficDashboardAction,
   recordStoreEventAction,
+  getAIBusinessRecommendationsAction,
+  applyBusinessRecommendationAction,
 } from "@/actions/marketplaceActions";
-import { StoreAnalyticsSummary, StoreAnalyticsEvent, TrafficMetrics } from "@/types";
+import {
+  StoreAnalyticsSummary,
+  StoreAnalyticsEvent,
+  TrafficMetrics,
+  AIBusinessRecommendation,
+  RecommendationCategory,
+} from "@/types";
 
 export default function SellerGrowthPage() {
   const { activeStore } = useSeller();
@@ -148,6 +162,78 @@ export default function SellerGrowthPage() {
   });
   const [trafficPermissionError, setTrafficPermissionError] = useState<string | null>(null);
 
+  // Checkpoint CP-GC03: AI Business Recommendations State
+  const [recommendations, setRecommendations] = useState<AIBusinessRecommendation[]>([
+    {
+      id: "rec-bundle-diya-coffee",
+      storeId: activeStore?.id || "store-1",
+      title: "Weekend Festive Diya & Chicory Coffee Bundle",
+      category: "bundling",
+      badge: "High Impact",
+      metric: "+34% Search Interest",
+      impact: "Est. +₹4,500 weekly revenue",
+      reasoning:
+        "Shoppers in Vidyanagar and CBT frequently search for handmade clay craft items and fresh roasted chicory coffee on Friday evenings. Bundling these items at ₹399 can boost basket value by ~24%.",
+      actionable: true,
+      actionLabel: "Create Festive Bundle (₹399)",
+      confidenceScore: 0.94,
+      createdAt: new Date().toISOString(),
+      applied: false,
+    },
+    {
+      id: "rec-pricing-filter-coffee",
+      storeId: activeStore?.id || "store-1",
+      title: "Filter Coffee Multi-Pack Volume Discount",
+      category: "pricing",
+      badge: "Loyalty Driver",
+      metric: "72% Reorder Rate",
+      impact: "+18% repeat order retention",
+      reasoning:
+        "500g Chicory Filter Coffee bags have the highest reorder frequency across Hubballi shoppers. Offering a 5% discount on 2+ packs can boost multi-pack cart additions.",
+      actionable: true,
+      actionLabel: "Apply 5% Multi-Pack Pricing",
+      confidenceScore: 0.89,
+      createdAt: new Date().toISOString(),
+      applied: false,
+    },
+    {
+      id: "rec-staging-express-pickup",
+      storeId: activeStore?.id || "store-1",
+      title: "Pre-Packed Staging for 6 PM Evening Rush",
+      category: "operational",
+      badge: "Operational Excellence",
+      metric: "Peak Footfall (6 PM - 8:30 PM)",
+      impact: "Cuts counter wait times by 40%",
+      reasoning:
+        "Your storefront traffic peaks between 6:00 PM and 8:30 PM with commuters from Station Road and Vidyanagar. Pre-packing top 10 SKUs in designated staging slots ensures 2-minute counter pickups.",
+      actionable: true,
+      actionLabel: "Enable Pre-Pack Staging",
+      confidenceScore: 0.92,
+      createdAt: new Date().toISOString(),
+      applied: false,
+    },
+    {
+      id: "rec-whatsapp-station-road",
+      storeId: activeStore?.id || "store-1",
+      title: "Weekly Fresh-Arrival WhatsApp Broadcast",
+      category: "marketing",
+      badge: "Quick Win",
+      metric: "25% Station Road Share",
+      impact: "Direct 1-tap WhatsApp pickup orders",
+      reasoning:
+        "Station Road shoppers frequently view fresh bakery arrivals on Wednesday mornings. Sharing a weekly fresh-batch link on WhatsApp drives instant pickup bookings.",
+      actionable: true,
+      actionLabel: "Share on WhatsApp",
+      confidenceScore: 0.87,
+      createdAt: new Date().toISOString(),
+      applied: false,
+    },
+  ]);
+  const [recCategoryFilter, setRecCategoryFilter] = useState<string>("all");
+  const [isGeneratingRecs, setIsGeneratingRecs] = useState<boolean>(false);
+  const [recActionMessage, setRecActionMessage] = useState<string | null>(null);
+  const [recommendationsPermissionError, setRecommendationsPermissionError] = useState<string | null>(null);
+
   // Load AI Provider Status
   useEffect(() => {
     async function loadAIStatus() {
@@ -215,6 +301,29 @@ export default function SellerGrowthPage() {
     loadTraffic();
   }, [activeStore?.id, trafficTimeframe, simulatedCount]);
 
+  // Checkpoint CP-GC03: Load AI Business Recommendations
+  useEffect(() => {
+    async function loadRecommendations() {
+      setRecommendationsPermissionError(null);
+      try {
+        const storeId = activeStore?.id || "store-1";
+        const res = await getAIBusinessRecommendationsAction(storeId, {
+          role: "seller",
+          storeName: activeStore?.name,
+        });
+
+        if (res.success && res.recommendations && res.recommendations.length > 0) {
+          setRecommendations(res.recommendations);
+        } else if (res.error) {
+          setRecommendationsPermissionError(res.error);
+        }
+      } catch (err: any) {
+        console.warn("Error loading AI recommendations:", err);
+      }
+    }
+    loadRecommendations();
+  }, [activeStore?.id, activeStore?.name]);
+
   const handleTestConnection = async () => {
     setIsTesting(true);
     setTestResult(null);
@@ -259,29 +368,64 @@ export default function SellerGrowthPage() {
     setSimulatedCount((c) => c + 1);
   };
 
-  const insights = [
-    {
-      id: "insight-1",
-      title: "Weekend Diya & Festive Spike",
-      metric: "+34% Search Interest",
-      desc: "Shoppers in Vidyanagar and CBT are frequently searching for clay craft items on Friday and Saturday evenings. We recommend keeping 10 pre-packed sets ready near the counter for express pickup.",
-      badge: "High Impact",
-    },
-    {
-      id: "insight-2",
-      title: "Filter Coffee Repeat Orders",
-      metric: "72% Reorder Rate",
-      desc: "500g Chicory Filter Coffee bags have the highest reorder frequency in Hubballi. Setting a small 5% bulk discount on 2+ packs can boost multi-pack cart additions.",
-      badge: "Loyalty Driver",
-    },
-    {
-      id: "insight-3",
-      title: "Storefront Pickup Speed",
-      metric: "Avg. 14 mins fulfillment",
-      desc: "Your counter packing speed is within the top 5% of Hubballi artisan shops, contributing to a 4.9-star shopper rating.",
-      badge: "Operational Excellence",
-    },
-  ];
+  // Checkpoint CP-GC03: Refresh AI Recommendations
+  const handleRefreshRecommendations = async () => {
+    setIsGeneratingRecs(true);
+    setRecActionMessage(null);
+    try {
+      const storeId = activeStore?.id || "store-1";
+      const res = await getAIBusinessRecommendationsAction(storeId, {
+        forceRefresh: true,
+        role: "seller",
+        storeName: activeStore?.name,
+      });
+
+      if (res.success && res.recommendations) {
+        setRecommendations(res.recommendations);
+        setRecActionMessage("AI Coach refreshed recommendations based on real-time store metrics.");
+      }
+    } catch {
+      // Keep existing recommendations
+    } finally {
+      setIsGeneratingRecs(false);
+    }
+  };
+
+  // Checkpoint CP-GC03: Apply Business Recommendation
+  const handleApplyRecommendation = async (recId: string) => {
+    try {
+      const storeId = activeStore?.id || "store-1";
+      const res = await applyBusinessRecommendationAction(recId, storeId, {
+        role: "seller",
+      });
+
+      if (res.success) {
+        setRecommendations((prev) =>
+          prev.map((r) =>
+            r.id === recId
+              ? { ...r, applied: true, appliedAt: res.appliedAt || new Date().toISOString() }
+              : r
+          )
+        );
+        setRecActionMessage(res.message || "Recommendation successfully implemented!");
+      }
+    } catch {
+      setRecommendations((prev) =>
+        prev.map((r) =>
+          r.id === recId ? { ...r, applied: true, appliedAt: new Date().toISOString() } : r
+        )
+      );
+    }
+  };
+
+  const handleDismissRecommendation = (recId: string) => {
+    setRecommendations((prev) => prev.filter((r) => r.id !== recId));
+  };
+
+  const filteredRecommendations =
+    recCategoryFilter === "all"
+      ? recommendations
+      : recommendations.filter((r) => r.category === recCategoryFilter);
 
   return (
     <div className="space-y-6">
@@ -397,6 +541,313 @@ export default function SellerGrowthPage() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Checkpoint CP-GC03: AI Business Recommendations & Coaching Section */}
+      <div
+        data-testid="ai-recommendations-section"
+        className="p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cream-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-terracotta-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Sparkles className="w-5 h-5 text-cream-100" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif font-extrabold text-lg text-forest-950">
+                  AI Business Recommendations & Coaching
+                </h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta-700 bg-terracotta-100 border border-terracotta-200 px-2 py-0.5 rounded-md">
+                  CP-GC03
+                </span>
+              </div>
+              <p className="text-xs text-forest-600">
+                Data-grounded retail actions derived from store conversion funnels and footfall patterns
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="refresh-recommendations-btn"
+              onClick={handleRefreshRecommendations}
+              disabled={isGeneratingRecs}
+              className="px-3.5 py-2 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 text-xs font-bold flex items-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-60"
+            >
+              {isGeneratingRecs ? (
+                <>
+                  <RefreshCw
+                    data-testid="generating-recommendations-loader"
+                    className="w-3.5 h-3.5 animate-spin text-terracotta-400"
+                  />
+                  <span>Analyzing Store Signals...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-terracotta-400" />
+                  <span>Re-Analyze Metrics</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Action Confirmation Banner */}
+        {recActionMessage && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{recActionMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRecActionMessage(null)}
+              className="text-emerald-700 hover:text-emerald-950 text-xs font-bold"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Permission Denied Alert for Recommendations */}
+        {recommendationsPermissionError && (
+          <div
+            data-testid="recommendations-permission-denied"
+            className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+            <span>{recommendationsPermissionError}</span>
+          </div>
+        )}
+
+        {/* Category Filter Pills */}
+        <div
+          data-testid="recommendations-category-filter"
+          className="flex items-center gap-2 overflow-x-auto pb-1 text-xs"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-forest-600 mr-1">
+            Focus:
+          </span>
+          <button
+            type="button"
+            data-testid="filter-cat-all"
+            onClick={() => setRecCategoryFilter("all")}
+            className={`px-3 py-1 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+              recCategoryFilter === "all"
+                ? "bg-forest-800 text-cream-50 shadow-xs"
+                : "bg-cream-200/80 hover:bg-cream-200 text-forest-700"
+            }`}
+          >
+            All Insights
+          </button>
+          <button
+            type="button"
+            data-testid="filter-cat-bundling"
+            onClick={() => setRecCategoryFilter("bundling")}
+            className={`px-3 py-1 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+              recCategoryFilter === "bundling"
+                ? "bg-forest-800 text-cream-50 shadow-xs"
+                : "bg-cream-200/80 hover:bg-cream-200 text-forest-700"
+            }`}
+          >
+            Bundling
+          </button>
+          <button
+            type="button"
+            data-testid="filter-cat-pricing"
+            onClick={() => setRecCategoryFilter("pricing")}
+            className={`px-3 py-1 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+              recCategoryFilter === "pricing"
+                ? "bg-forest-800 text-cream-50 shadow-xs"
+                : "bg-cream-200/80 hover:bg-cream-200 text-forest-700"
+            }`}
+          >
+            Pricing & Margins
+          </button>
+          <button
+            type="button"
+            data-testid="filter-cat-operational"
+            onClick={() => setRecCategoryFilter("operational")}
+            className={`px-3 py-1 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+              recCategoryFilter === "operational"
+                ? "bg-forest-800 text-cream-50 shadow-xs"
+                : "bg-cream-200/80 hover:bg-cream-200 text-forest-700"
+            }`}
+          >
+            Operations
+          </button>
+          <button
+            type="button"
+            data-testid="filter-cat-marketing"
+            onClick={() => setRecCategoryFilter("marketing")}
+            className={`px-3 py-1 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+              recCategoryFilter === "marketing"
+                ? "bg-forest-800 text-cream-50 shadow-xs"
+                : "bg-cream-200/80 hover:bg-cream-200 text-forest-700"
+            }`}
+          >
+            Marketing
+          </button>
+          <button
+            type="button"
+            data-testid="filter-cat-inventory"
+            onClick={() => setRecCategoryFilter("inventory")}
+            className={`px-3 py-1 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+              recCategoryFilter === "inventory"
+                ? "bg-forest-800 text-cream-50 shadow-xs"
+                : "bg-cream-200/80 hover:bg-cream-200 text-forest-700"
+            }`}
+          >
+            Inventory
+          </button>
+        </div>
+
+        {/* Recommendations Cards Grid */}
+        <div className="space-y-4">
+          {filteredRecommendations.length === 0 ? (
+            <div className="p-8 text-center text-xs text-forest-600 bg-cream-100 rounded-3xl border border-cream-200">
+              No recommendations found for the selected category.
+            </div>
+          ) : (
+            filteredRecommendations.map((rec) => (
+              <motion.div
+                key={rec.id}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                data-testid={`recommendation-card-${rec.id}`}
+                className={`p-5 rounded-3xl border transition-all ${
+                  rec.applied
+                    ? "bg-emerald-50/50 border-emerald-300 shadow-2xs"
+                    : "bg-white border-cream-300 shadow-warm hover:border-terracotta-300"
+                } space-y-4`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${
+                        rec.category === "bundling"
+                          ? "bg-terracotta-100 text-terracotta-700"
+                          : rec.category === "pricing"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : rec.category === "operational"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {rec.category === "bundling" && <Layers className="w-4 h-4" />}
+                      {rec.category === "pricing" && <Tag className="w-4 h-4" />}
+                      {rec.category === "operational" && <Clock className="w-4 h-4" />}
+                      {rec.category === "marketing" && <Share2 className="w-4 h-4" />}
+                      {rec.category === "inventory" && <PackageCheck className="w-4 h-4" />}
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3
+                          data-testid={`recommendation-title-${rec.id}`}
+                          className="font-serif font-extrabold text-base text-forest-950"
+                        >
+                          {rec.title}
+                        </h3>
+                        <span
+                          data-testid={`recommendation-category-${rec.id}`}
+                          className="text-[10px] font-mono font-bold uppercase tracking-wider text-forest-600 bg-cream-200 px-2 py-0.5 rounded"
+                        >
+                          {rec.category}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs">
+                        <span
+                          data-testid={`recommendation-metric-${rec.id}`}
+                          className="font-bold text-terracotta-700 font-mono"
+                        >
+                          {rec.metric}
+                        </span>
+                        <span className="text-forest-400">•</span>
+                        <span
+                          data-testid={`recommendation-impact-${rec.id}`}
+                          className="font-semibold text-emerald-700"
+                        >
+                          {rec.impact}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-start">
+                    <span
+                      data-testid={`recommendation-badge-${rec.id}`}
+                      className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                        rec.badge === "High Impact"
+                          ? "bg-terracotta-100 text-terracotta-700 border border-terracotta-200"
+                          : rec.badge === "Loyalty Driver"
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          : rec.badge === "Operational Excellence"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200"
+                          : "bg-amber-100 text-amber-800 border border-amber-200"
+                      }`}
+                    >
+                      {rec.badge}
+                    </span>
+
+                    <button
+                      type="button"
+                      data-testid={`dismiss-recommendation-btn-${rec.id}`}
+                      onClick={() => handleDismissRecommendation(rec.id)}
+                      className="p-1 rounded-lg text-forest-400 hover:text-forest-700 hover:bg-cream-100 transition-colors cursor-pointer"
+                      title="Dismiss"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* AI Reasoning Text */}
+                <p
+                  data-testid={`recommendation-reasoning-${rec.id}`}
+                  className="text-xs text-forest-700 leading-relaxed bg-cream-100/70 p-3.5 rounded-2xl border border-cream-200 font-sans"
+                >
+                  {rec.reasoning}
+                </p>
+
+                {/* Action Trigger / Applied State */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-cream-100">
+                  <div className="flex items-center gap-2 text-[11px] text-forest-500 font-mono">
+                    <Target className="w-3 h-3 text-forest-400" />
+                    <span>AI Confidence: {Math.round(rec.confidenceScore * 100)}%</span>
+                  </div>
+
+                  <div>
+                    {rec.applied ? (
+                      <span
+                        data-testid={`applied-recommendation-badge-${rec.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200"
+                      >
+                        <Check className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Implemented</span>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        data-testid={`apply-recommendation-btn-${rec.id}`}
+                        onClick={() => handleApplyRecommendation(rec.id)}
+                        className="px-4 py-2 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-warm cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-cream-200" />
+                        <span>{rec.actionLabel || "Implement Recommendation"}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Checkpoint CP-GC02: Merchant Traffic Dashboard Card */}
@@ -1021,43 +1472,6 @@ export default function SellerGrowthPage() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* AI Recommendations Section */}
-      <div className="space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900">
-          Heuristic Growth Tips
-        </h3>
-        {insights.map((insight) => (
-          <motion.div
-            key={insight.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-3 shadow-warm"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-forest-800 text-cream-100">
-                  <Sparkles className="w-4 h-4 text-terracotta-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-forest-950">{insight.title}</h3>
-                  <span className="text-[11px] font-semibold text-emerald-700">
-                    {insight.metric}
-                  </span>
-                </div>
-              </div>
-
-              <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta-700 bg-terracotta-100 px-2.5 py-1 rounded-full">
-                {insight.badge}
-              </span>
-            </div>
-
-            <p className="text-xs text-forest-700 leading-relaxed bg-cream-100 p-3.5 rounded-2xl border border-cream-200">
-              {insight.desc}
-            </p>
-          </motion.div>
-        ))}
       </div>
     </div>
   );
