@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { CartItem, Product, Order, OrderStatus, NeighborhoodArea } from "@/types";
 import { placeOrderAtomicAction, updateOrderStatusAction } from "@/actions/marketplaceActions";
+import { recordStoreAnalyticsEvent } from "@/lib/analyticsTracker";
 import { MOCK_PRODUCTS } from "@/data/mockData";
 
 interface CartContextType {
@@ -194,6 +195,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addRecentlyViewed = (product: Product) => {
+    // Checkpoint CP-GC01: Track product view analytics event
+    try {
+      recordStoreAnalyticsEvent({
+        storeId: product.storeId || "store-1",
+        productId: product.id,
+        productName: product.name,
+        eventType: "product_view",
+        metadata: { price: product.price, category: product.category },
+      });
+    } catch {
+      // Non-blocking analytics tracking
+    }
+
     setRecentlyViewed((prev) => {
       const filtered = prev.filter((p) => p.id !== product.id);
       return [product, ...filtered].slice(0, 10);
@@ -202,6 +216,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (product: Product) => {
     addRecentlyViewed(product);
+
+    // Checkpoint CP-GC01: Track cart addition analytics event
+    try {
+      recordStoreAnalyticsEvent({
+        storeId: product.storeId || "store-1",
+        productId: product.id,
+        productName: product.name,
+        eventType: "cart_add",
+        metadata: { price: product.price },
+      });
+    } catch {
+      // Non-blocking analytics tracking
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
@@ -336,6 +364,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const updated = [newOrder, ...orders];
     setOrders(updated);
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
+
+    // Checkpoint CP-GC01: Track order conversion analytics event
+    try {
+      recordStoreAnalyticsEvent({
+        storeId: primaryStoreId || "store-1",
+        eventType: "order_placed",
+        metadata: {
+          orderId: newOrder.id,
+          total: orderTotal,
+          itemsCount: orderItems.length,
+          paymentMethod: data.paymentMethod,
+        },
+      });
+    } catch {
+      // Non-blocking analytics tracking
+    }
     if (!data.items) {
       clearCart();
     }

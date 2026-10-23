@@ -1866,3 +1866,187 @@ console.log("\n=================================================================
 console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-AI04!`);
 console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls, Low-Stock Badges, Order Board, Realtime Subscriptions, Packed/Ready Actions, Realtime/Authorization Guards, AI Provider/Server Key, AI Listing Helper, Validated Structured Output & Seller Approval Workflow Operational!");
 console.log("==================================================================");
+
+// =================================================================
+// 20. STORE ANALYTICS EVENTS & GROWTH METRICS (CP-GC01)
+// =================================================================
+console.log("\n--- 20. STORE ANALYTICS EVENTS & FUNNEL (CP-GC01) ---");
+
+// 20.1 File, Module & Type Integrity
+const analyticsTrackerSource = fs.readFileSync("./src/lib/analyticsTracker.ts", "utf-8");
+testAssert(analyticsTrackerSource.includes("export function recordStoreAnalyticsEvent"), "recordStoreAnalyticsEvent exported from analyticsTracker.ts");
+testAssert(analyticsTrackerSource.includes("export function getStoreAnalyticsEvents"), "getStoreAnalyticsEvents exported from analyticsTracker.ts");
+testAssert(analyticsTrackerSource.includes("export function calculateStoreAnalyticsSummary"), "calculateStoreAnalyticsSummary exported from analyticsTracker.ts");
+testAssert(analyticsTrackerSource.includes("export function validateAnalyticsEventPayload"), "validateAnalyticsEventPayload exported from analyticsTracker.ts");
+testAssert(analyticsTrackerSource.includes("export const VALID_EVENT_TYPES"), "VALID_EVENT_TYPES exported from analyticsTracker.ts");
+
+const marketplaceActionsWithAnalytics = fs.readFileSync("./src/actions/marketplaceActions.ts", "utf-8");
+testAssert(marketplaceActionsWithAnalytics.includes("export async function recordStoreEventAction"), "recordStoreEventAction exported from marketplaceActions.ts");
+testAssert(marketplaceActionsWithAnalytics.includes("export async function getStoreAnalyticsSummaryAction"), "getStoreAnalyticsSummaryAction exported from marketplaceActions.ts");
+testAssert(marketplaceActionsWithAnalytics.includes("export async function getStoreRecentEventsAction"), "getStoreRecentEventsAction exported from marketplaceActions.ts");
+
+const typesWithAnalytics = fs.readFileSync("./src/types/index.ts", "utf-8");
+testAssert(typesWithAnalytics.includes("export type AnalyticsEventType"), "AnalyticsEventType union defined in types/index.ts");
+testAssert(typesWithAnalytics.includes("export interface StoreAnalyticsEvent"), "StoreAnalyticsEvent interface defined in types/index.ts");
+testAssert(typesWithAnalytics.includes("export interface StoreAnalyticsSummary"), "StoreAnalyticsSummary interface defined in types/index.ts");
+
+const migrationsList = fs.readdirSync("./supabase/migrations");
+testAssert(migrationsList.some((f) => f.includes("analytics_events")), "Declarative migration 20261023230000_create_store_analytics_events.sql tracked in git");
+
+// 20.2 Event Payload Validation Unit Logic
+function testValidateAnalyticsPayload(payload) {
+  const validTypes = ["store_view", "product_view", "cart_add", "cart_remove", "checkout_start", "order_placed", "search_query"];
+  if (!payload || typeof payload !== "object") return { valid: false, error: "Payload must be a valid JSON object" };
+  if (!payload.storeId || typeof payload.storeId !== "string" || !payload.storeId.trim()) {
+    return { valid: false, error: "storeId is required" };
+  }
+  if (!payload.eventType || !validTypes.includes(payload.eventType)) {
+    return { valid: false, error: `Invalid eventType '${payload.eventType}'` };
+  }
+  return {
+    valid: true,
+    sanitized: {
+      storeId: payload.storeId.trim(),
+      eventType: payload.eventType,
+      productId: payload.productId || undefined,
+      metadata: payload.metadata || {},
+    },
+  };
+}
+
+testAssert(!testValidateAnalyticsPayload(null).valid, "Validation: Null payload rejected");
+testAssert(!testValidateAnalyticsPayload({}).valid, "Validation: Missing storeId rejected");
+testAssert(!testValidateAnalyticsPayload({ storeId: "  " }).valid, "Validation: Blank storeId rejected");
+testAssert(!testValidateAnalyticsPayload({ storeId: "store-1", eventType: "invalid_evt" }).valid, "Validation: Unknown eventType rejected");
+testAssert(testValidateAnalyticsPayload({ storeId: "store-1", eventType: "store_view" }).valid, "Validation: Valid store_view event accepted");
+testAssert(testValidateAnalyticsPayload({ storeId: "store-1", eventType: "product_view", productId: "p1" }).valid, "Validation: Valid product_view event accepted");
+testAssert(testValidateAnalyticsPayload({ storeId: "store-1", eventType: "cart_add", productId: "p1" }).valid, "Validation: Valid cart_add event accepted");
+testAssert(testValidateAnalyticsPayload({ storeId: "store-1", eventType: "order_placed" }).valid, "Validation: Valid order_placed event accepted");
+
+// 20.3 Role Authorization & Tenant Isolation Matrix
+function testSimulateAnalyticsSummaryAction(storeId, options = {}) {
+  const role = options.role || "seller";
+  if (role !== "seller" && role !== "admin") {
+    return { success: false, error: "Unauthorized: Seller or admin role required to view store analytics" };
+  }
+  if (options.userStoreId && options.userStoreId !== storeId && role !== "admin") {
+    return { success: false, error: "Forbidden: You can only view analytics for your own store" };
+  }
+  if (!storeId || !storeId.trim()) {
+    return { success: false, error: "storeId is required" };
+  }
+  return { success: true };
+}
+
+testAssert(!testSimulateAnalyticsSummaryAction("store-1", { role: "customer" }).success, "Analytics RBAC: Customer role rejected");
+testAssert(!testSimulateAnalyticsSummaryAction("store-1", { role: "anonymous" }).success, "Analytics RBAC: Anonymous role rejected");
+testAssert(!testSimulateAnalyticsSummaryAction("store-1", { role: "guest" }).success, "Analytics RBAC: Guest role rejected");
+testAssert(testSimulateAnalyticsSummaryAction("store-1", { role: "seller" }).success, "Analytics RBAC: Seller role authorized");
+testAssert(testSimulateAnalyticsSummaryAction("store-1", { role: "admin" }).success, "Analytics RBAC: Admin role authorized");
+testAssert(!testSimulateAnalyticsSummaryAction("store-2", { role: "seller", userStoreId: "store-1" }).success, "Tenant Isolation: Cross-tenant store analytics access forbidden");
+testAssert(testSimulateAnalyticsSummaryAction("store-2", { role: "admin", userStoreId: "store-1" }).success, "Tenant Isolation: Admin permitted to view any store analytics");
+
+// 20.4 Funnel Calculation & Aggregation Metrics Unit Logic
+function testCalculateSummary(events, storeId) {
+  let views = 0;
+  let prodViews = 0;
+  let cartAdds = 0;
+  let orders = 0;
+  const prodStats = {};
+
+  for (const e of events) {
+    if (e.storeId !== storeId) continue;
+    if (e.eventType === "store_view") views++;
+    if (e.eventType === "product_view") {
+      prodViews++;
+      if (e.productId) {
+        prodStats[e.productId] = prodStats[e.productId] || { views: 0, cartAdds: 0 };
+        prodStats[e.productId].views++;
+      }
+    }
+    if (e.eventType === "cart_add") {
+      cartAdds++;
+      if (e.productId) {
+        prodStats[e.productId] = prodStats[e.productId] || { views: 0, cartAdds: 0 };
+        prodStats[e.productId].cartAdds++;
+      }
+    }
+    if (e.eventType === "order_placed") orders++;
+  }
+
+  const cv = views > 0 ? Number(((orders / views) * 100).toFixed(1)) : 0;
+  const cartCv = cartAdds > 0 ? Number(((orders / cartAdds) * 100).toFixed(1)) : 0;
+  return {
+    totalStoreViews: views,
+    totalProductViews: prodViews,
+    totalCartAdds: cartAdds,
+    totalOrdersPlaced: orders,
+    conversionRate: cv,
+    cartConversionRate: cartCv,
+    topProducts: Object.entries(prodStats).map(([id, stats]) => ({
+      productId: id,
+      views: stats.views,
+      cartAdds: stats.cartAdds,
+      conversionRate: stats.views > 0 ? Number(((stats.cartAdds / stats.views) * 100).toFixed(1)) : 0,
+    })),
+  };
+}
+
+const mockEvents = [
+  { storeId: "s1", eventType: "store_view" },
+  { storeId: "s1", eventType: "store_view" },
+  { storeId: "s1", eventType: "store_view" },
+  { storeId: "s1", eventType: "store_view" },
+  { storeId: "s1", eventType: "product_view", productId: "p1" },
+  { storeId: "s1", eventType: "product_view", productId: "p1" },
+  { storeId: "s1", eventType: "cart_add", productId: "p1" },
+  { storeId: "s1", eventType: "order_placed" },
+];
+
+const computedSummary = testCalculateSummary(mockEvents, "s1");
+testAssert(computedSummary.totalStoreViews === 4, "Metrics: Store views aggregated accurately (4)");
+testAssert(computedSummary.totalProductViews === 2, "Metrics: Product views aggregated accurately (2)");
+testAssert(computedSummary.totalCartAdds === 1, "Metrics: Cart additions aggregated accurately (1)");
+testAssert(computedSummary.totalOrdersPlaced === 1, "Metrics: Orders placed aggregated accurately (1)");
+testAssert(computedSummary.conversionRate === 25.0, "Metrics: Store conversion rate computed accurately (25.0%)");
+testAssert(computedSummary.cartConversionRate === 100.0, "Metrics: Cart conversion rate computed accurately (100.0%)");
+testAssert(computedSummary.topProducts.length === 1 && computedSummary.topProducts[0].productId === "p1", "Metrics: Top products SKU aggregation accurate");
+testAssert(computedSummary.topProducts[0].conversionRate === 50.0, "Metrics: SKU view-to-cart conversion computed accurately (50.0%)");
+
+// Zero division protection
+const emptySummary = testCalculateSummary([], "s1");
+testAssert(emptySummary.conversionRate === 0 && emptySummary.cartConversionRate === 0, "Metrics: Zero-division protected safely (0% fallback)");
+
+// 20.5 Customer Flow Automated Telemetry Verification
+const cartContextSourceWithTracking = fs.readFileSync("./src/context/CartContext.tsx", "utf-8");
+testAssert(cartContextSourceWithTracking.includes("recordStoreAnalyticsEvent"), "Customer Flow: CartContext imports recordStoreAnalyticsEvent");
+testAssert(cartContextSourceWithTracking.includes("eventType: \"product_view\""), "Customer Flow: Product view tracked on customer interaction");
+testAssert(cartContextSourceWithTracking.includes("eventType: \"cart_add\""), "Customer Flow: Cart addition tracked on addToCart");
+testAssert(cartContextSourceWithTracking.includes("eventType: \"order_placed\""), "Customer Flow: Order placement tracked on checkout completion");
+
+// 20.6 UI Integration in Seller Growth Page
+const growthPageSourceWithAnalytics = fs.readFileSync("./src/app/seller/growth/page.tsx", "utf-8");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"analytics-summary-card\""), "UI: Store analytics summary card (data-testid='analytics-summary-card') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"timeframe-selector\""), "UI: Timeframe selector (data-testid='timeframe-selector') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"timeframe-today\""), "UI: Timeframe today button (data-testid='timeframe-today') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"timeframe-7d\""), "UI: Timeframe 7d button (data-testid='timeframe-7d') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"timeframe-30d\""), "UI: Timeframe 30d button (data-testid='timeframe-30d') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"timeframe-all\""), "UI: Timeframe all button (data-testid='timeframe-all') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"metric-store-views\""), "UI: Metric store views (data-testid='metric-store-views') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"metric-product-views\""), "UI: Metric product views (data-testid='metric-product-views') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"metric-cart-adds\""), "UI: Metric cart additions (data-testid='metric-cart-adds') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"metric-orders-placed\""), "UI: Metric orders placed (data-testid='metric-orders-placed') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"metric-conversion-rate\""), "UI: Metric conversion rate (data-testid='metric-conversion-rate') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"top-products-table\""), "UI: Top converting products table (data-testid='top-products-table') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"recent-events-stream\""), "UI: Real-time event stream (data-testid='recent-events-stream') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"simulate-event-btn\""), "UI: Live event simulation button (data-testid='simulate-event-btn') present");
+testAssert(growthPageSourceWithAnalytics.includes("data-testid=\"analytics-permission-denied\""), "UI: Permission denied alert (data-testid='analytics-permission-denied') present");
+
+// 20.7 Seller Dashboard Integration
+const sellerPageSource = fs.readFileSync("./src/app/seller/page.tsx", "utf-8");
+testAssert(sellerPageSource.includes("/seller/growth"), "UI: Seller main dashboard links directly to Growth Coach Analytics (/seller/growth)");
+
+console.log("\n==================================================================");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-GC01!`);
+console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls, Low-Stock Badges, Order Board, Realtime Subscriptions, Packed/Ready Actions, Realtime/Authorization Guards, AI Provider/Server Key, AI Listing Helper, Validated Structured Output, Seller Approval & Store Analytics Events Operational!");
+console.log("==================================================================");

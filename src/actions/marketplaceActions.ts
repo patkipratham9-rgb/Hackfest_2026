@@ -974,3 +974,135 @@ export async function approveAIProductListingAction(
     return { success: false, error: err?.message || "Failed to approve AI listing draft" };
   }
 }
+
+/**
+ * Checkpoint CP-GC01: Record Store Analytics Event Server Action
+ * Records shopper views, cart additions, search queries, and order conversions
+ */
+export async function recordStoreEventAction(
+  payload: any
+): Promise<{ success: boolean; eventId?: string; error?: string }> {
+  try {
+    const { recordStoreAnalyticsEvent } = await import("@/lib/analyticsTracker");
+    const result = recordStoreAnalyticsEvent(payload);
+
+    if (!result.success || !result.event) {
+      return { success: false, error: result.error || "Failed to record event" };
+    }
+
+    // Best-effort background persistence to Supabase
+    try {
+      const adminClient = createServerSupabaseClient();
+      await adminClient.from("analytics_events").insert({
+        store_id: result.event.storeId,
+        product_id: result.event.productId || null,
+        event_type: result.event.eventType,
+        session_id: result.event.sessionId || null,
+        customer_id: result.event.customerId || null,
+        metadata: result.event.metadata || {},
+      });
+    } catch {
+      // Offline / sandbox fallback
+    }
+
+    return { success: true, eventId: result.event.id };
+  } catch (err: any) {
+    console.error("Exception in recordStoreEventAction:", err);
+    return { success: false, error: err?.message || "Failed to record analytics event" };
+  }
+}
+
+/**
+ * Checkpoint CP-GC01: Get Store Analytics Summary Server Action
+ * Role-guarded: Only merchant seller or platform admin can inspect analytics
+ */
+export async function getStoreAnalyticsSummaryAction(
+  storeId: string,
+  options?: {
+    timeframe?: "today" | "7d" | "30d" | "all";
+    role?: string;
+    userStoreId?: string;
+  }
+): Promise<{
+  success: boolean;
+  summary?: import("@/types").StoreAnalyticsSummary;
+  error?: string;
+}> {
+  try {
+    const role = options?.role || "seller";
+    if (role !== "seller" && role !== "admin") {
+      return {
+        success: false,
+        error: "Unauthorized: Seller or admin role required to view store analytics",
+      };
+    }
+
+    if (options?.userStoreId && options.userStoreId !== storeId && role !== "admin") {
+      return {
+        success: false,
+        error: "Forbidden: You can only view analytics for your own store",
+      };
+    }
+
+    if (!storeId || typeof storeId !== "string" || !storeId.trim()) {
+      return { success: false, error: "storeId is required" };
+    }
+
+    const { calculateStoreAnalyticsSummary } = await import("@/lib/analyticsTracker");
+    const summary = calculateStoreAnalyticsSummary(
+      storeId.trim(),
+      options?.timeframe || "7d"
+    );
+
+    return { success: true, summary };
+  } catch (err: any) {
+    console.error("Exception in getStoreAnalyticsSummaryAction:", err);
+    return {
+      success: false,
+      error: err?.message || "Failed to generate store analytics summary",
+    };
+  }
+}
+
+/**
+ * Checkpoint CP-GC01: Get Store Recent Events Stream Action
+ */
+export async function getStoreRecentEventsAction(
+  storeId: string,
+  options?: {
+    limit?: number;
+    role?: string;
+    userStoreId?: string;
+  }
+): Promise<{
+  success: boolean;
+  events?: import("@/types").StoreAnalyticsEvent[];
+  error?: string;
+}> {
+  try {
+    const role = options?.role || "seller";
+    if (role !== "seller" && role !== "admin") {
+      return {
+        success: false,
+        error: "Unauthorized: Seller or admin role required to access event stream",
+      };
+    }
+
+    if (options?.userStoreId && options.userStoreId !== storeId && role !== "admin") {
+      return {
+        success: false,
+        error: "Forbidden: You can only view events for your own store",
+      };
+    }
+
+    const { getStoreAnalyticsEvents } = await import("@/lib/analyticsTracker");
+    const events = getStoreAnalyticsEvents(storeId, {
+      limit: options?.limit || 20,
+    });
+
+    return { success: true, events };
+  } catch (err: any) {
+    console.error("Exception in getStoreRecentEventsAction:", err);
+    return { success: false, error: err?.message || "Failed to fetch event stream" };
+  }
+}

@@ -117,14 +117,28 @@ export default function SellerDashboardPage() {
               AI Growth Coach Recommendation
             </h2>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta-700 bg-terracotta-100 px-2 py-0.5 rounded-full">
-            Local Insights
-          </span>
+          <Link
+            href="/seller/growth"
+            className="text-[10px] font-bold uppercase tracking-wider text-terracotta-700 bg-terracotta-100 hover:bg-terracotta-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1 transition-colors"
+          >
+            <span>Analytics & Insights</span>
+            <ChevronRight className="w-3 h-3" />
+          </Link>
         </div>
 
         <p className="text-xs text-forest-700 leading-relaxed bg-cream-100 p-3.5 rounded-2xl border border-cream-200">
           Shoppers in <strong>Vidyanagar & Station Road</strong> searched for &ldquo;fresh roasted coffee&rdquo; 42 times this week. Bundling your <em>Terracotta Diya Set</em> with <em>Chicory Filter Coffee Powder</em> at ₹399 can increase counter pickup conversion by ~24%.
         </p>
+
+        <div className="pt-1 flex items-center justify-end">
+          <Link
+            href="/seller/growth"
+            className="text-xs font-bold text-terracotta-600 hover:text-terracotta-700 inline-flex items-center gap-1"
+          >
+            <span>View Funnel & Store Telemetry</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* Recent Orders Pipeline Section */}

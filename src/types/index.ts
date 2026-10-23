@@ -85,3 +85,45 @@ export interface Order {
   shelfSlot?: string;
   packingNotes?: string;
 }
+
+export type AnalyticsEventType =
+  | "store_view"
+  | "product_view"
+  | "cart_add"
+  | "cart_remove"
+  | "checkout_start"
+  | "order_placed"
+  | "search_query";
+
+export interface StoreAnalyticsEvent {
+  id: string;
+  storeId: string;
+  productId?: string;
+  productName?: string;
+  eventType: AnalyticsEventType;
+  sessionId?: string;
+  customerId?: string;
+  metadata?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface StoreAnalyticsSummary {
+  storeId: string;
+  storeName?: string;
+  totalStoreViews: number;
+  totalProductViews: number;
+  totalCartAdds: number;
+  totalOrdersPlaced: number;
+  conversionRate: number; // percentage (orders / storeViews * 100)
+  cartConversionRate: number; // percentage (orders / cartAdds * 100)
+  topProducts: Array<{
+    productId: string;
+    productName: string;
+    views: number;
+    cartAdds: number;
+    orders: number;
+    conversionRate: number;
+  }>;
+  recentEvents: StoreAnalyticsEvent[];
+  timeframe: "today" | "7d" | "30d" | "all";
+}

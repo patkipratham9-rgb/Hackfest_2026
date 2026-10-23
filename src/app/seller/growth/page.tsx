@@ -13,12 +13,22 @@ import {
   CheckCircle2,
   RefreshCw,
   Zap,
+  Eye,
+  ShoppingCart,
+  ShoppingBag,
+  BarChart3,
+  Activity,
+  PlusCircle,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   getAIProviderStatusAction,
   testAIProviderConnectionAction,
+  getStoreAnalyticsSummaryAction,
+  recordStoreEventAction,
 } from "@/actions/marketplaceActions";
+import { StoreAnalyticsSummary, StoreAnalyticsEvent } from "@/types";
 
 export default function SellerGrowthPage() {
   const { activeStore } = useSeller();
@@ -50,6 +60,42 @@ export default function SellerGrowthPage() {
     message?: string;
   } | null>(null);
 
+  // Checkpoint CP-GC01: Store Analytics Events State
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState<"today" | "7d" | "30d" | "all">("7d");
+  const [analyticsSummary, setAnalyticsSummary] = useState<StoreAnalyticsSummary>({
+    storeId: activeStore?.id || "store-1",
+    totalStoreViews: 4,
+    totalProductViews: 5,
+    totalCartAdds: 4,
+    totalOrdersPlaced: 3,
+    conversionRate: 75.0,
+    cartConversionRate: 75.0,
+    topProducts: [
+      {
+        productId: "p1",
+        productName: "Dharwad Pedha (500g)",
+        views: 4,
+        cartAdds: 3,
+        orders: 2,
+        conversionRate: 75.0,
+      },
+      {
+        productId: "p2",
+        productName: "Bikaneri Bhujia (250g)",
+        views: 1,
+        cartAdds: 1,
+        orders: 1,
+        conversionRate: 100.0,
+      },
+    ],
+    recentEvents: [],
+    timeframe: "7d",
+  });
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+  const [simulatedCount, setSimulatedCount] = useState(0);
+
+  // Load AI Provider Status
   useEffect(() => {
     async function loadAIStatus() {
       try {
@@ -70,6 +116,32 @@ export default function SellerGrowthPage() {
     loadAIStatus();
   }, []);
 
+  // Checkpoint CP-GC01: Load Store Analytics Events Summary
+  useEffect(() => {
+    async function loadAnalytics() {
+      setIsAnalyticsLoading(true);
+      setPermissionError(null);
+      try {
+        const storeId = activeStore?.id || "store-1";
+        const res = await getStoreAnalyticsSummaryAction(storeId, {
+          timeframe: analyticsTimeframe,
+          role: "seller",
+        });
+
+        if (res.success && res.summary) {
+          setAnalyticsSummary(res.summary);
+        } else if (res.error) {
+          setPermissionError(res.error);
+        }
+      } catch (err: any) {
+        console.warn("Error loading analytics:", err);
+      } finally {
+        setIsAnalyticsLoading(false);
+      }
+    }
+    loadAnalytics();
+  }, [activeStore?.id, analyticsTimeframe, simulatedCount]);
+
   const handleTestConnection = async () => {
     setIsTesting(true);
     setTestResult(null);
@@ -89,6 +161,29 @@ export default function SellerGrowthPage() {
     } finally {
       setIsTesting(false);
     }
+  };
+
+  // Checkpoint CP-GC01: Interactive Simulator for Live Demo and Testing
+  const handleSimulateEvent = async (type: "store_view" | "cart_add" | "product_view") => {
+    const storeId = activeStore?.id || "store-1";
+    const sampleProduct = analyticsSummary.topProducts[0] || {
+      productId: "p1",
+      productName: "Dharwad Pedha (500g)",
+    };
+
+    await recordStoreEventAction({
+      storeId,
+      productId: type !== "store_view" ? sampleProduct.productId : undefined,
+      productName: type !== "store_view" ? sampleProduct.productName : undefined,
+      eventType: type,
+      metadata: {
+        area: "Vidyanagar",
+        source: "growth_coach_simulator",
+        simulated: true,
+      },
+    });
+
+    setSimulatedCount((c) => c + 1);
   };
 
   const insights = [
@@ -231,7 +326,301 @@ export default function SellerGrowthPage() {
         </AnimatePresence>
       </div>
 
+      {/* Checkpoint CP-GC01: Store Analytics Events & Funnel Card */}
+      <div
+        data-testid="analytics-summary-card"
+        className="p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cream-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-terracotta-100 text-terracotta-600 border border-terracotta-200 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif font-extrabold text-lg text-forest-950">
+                  Storefront Analytics & Conversion Funnel
+                </h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta-600 bg-terracotta-50 border border-terracotta-200 px-2 py-0.5 rounded-md">
+                  CP-GC01
+                </span>
+              </div>
+              <p className="text-xs text-forest-600">
+                Real-time shopper event telemetry across Hubballi lanes
+              </p>
+            </div>
+          </div>
+
+          {/* Timeframe Selector */}
+          <div
+            data-testid="timeframe-selector"
+            className="flex items-center p-1 rounded-xl bg-cream-200 border border-cream-300 text-xs self-start sm:self-auto"
+          >
+            <button
+              type="button"
+              data-testid="timeframe-today"
+              onClick={() => setAnalyticsTimeframe("today")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                analyticsTimeframe === "today"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              data-testid="timeframe-7d"
+              onClick={() => setAnalyticsTimeframe("7d")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                analyticsTimeframe === "7d"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              7 Days
+            </button>
+            <button
+              type="button"
+              data-testid="timeframe-30d"
+              onClick={() => setAnalyticsTimeframe("30d")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                analyticsTimeframe === "30d"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              30 Days
+            </button>
+            <button
+              type="button"
+              data-testid="timeframe-all"
+              onClick={() => setAnalyticsTimeframe("all")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                analyticsTimeframe === "all"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              All Time
+            </button>
+          </div>
+        </div>
+
+        {/* Permission Denied Alert (for testing / unauthorized scenarios) */}
+        {permissionError && (
+          <div
+            data-testid="analytics-permission-denied"
+            className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+            <span>{permissionError}</span>
+          </div>
+        )}
+
+        {/* Funnel Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {/* Store Views */}
+          <div
+            data-testid="metric-store-views"
+            className="p-4 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-forest-600 text-xs">
+              <span>Store Views</span>
+              <Eye className="w-4 h-4 text-forest-500" />
+            </div>
+            <span className="font-serif font-black text-2xl text-forest-950 block">
+              {analyticsSummary.totalStoreViews}
+            </span>
+            <span className="text-[10px] text-forest-600 font-medium">Shopper visits</span>
+          </div>
+
+          {/* Product Views */}
+          <div
+            data-testid="metric-product-views"
+            className="p-4 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-forest-600 text-xs">
+              <span>Product Views</span>
+              <Activity className="w-4 h-4 text-forest-500" />
+            </div>
+            <span className="font-serif font-black text-2xl text-forest-950 block">
+              {analyticsSummary.totalProductViews}
+            </span>
+            <span className="text-[10px] text-forest-600 font-medium">SKU interactions</span>
+          </div>
+
+          {/* Cart Additions */}
+          <div
+            data-testid="metric-cart-adds"
+            className="p-4 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-terracotta-700 text-xs">
+              <span>Cart Additions</span>
+              <ShoppingCart className="w-4 h-4 text-terracotta-600" />
+            </div>
+            <span className="font-serif font-black text-2xl text-terracotta-700 block">
+              {analyticsSummary.totalCartAdds}
+            </span>
+            <span className="text-[10px] text-forest-600 font-medium">Intent to buy</span>
+          </div>
+
+          {/* Orders Placed */}
+          <div
+            data-testid="metric-orders-placed"
+            className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-emerald-800 text-xs">
+              <span>Orders Placed</span>
+              <ShoppingBag className="w-4 h-4 text-emerald-700" />
+            </div>
+            <span className="font-serif font-black text-2xl text-emerald-800 block">
+              {analyticsSummary.totalOrdersPlaced}
+            </span>
+            <span className="text-[10px] text-emerald-700 font-medium">Completed conversions</span>
+          </div>
+
+          {/* Conversion Rate */}
+          <div
+            data-testid="metric-conversion-rate"
+            className="p-4 rounded-2xl bg-terracotta-500 text-white space-y-1 col-span-2 md:col-span-1 shadow-sm"
+          >
+            <div className="flex items-center justify-between text-cream-200 text-xs">
+              <span>Store Conversion</span>
+              <TrendingUp className="w-4 h-4 text-cream-100" />
+            </div>
+            <span className="font-serif font-black text-2xl text-white block">
+              {analyticsSummary.conversionRate}%
+            </span>
+            <span className="text-[10px] text-cream-200 font-medium">
+              Cart CV: {analyticsSummary.cartConversionRate}%
+            </span>
+          </div>
+        </div>
+
+        {/* Top Performing SKUs Table */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900">
+              Top Converting SKUs
+            </h3>
+            <span className="text-[11px] text-forest-600">Ranked by shopper intent</span>
+          </div>
+
+          <div
+            data-testid="top-products-table"
+            className="overflow-x-auto rounded-2xl border border-cream-200 bg-white"
+          >
+            <table className="w-full text-left text-xs">
+              <thead className="bg-cream-100/80 text-forest-700 font-semibold border-b border-cream-200">
+                <tr>
+                  <th className="p-3">Product Name</th>
+                  <th className="p-3 text-center">Shopper Views</th>
+                  <th className="p-3 text-center">Cart Adds</th>
+                  <th className="p-3 text-right">Conversion</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-cream-100">
+                {analyticsSummary.topProducts.map((p) => (
+                  <tr
+                    key={p.productId}
+                    data-testid={`top-product-row-${p.productId}`}
+                    className="hover:bg-cream-50/60 transition-colors"
+                  >
+                    <td className="p-3 font-bold text-forest-950">{p.productName}</td>
+                    <td className="p-3 text-center text-forest-700 font-mono">{p.views}</td>
+                    <td className="p-3 text-center text-terracotta-700 font-bold font-mono">
+                      {p.cartAdds}
+                    </td>
+                    <td className="p-3 text-right">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono font-bold text-[11px]">
+                        {p.conversionRate}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Live Shopper Telemetry Stream */}
+        <div className="space-y-3 pt-2 border-t border-cream-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900">
+                Live Shopper Event Telemetry
+              </h3>
+              <p className="text-[11px] text-forest-600">
+                Real-time activity captured via LocalLoop event broker
+              </p>
+            </div>
+
+            {/* Simulation trigger for live testing */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="simulate-event-btn"
+                onClick={() => handleSimulateEvent("cart_add")}
+                className="px-3 py-1.5 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-terracotta-400" />
+                <span>Simulate Shopper Cart Add</span>
+              </button>
+            </div>
+          </div>
+
+          <div
+            data-testid="recent-events-stream"
+            className="space-y-2 max-h-56 overflow-y-auto pr-1"
+          >
+            {analyticsSummary.recentEvents.length === 0 ? (
+              <div className="p-4 text-center text-xs text-forest-500 bg-cream-100/50 rounded-2xl">
+                Awaiting shopper events. Click &lsquo;Simulate Shopper Cart Add&rsquo; to trigger live telemetry.
+              </div>
+            ) : (
+              analyticsSummary.recentEvents.map((evt) => (
+                <div
+                  key={evt.id}
+                  data-testid={`event-item-${evt.id}`}
+                  className="p-3 rounded-2xl bg-white border border-cream-200 flex items-center justify-between text-xs"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-mono font-bold text-[10px] uppercase tracking-wider ${
+                        evt.eventType === "order_placed"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : evt.eventType === "cart_add"
+                          ? "bg-terracotta-100 text-terracotta-800"
+                          : "bg-forest-100 text-forest-800"
+                      }`}
+                    >
+                      {evt.eventType.replace("_", " ")}
+                    </span>
+                    <span className="font-medium text-forest-950">
+                      {evt.productName || evt.metadata?.area || "Storefront Activity"}
+                    </span>
+                  </div>
+
+                  <span className="text-[10px] font-mono text-forest-500">
+                    {new Date(evt.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* AI Recommendations Section */}
       <div className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900">
+          Heuristic Growth Tips
+        </h3>
         {insights.map((insight) => (
           <motion.div
             key={insight.id}
