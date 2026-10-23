@@ -1,8 +1,9 @@
 "use client";
 
-import React, { use } from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { OrderStatus } from "@/types";
 import {
@@ -30,7 +31,7 @@ interface OrderTrackingStep {
   icon: React.ElementType;
 }
 
-// Checkpoint 4.3: Four official order statuses with exact labels:
+// Four official order statuses with exact labels:
 // Placed → Packed → Ready for Pickup → Completed
 const TRACKING_STEPS: OrderTrackingStep[] = [
   {
@@ -84,16 +85,22 @@ const STATUS_HEADLINES: Record<OrderStatus, { headline: string; detail: string }
   },
 };
 
-export default function OrderTrackingPage({
-  params,
+function OrderTrackingContent({
+  initialId,
 }: {
-  params: Promise<{ id: string }>;
+  initialId?: string;
 }) {
-  const resolvedParams = use(params);
-  const { orders, getOrderById, updateOrderStatus, isLoaded } = useCart();
-  const orderId = resolvedParams.id;
+  const routeParams = useParams();
+  const rawParamId = routeParams?.id;
+  const orderId =
+    (typeof rawParamId === "string"
+      ? rawParamId
+      : Array.isArray(rawParamId)
+      ? rawParamId[0]
+      : initialId) || "";
 
-  const order = getOrderById(orderId);
+  const { orders, getOrderById, updateOrderStatus, isLoaded } = useCart();
+  const order = orderId ? getOrderById(orderId) : undefined;
 
   // If initial hydration / storage load is still occurring and order not found yet
   if (!isLoaded && !order) {
@@ -104,13 +111,13 @@ export default function OrderTrackingPage({
       >
         <div className="w-12 h-12 border-4 border-terracotta-500 border-t-transparent rounded-full animate-spin mx-auto" />
         <p className="text-xs text-forest-700 font-semibold">
-          Loading order details for <span className="font-mono">{orderId}</span>...
+          Loading order details for <span className="font-mono">{orderId || "order"}</span>...
         </p>
       </div>
     );
   }
 
-  // Checkpoint 4.2: Useful Not-Found State for unknown IDs
+  // Useful Not-Found State for unknown IDs
   if (!order) {
     return (
       <motion.div
@@ -136,7 +143,7 @@ export default function OrderTrackingPage({
               data-testid="not-found-order-id"
               className="font-mono font-bold text-forest-950 bg-cream-200 px-1.5 py-0.5 rounded border border-cream-300"
             >
-              {orderId}
+              {orderId || "Unknown"}
             </span>
             .
           </p>
@@ -311,7 +318,7 @@ export default function OrderTrackingPage({
           </motion.div>
         </div>
 
-        {/* Checkpoint 4.3: 4-Step Visual Progress Bar */}
+        {/* 4-Step Visual Progress Bar */}
         <div
           data-testid="order-progress-timeline"
           data-active-step={order.status}
@@ -336,7 +343,6 @@ export default function OrderTrackingPage({
                 const isPassed = idx <= currentStepIndex;
                 const isCompleted = idx < currentStepIndex;
                 const isCurrent = idx === currentStepIndex;
-                const isPending = idx > currentStepIndex;
                 const StepIcon = step.icon;
 
                 const stepState = isCurrent ? "active" : isCompleted ? "completed" : "pending";
@@ -593,5 +599,25 @@ export default function OrderTrackingPage({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+export default function OrderTrackingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          data-testid="order-loading"
+          className="max-w-md mx-auto text-center py-20 space-y-4"
+        >
+          <div className="w-12 h-12 border-4 border-terracotta-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-forest-700 font-semibold">
+            Loading order details...
+          </p>
+        </div>
+      }
+    >
+      <OrderTrackingContent />
+    </Suspense>
   );
 }
