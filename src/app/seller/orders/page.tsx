@@ -29,9 +29,14 @@ import {
   VolumeX,
   Radio,
   Bell,
+  Store,
+  CheckSquare,
+  Square,
+  Send,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
+import { markOrderPackedAction, markOrderReadyAction } from "@/actions/marketplaceActions";
 
 export default function SellerOrdersPage() {
   const { activeStore } = useSeller();
@@ -41,6 +46,15 @@ export default function SellerOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+
+  // Checkpoint CP-OB03: Packing & Staging Modal States
+  const [packingOrder, setPackingOrder] = useState<Order | null>(null);
+  const [packedItemsCheck, setPackedItemsCheck] = useState<Record<string, boolean>>({});
+  const [packingNotes, setPackingNotes] = useState("");
+
+  const [stagingOrder, setStagingOrder] = useState<Order | null>(null);
+  const [shelfSlot, setShelfSlot] = useState("Front Counter Shelf A1");
+  const [notifyCustomerOnReady, setNotifyCustomerOnReady] = useState(true);
 
   // Checkpoint CP-OB02: Realtime Subscriptions State & Toast
   const [realtimeToast, setRealtimeToast] = useState<{ id: string; customer: string; amount: number } | null>(null);
@@ -118,14 +132,47 @@ export default function SellerOrdersPage() {
     });
   }, [displayOrders, searchQuery, statusFilter]);
 
+  // Checkpoint CP-OB03: Mark Order as Packed Action
+  const handleMarkPacked = (order: Order, notes?: string) => {
+    const packedAt = new Date().toISOString();
+    updateOrderStatus(order.id, "packed", { packedAt, packingNotes: notes });
+    markOrderPackedAction(order.id, { packingNotes: notes });
+    setSuccessToast(`Order ${order.id} marked as Packed & Bagged!`);
+    setPackingOrder(null);
+  };
+
+  const openPackModal = (order: Order) => {
+    setPackingOrder(order);
+    const initialChecks: Record<string, boolean> = {};
+    order.items.forEach((item) => {
+      initialChecks[item.product.id] = true;
+    });
+    setPackedItemsCheck(initialChecks);
+    setPackingNotes("");
+  };
+
+  // Checkpoint CP-OB03: Mark Order Ready for Pickup Action
+  const handleMarkReady = (order: Order, slot?: string) => {
+    const readyAt = new Date().toISOString();
+    const assignedSlot = slot || shelfSlot || "Front Counter Shelf A1";
+    updateOrderStatus(order.id, "ready", { readyAt, shelfSlot: assignedSlot });
+    markOrderReadyAction(order.id, { shelfSlot: assignedSlot, notifyCustomer: notifyCustomerOnReady });
+    setSuccessToast(`Order ${order.id} is Ready at ${assignedSlot}! Customer arrival alert active.`);
+    setStagingOrder(null);
+  };
+
+  const openReadyModal = (order: Order) => {
+    setStagingOrder(order);
+    setShelfSlot("Front Counter Shelf A1");
+    setNotifyCustomerOnReady(true);
+  };
+
   // Handle advancing state
   const handleAdvance = (order: Order) => {
     if (order.status === "placed") {
-      updateOrderStatus(order.id, "packed");
-      setSuccessToast(`Order ${order.id} marked as Packed!`);
+      handleMarkPacked(order);
     } else if (order.status === "packed") {
-      updateOrderStatus(order.id, "ready");
-      setSuccessToast(`Order ${order.id} is now Ready for Counter Pickup!`);
+      handleMarkReady(order);
     } else if (order.status === "ready") {
       // Open verification modal for PIN release
       setVerifyingOrder(order);
@@ -319,6 +366,35 @@ export default function SellerOrdersPage() {
                 {order.paymentMethod === "upi" ? "UPI Paid" : "Pay at Counter"}
               </span>
             </div>
+
+            {/* Checkpoint CP-OB03: Packed & Shelf Slot Badges */}
+            {order.status === "packed" && (
+              <div
+                data-testid={`order-packed-badge-${order.id}`}
+                className="flex items-center justify-between text-[11px] text-sky-800 bg-sky-50 px-2 py-1 rounded-lg border border-sky-200"
+              >
+                <span className="flex items-center gap-1 font-semibold">
+                  <Package className="w-3 h-3 text-sky-600" />
+                  <span>Reserved & Bagged</span>
+                </span>
+                <span className="font-mono text-[10px] text-sky-700 font-bold">Packed</span>
+              </div>
+            )}
+
+            {order.status === "ready" && (
+              <div
+                data-testid={`order-shelf-slot-${order.id}`}
+                className="flex items-center justify-between text-[11px] text-terracotta-800 bg-terracotta-50 px-2 py-1 rounded-lg border border-terracotta-200"
+              >
+                <span className="flex items-center gap-1 font-semibold">
+                  <Store className="w-3 h-3 text-terracotta-600" />
+                  <span>Counter Staging:</span>
+                </span>
+                <strong className="text-terracotta-900 font-bold text-[11px]">
+                  {order.shelfSlot || "Front Counter Shelf A1"}
+                </strong>
+              </div>
+            )}
           </div>
 
           {/* Ordered Line Items */}
@@ -354,41 +430,66 @@ export default function SellerOrdersPage() {
           </div>
         </div>
 
-        {/* Action Bar */}
+        {/* Action Bar: Checkpoint CP-OB03 Packed and Ready Actions */}
         <div className="pt-3 border-t border-cream-200 flex items-center gap-2">
           {order.status === "placed" && (
-            <button
-              type="button"
-              data-testid={`advance-order-btn-${order.id}`}
-              data-mark-packed={`mark-packed-${order.id}`}
-              onClick={() => handleAdvance(order)}
-              className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Package className="w-3.5 h-3.5" />
-              <span>Mark as Packed</span>
-            </button>
+            <div className="flex-1 flex items-center gap-1.5">
+              <button
+                type="button"
+                data-testid={`mark-packed-${order.id}`}
+                data-advance-order={`advance-order-btn-${order.id}`}
+                onClick={() => handleMarkPacked(order)}
+                className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Mark as Packed"
+              >
+                <Package className="w-3.5 h-3.5" />
+                <span>Mark as Packed</span>
+              </button>
+              <button
+                type="button"
+                data-testid={`pack-checklist-btn-${order.id}`}
+                onClick={() => openPackModal(order)}
+                className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold cursor-pointer transition-colors"
+                title="Verify items with packaging checklist"
+              >
+                <CheckSquare className="w-4 h-4 text-amber-700" />
+              </button>
+            </div>
           )}
 
           {order.status === "packed" && (
-            <button
-              type="button"
-              data-testid={`advance-order-btn-${order.id}`}
-              data-mark-ready={`mark-ready-${order.id}`}
-              onClick={() => handleAdvance(order)}
-              className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Clock className="w-3.5 h-3.5" />
-              <span>Mark Ready for Pickup</span>
-            </button>
+            <div className="flex-1 flex items-center gap-1.5">
+              <button
+                type="button"
+                data-testid={`mark-ready-${order.id}`}
+                data-advance-order={`advance-order-btn-${order.id}`}
+                onClick={() => handleMarkReady(order)}
+                className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Mark Ready for Pickup"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Mark Ready for Pickup</span>
+              </button>
+              <button
+                type="button"
+                data-testid={`stage-shelf-btn-${order.id}`}
+                onClick={() => openReadyModal(order)}
+                className="p-2 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-900 border border-sky-300 text-xs font-bold cursor-pointer transition-colors"
+                title="Assign counter staging shelf"
+              >
+                <Store className="w-4 h-4 text-sky-700" />
+              </button>
+            </div>
           )}
 
           {order.status === "ready" && (
             <button
               type="button"
-              data-testid={`advance-order-btn-${order.id}`}
-              data-mark-completed={`mark-completed-${order.id}`}
+              data-testid={`mark-completed-${order.id}`}
+              data-advance-order={`advance-order-btn-${order.id}`}
               onClick={() => handleAdvance(order)}
               className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-terracotta-500 hover:bg-terracotta-600 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              title="Verify Counter PIN and Complete Pickup"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Verify & Release Order</span>
@@ -998,6 +1099,222 @@ export default function SellerOrdersPage() {
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Confirm Pickup</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Checkpoint CP-OB03: Pack Order Checklist Modal */}
+      <AnimatePresence>
+        {packingOrder && (
+          <div
+            data-testid="pack-order-modal"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-cream-50 rounded-3xl border border-cream-300 shadow-2xl p-6 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-cream-300">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                    <Package className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-forest-950">
+                      Packing Checklist
+                    </h3>
+                    <p className="text-[11px] text-forest-600">
+                      Order: {packingOrder.id} • {packingOrder.customerName}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  data-testid="cancel-pack-button"
+                  onClick={() => setPackingOrder(null)}
+                  className="p-1.5 rounded-lg text-forest-500 hover:text-forest-900 hover:bg-cream-200 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-forest-700">
+                  Verify items into local packaging bag before marking packed:
+                </p>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {packingOrder.items.map((item) => {
+                    const isChecked = !!packedItemsCheck[item.product.id];
+                    return (
+                      <div
+                        key={item.product.id}
+                        onClick={() =>
+                          setPackedItemsCheck({
+                            ...packedItemsCheck,
+                            [item.product.id]: !isChecked,
+                          })
+                        }
+                        className={`p-2.5 rounded-xl border flex items-center justify-between text-xs cursor-pointer transition-colors ${
+                          isChecked
+                            ? "bg-amber-50/80 border-amber-300 text-amber-950"
+                            : "bg-cream-100 border-cream-200 text-forest-700"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            data-testid={`pack-item-check-${item.product.id}`}
+                            onChange={() => {}}
+                            className="w-4 h-4 rounded text-amber-600 cursor-pointer"
+                          />
+                          <span className="font-semibold">
+                            {item.quantity}× {item.product.name}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-forest-600">
+                          ₹{item.product.price * item.quantity}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                    Packaging Notes (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="pack-notes-input"
+                    value={packingNotes}
+                    onChange={(e) => setPackingNotes(e.target.value)}
+                    placeholder="e.g. Bagged with extra tissue wrap"
+                    className="w-full px-3.5 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-cream-300 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPackingOrder(null)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-testid="confirm-pack-button"
+                  onClick={() => handleMarkPacked(packingOrder, packingNotes)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-warm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Package className="w-4 h-4" />
+                  <span>Confirm Packed</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Checkpoint CP-OB03: Ready Staging & Shelf Slot Modal */}
+      <AnimatePresence>
+        {stagingOrder && (
+          <div
+            data-testid="ready-order-modal"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-cream-50 rounded-3xl border border-cream-300 shadow-2xl p-6 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-cream-300">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center">
+                    <Store className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-forest-950">
+                      Stage for Counter Pickup
+                    </h3>
+                    <p className="text-[11px] text-forest-600">
+                      Order: {stagingOrder.id} • PIN: {stagingOrder.pickupCode}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  data-testid="cancel-ready-button"
+                  onClick={() => setStagingOrder(null)}
+                  className="p-1.5 rounded-lg text-forest-500 hover:text-forest-900 hover:bg-cream-200 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-forest-700">
+                  Assign a counter staging shelf so customer service staff can locate the order in seconds:
+                </p>
+
+                <div>
+                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                    Pickup Staging Shelf / Slot
+                  </label>
+                  <select
+                    data-testid="shelf-slot-input"
+                    value={shelfSlot}
+                    onChange={(e) => setShelfSlot(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-bold focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
+                  >
+                    <option value="Front Counter Shelf A1">Front Counter Shelf A1 (Quick Pickup)</option>
+                    <option value="Front Counter Shelf A2">Front Counter Shelf A2</option>
+                    <option value="Shelf B2 (Sweets Section)">Shelf B2 (Sweets Section)</option>
+                    <option value="Refrigerated Shelf 1 (Dairy/Chilled)">Refrigerated Shelf 1 (Dairy/Chilled)</option>
+                    <option value="Staging Bin 3">Staging Bin 3</option>
+                  </select>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-cream-100 border border-cream-200 flex items-center justify-between text-xs">
+                  <span className="font-medium text-forest-700">Send Customer Arrival Notice:</span>
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-forest-950">
+                    <input
+                      type="checkbox"
+                      data-testid="notify-customer-checkbox"
+                      checked={notifyCustomerOnReady}
+                      onChange={(e) => setNotifyCustomerOnReady(e.target.checked)}
+                      className="w-4 h-4 rounded text-terracotta-600"
+                    />
+                    <span>Notify on WhatsApp/SMS</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-cream-300 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStagingOrder(null)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-testid="confirm-ready-button"
+                  onClick={() => handleMarkReady(stagingOrder, shelfSlot)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-warm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Notify & Stage</span>
                 </button>
               </div>
             </motion.div>

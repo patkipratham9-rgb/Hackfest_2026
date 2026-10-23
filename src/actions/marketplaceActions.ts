@@ -251,6 +251,71 @@ export async function updateOrderStatusAction(
 }
 
 /**
+ * Checkpoint CP-OB03: Mark Order Packed Server Action
+ */
+export async function markOrderPackedAction(
+  orderId: string,
+  options?: { packingNotes?: string; role?: string }
+): Promise<{ success: boolean; error?: string; packedAt?: string }> {
+  try {
+    if (options?.role && options.role !== "seller" && options.role !== "admin") {
+      return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+    }
+    if (!orderId) {
+      return { success: false, error: "Order ID is required" };
+    }
+
+    const res = await updateOrderStatusAction(orderId, "packed", {
+      role: options?.role || "seller",
+    });
+
+    if (!res.success) {
+      return res;
+    }
+
+    return {
+      success: true,
+      packedAt: new Date().toISOString(),
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to mark order packed" };
+  }
+}
+
+/**
+ * Checkpoint CP-OB03: Mark Order Ready Server Action
+ */
+export async function markOrderReadyAction(
+  orderId: string,
+  options?: { shelfSlot?: string; notifyCustomer?: boolean; role?: string }
+): Promise<{ success: boolean; error?: string; readyAt?: string; shelfSlot?: string }> {
+  try {
+    if (options?.role && options.role !== "seller" && options.role !== "admin") {
+      return { success: false, error: "Unauthorized: Seller or Admin permissions required" };
+    }
+    if (!orderId) {
+      return { success: false, error: "Order ID is required" };
+    }
+
+    const res = await updateOrderStatusAction(orderId, "ready", {
+      role: options?.role || "seller",
+    });
+
+    if (!res.success) {
+      return res;
+    }
+
+    return {
+      success: true,
+      readyAt: new Date().toISOString(),
+      shelfSlot: options?.shelfSlot || "Counter Shelf A1",
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to mark order ready" };
+  }
+}
+
+/**
  * Get order details by ID
  */
 export async function getOrderDetailsAction(orderId: string): Promise<Order | null> {

@@ -77,4 +77,8 @@ export interface Order {
   pickupTime: string;
   pickupCode: string;
   createdAt: string;
+  packedAt?: string;
+  readyAt?: string;
+  shelfSlot?: string;
+  packingNotes?: string;
 }

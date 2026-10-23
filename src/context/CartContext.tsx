@@ -32,7 +32,11 @@ interface CartContextType {
     paymentMethod: "upi" | "counter";
     items?: CartItem[];
   }) => Order | null;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  updateOrderStatus: (
+    orderId: string,
+    status: OrderStatus,
+    meta?: { packedAt?: string; readyAt?: string; shelfSlot?: string; packingNotes?: string }
+  ) => void;
   totalItems: number;
   subtotal: number;
   platformFee: number;
@@ -362,10 +366,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return newOrder;
   };
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    setOrders((prev) =>
-      prev.map((ord) => (ord.id === orderId ? { ...ord, status } : ord))
-    );
+  const updateOrderStatus = (
+    orderId: string,
+    status: OrderStatus,
+    meta?: { packedAt?: string; readyAt?: string; shelfSlot?: string; packingNotes?: string }
+  ) => {
+    setOrders((prev) => {
+      const updated = prev.map((ord) =>
+        ord.id === orderId ? { ...ord, status, ...(meta || {}) } : ord
+      );
+      try {
+        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Storage sync error:", e);
+      }
+      return updated;
+    });
 
     updateOrderStatusAction(orderId, status).catch((err) => {
       console.warn("Supabase status sync note:", err);
