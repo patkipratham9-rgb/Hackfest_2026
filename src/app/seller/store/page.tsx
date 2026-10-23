@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useMemo } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useSeller } from "@/context/SellerContext";
 import { supabase } from "@/lib/supabaseClient";
 import { NeighborhoodArea, ProductCategory } from "@/types";
@@ -30,6 +31,9 @@ import {
   X,
   FileImage,
   Calendar,
+  Trash2,
+  Building2,
+  CreditCard,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -62,7 +66,8 @@ const DAY_TEST_IDS: Record<DayOfWeek, string> = {
 };
 
 export default function StoreProfilePage() {
-  const { activeStore, updateStoreProfile, toggleStoreOpen } = useSeller();
+  const router = useRouter();
+  const { activeStore, updateStoreProfile, toggleStoreOpen, deleteMerchantStore } = useSeller();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states initialized with activeStore
@@ -75,6 +80,24 @@ export default function StoreProfilePage() {
   const [openingHours, setOpeningHours] = useState(activeStore.openingHours || "7:00 AM - 9:00 PM");
   const [bannerUrl, setBannerUrl] = useState(activeStore.bannerUrl || "");
   const [imageUrl, setImageUrl] = useState(activeStore.imageUrl || "");
+
+  // Extended Merchant Details
+  const [location, setLocation] = useState(activeStore.location || activeStore.area || "Vidyanagar");
+  const [shopTiming, setShopTiming] = useState(activeStore.shopTiming || activeStore.openingHours || "8:00 AM - 9:00 PM");
+  const [holidays, setHolidays] = useState(activeStore.holidays || "Every Sunday & National Holidays");
+  const [businessType, setBusinessType] = useState(activeStore.businessType || "Sole Proprietorship");
+  const [contactPhone, setContactPhone] = useState(activeStore.contactPhone || activeStore.phone || "+91 98450 12345");
+  const [panNumber, setPanNumber] = useState(activeStore.panNumber || "ABCDE1234F");
+  const [bankAccountNumber, setBankAccountNumber] = useState(activeStore.bankAccountNumber || "9876543210123");
+  const [bankIfscCode, setBankIfscCode] = useState(activeStore.bankIfscCode || "SBIN0001234");
+  const [bankName, setBankName] = useState(activeStore.bankName || "State Bank of India");
+  const [pickupAddress, setPickupAddress] = useState(activeStore.pickupAddress || activeStore.lane || "Shop #12, Market Road, Hubballi");
+  const [returnAddress, setReturnAddress] = useState(activeStore.returnAddress || activeStore.lane || "Shop #12, Market Road, Hubballi");
+  const [logoUrl, setLogoUrl] = useState(activeStore.logoUrl || activeStore.imageUrl || "");
+
+  // Account Removal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingStore, setIsDeletingStore] = useState(false);
 
   // Checkpoint CP-SP04: Structured Operating Hours & Schedule States
   const initialHours = useMemo(
@@ -268,12 +291,35 @@ export default function StoreProfilePage() {
         openingHours: openingHours.trim(),
         bannerUrl: bannerUrl.trim() || activeStore.bannerUrl,
         imageUrl: imageUrl.trim() || activeStore.imageUrl,
+        location: location.trim(),
+        shopTiming: shopTiming.trim(),
+        holidays: holidays.trim(),
+        businessType: businessType.trim(),
+        contactPhone: contactPhone.trim(),
+        panNumber: panNumber.trim().toUpperCase(),
+        bankAccountNumber: bankAccountNumber.trim(),
+        bankIfscCode: bankIfscCode.trim().toUpperCase(),
+        bankName: bankName.trim(),
+        pickupAddress: pickupAddress.trim(),
+        returnAddress: returnAddress.trim(),
+        logoUrl: logoUrl.trim() || imageUrl.trim(),
       });
 
       setIsSubmitting(false);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3500);
     }, 400);
+  };
+
+  const handleDeleteStore = async () => {
+    setIsDeletingStore(true);
+    try {
+      await deleteMerchantStore();
+      router.push("/merchant/login");
+    } catch (err) {
+      console.error("Failed to delete store account:", err);
+      setIsDeletingStore(false);
+    }
   };
 
   const handleReset = () => {
@@ -291,6 +337,18 @@ export default function StoreProfilePage() {
     setHoursError("");
     setBannerUrl(activeStore.bannerUrl || "");
     setImageUrl(activeStore.imageUrl || "");
+    setLocation(activeStore.location || activeStore.area || "Vidyanagar");
+    setShopTiming(activeStore.shopTiming || activeStore.openingHours || "8:00 AM - 9:00 PM");
+    setHolidays(activeStore.holidays || "Every Sunday & National Holidays");
+    setBusinessType(activeStore.businessType || "Sole Proprietorship");
+    setContactPhone(activeStore.contactPhone || activeStore.phone || "+91 98450 12345");
+    setPanNumber(activeStore.panNumber || "ABCDE1234F");
+    setBankAccountNumber(activeStore.bankAccountNumber || "9876543210123");
+    setBankIfscCode(activeStore.bankIfscCode || "SBIN0001234");
+    setBankName(activeStore.bankName || "State Bank of India");
+    setPickupAddress(activeStore.pickupAddress || activeStore.lane || "Shop #12, Market Road, Hubballi");
+    setReturnAddress(activeStore.returnAddress || activeStore.lane || "Shop #12, Market Road, Hubballi");
+    setLogoUrl(activeStore.logoUrl || activeStore.imageUrl || "");
     setNameError("");
     setPhoneError("");
     setUploadError("");
@@ -518,7 +576,7 @@ export default function StoreProfilePage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             <div>
               <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
                 Direct Banner Image URL (or Storage URL)
@@ -542,6 +600,19 @@ export default function StoreProfilePage() {
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://images.unsplash.com/..."
+                className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Merchant Logo URL
+              </label>
+              <input
+                type="url"
+                data-testid="store-logo-input"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://images.unsplash.com/logo..."
                 className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
               />
             </div>
@@ -869,6 +940,232 @@ export default function StoreProfilePage() {
           )}
         </div>
 
+        {/* Business & Tax Identification */}
+        <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-4 shadow-xs">
+          <span className="text-xs font-bold text-forest-900 uppercase tracking-wider flex items-center gap-1.5">
+            <Building2 className="w-4 h-4 text-terracotta-500" />
+            <span>Business Entity & Tax Details</span>
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Business Type
+              </label>
+              <select
+                data-testid="store-business-type-select"
+                value={businessType}
+                onChange={(e) => setBusinessType(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
+              >
+                <option value="Sole Proprietorship">Sole Proprietorship</option>
+                <option value="Partnership">Partnership</option>
+                <option value="Private Limited">Private Limited</option>
+                <option value="Limited Liability Partnership (LLP)">Limited Liability Partnership (LLP)</option>
+                <option value="Individual Artisan">Individual Artisan</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Contact Phone
+              </label>
+              <input
+                type="tel"
+                data-testid="store-contact-phone-input"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="+91 98450 12345"
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                PAN Number
+              </label>
+              <input
+                type="text"
+                data-testid="store-pan-input"
+                value={panNumber}
+                onChange={(e) => setPanNumber(e.target.value.toUpperCase())}
+                placeholder="ABCDE1234F"
+                maxLength={10}
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 uppercase"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Fulfillment, Pickup & Return Addresses */}
+        <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-4 shadow-xs">
+          <span className="text-xs font-bold text-forest-900 uppercase tracking-wider flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-terracotta-500" />
+            <span>Store Location, Pickup & Return Addresses</span>
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-3">
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Store Location / Neighborhood Description
+              </label>
+              <input
+                type="text"
+                data-testid="store-location-input"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Vidyanagar, Hubballi"
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
+            </div>
+
+            <div className="sm:col-span-3 sm:grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                  Pickup Address (Customer Fulfillment)
+                </label>
+                <textarea
+                  rows={2}
+                  data-testid="store-pickup-address-input"
+                  value={pickupAddress}
+                  onChange={(e) => setPickupAddress(e.target.value)}
+                  placeholder="Full pickup counter address for customer orders..."
+                  className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                  Return Address (Returns & Exchanges)
+                </label>
+                <textarea
+                  rows={2}
+                  data-testid="store-return-address-input"
+                  value={returnAddress}
+                  onChange={(e) => setReturnAddress(e.target.value)}
+                  placeholder="Address where returns or exchanges should be dispatched..."
+                  className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Shop Timings & Designated Holidays */}
+        <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-4 shadow-xs">
+          <span className="text-xs font-bold text-forest-900 uppercase tracking-wider flex items-center gap-1.5">
+            <Calendar className="w-4 h-4 text-terracotta-500" />
+            <span>Shop Timings & Designated Holidays</span>
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Shop Timing
+              </label>
+              <input
+                type="text"
+                data-testid="store-shop-timing-input"
+                value={shopTiming}
+                onChange={(e) => setShopTiming(e.target.value)}
+                placeholder="e.g. 8:00 AM - 9:00 PM"
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Holidays / Weekly Offs
+              </label>
+              <input
+                type="text"
+                data-testid="store-holidays-input"
+                value={holidays}
+                onChange={(e) => setHolidays(e.target.value)}
+                placeholder="e.g. Every Sunday & National Holidays"
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Settlement Bank Account Details */}
+        <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-4 shadow-xs">
+          <span className="text-xs font-bold text-forest-900 uppercase tracking-wider flex items-center gap-1.5">
+            <CreditCard className="w-4 h-4 text-terracotta-500" />
+            <span>Settlement Bank Account</span>
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Bank Name
+              </label>
+              <input
+                type="text"
+                data-testid="store-bank-name-input"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+                placeholder="e.g. State Bank of India"
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Bank Account Number
+              </label>
+              <input
+                type="text"
+                data-testid="store-bank-account-input"
+                value={bankAccountNumber}
+                onChange={(e) => setBankAccountNumber(e.target.value)}
+                placeholder="9876543210123"
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Bank IFSC Code
+              </label>
+              <input
+                type="text"
+                data-testid="store-bank-ifsc-input"
+                value={bankIfscCode}
+                onChange={(e) => setBankIfscCode(e.target.value.toUpperCase())}
+                placeholder="SBIN0001234"
+                maxLength={11}
+                className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 uppercase"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Danger Zone: Remove Store Account */}
+        <div className="p-5 rounded-3xl bg-rose-50/60 border border-rose-200 space-y-3 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Trash2 className="w-4 h-4 text-rose-600" />
+                <span>Remove Store & Merchant Account</span>
+              </span>
+              <p className="text-xs text-rose-700 mt-1">
+                Permanently delete this store profile, product inventory, and merchant database records.
+              </p>
+            </div>
+            <button
+              type="button"
+              data-testid="delete-store-button"
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer self-start sm:self-auto shadow-xs flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remove Store Account</span>
+            </button>
+          </div>
+        </div>
+
         {/* Action Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
           <button
@@ -901,6 +1198,60 @@ export default function StoreProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* Remove Store Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-50 bg-forest-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-cream-100 rounded-3xl max-w-md w-full p-6 border border-rose-200 shadow-2xl space-y-4"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-xl text-forest-950">
+                  Delete Merchant Store?
+                </h3>
+                <p className="text-xs text-forest-600 mt-1">
+                  This action is permanent and cannot be undone. All listings, settings, and database entries for{" "}
+                  <strong>{name || "your store"}</strong> will be permanently wiped.
+                </p>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={isDeletingStore}
+                  className="px-4 py-2 bg-cream-200 hover:bg-cream-300 text-forest-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-testid="confirm-delete-store-button"
+                  onClick={handleDeleteStore}
+                  disabled={isDeletingStore}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isDeletingStore ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Deleting Store...</span>
+                    </>
+                  ) : (
+                    <span>Yes, Delete Store</span>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -519,6 +519,22 @@ export default function LoginPage() {
         </p>
       </div>
 
+      {/* Merchant Partner Login link with /merchant in URL */}
+      <div className="p-4 bg-terracotta-50 border border-terracotta-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div>
+          <span className="font-bold text-forest-950 block">Are you a merchant partner?</span>
+          <span className="text-forest-600 text-[11px]">Access shop management, stock &amp; orders with /merchant</span>
+        </div>
+        <Link
+          href="/merchant/login"
+          data-testid="link-merchant-login"
+          className="px-3.5 py-1.5 bg-terracotta-600 hover:bg-terracotta-700 text-white font-bold text-xs rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5"
+        >
+          <Store className="w-3.5 h-3.5" />
+          <span>Merchant Login (/merchant)</span>
+        </Link>
+      </div>
+
       <div className="text-center">
         <Link
           href="/"

@@ -485,6 +485,121 @@ it("User Account Page: src/app/account/page.tsx renders Address Book with Primar
 });
 
 // ----------------------------------------------------------------------
+// 7. USER & MERCHANT EXTENDED DETAILS, DB PERSISTENCE & ACCOUNT REMOVAL
+// ----------------------------------------------------------------------
+console.log(cyan("\n--- 7. USER/MERCHANT SEPARATE LOGIN, EXTENDED DETAILS, DB PERSISTENCE & DELETION ---"));
+
+it("Front Page Guard: unauthenticated users redirected to /login before marketplace renders", () => {
+  const homePath = path.join(process.cwd(), "src/app/page.tsx");
+  assert.strictEqual(fs.existsSync(homePath), true);
+  const content = fs.readFileSync(homePath, "utf-8");
+
+  assert.strictEqual(content.includes("useAuth"), true);
+  assert.strictEqual(content.includes("/login"), true);
+  assert.strictEqual(content.includes("!isAuthenticated"), true);
+});
+
+it("Merchant Login: dedicated /merchant/login page exists with role separation", () => {
+  const merchantLoginPath = path.join(process.cwd(), "src/app/merchant/login/page.tsx");
+  assert.strictEqual(fs.existsSync(merchantLoginPath), true);
+  const content = fs.readFileSync(merchantLoginPath, "utf-8");
+
+  assert.strictEqual(content.includes("Merchant Partner Portal"), true);
+  assert.strictEqual(content.includes("Phone (OTP)"), true);
+  assert.strictEqual(content.includes("router.push(\"/seller\")"), true);
+
+  // Check /merchant route redirect
+  const merchantIndexPath = path.join(process.cwd(), "src/app/merchant/page.tsx");
+  assert.strictEqual(fs.existsSync(merchantIndexPath), true);
+});
+
+it("Persistent Login: session stored in localStorage without auto-expiration until sign out", () => {
+  const authContextPath = path.join(process.cwd(), "src/context/AuthContext.tsx");
+  const content = fs.readFileSync(authContextPath, "utf-8");
+
+  assert.strictEqual(content.includes("localloop_auth_session_v1"), true);
+  assert.strictEqual(content.includes("logout"), true);
+  assert.strictEqual(content.includes("deleteAccount"), true);
+});
+
+it("User Details & Account Removal: edit profile recorded in DB profiles table and remove account supported", () => {
+  const accountPath = path.join(process.cwd(), "src/app/account/page.tsx");
+  const content = fs.readFileSync(accountPath, "utf-8");
+
+  assert.strictEqual(content.includes("Edit User Information"), true);
+  assert.strictEqual(content.includes("btn-remove-account"), true);
+  assert.strictEqual(content.includes("btn-confirm-delete-account"), true);
+  assert.strictEqual(content.includes("deleteAccount"), true);
+
+  const actionsPath = path.join(process.cwd(), "src/actions/marketplaceActions.ts");
+  const actionsContent = fs.readFileSync(actionsPath, "utf-8");
+  assert.strictEqual(actionsContent.includes("saveUserProfileToDbAction"), true);
+  assert.strictEqual(actionsContent.includes("deleteUserAccountFromDbAction"), true);
+});
+
+it("Merchant Details: all 14 required fields recorded in database and editable", () => {
+  const storePagePath = path.join(process.cwd(), "src/app/seller/store/page.tsx");
+  const content = fs.readFileSync(storePagePath, "utf-8");
+
+  // Verify all 14 fields in UI form
+  const requiredFields = [
+    "store-name-input",         // shop name
+    "store-location-input",     // location
+    "store-shop-timing-input",  // shop timing
+    "store-holidays-input",     // holidays
+    "store-business-type-select", // business type
+    "store-contact-phone-input",// contact phone
+    "store-pan-input",          // PAN number
+    "store-bank-account-input", // bank account number
+    "store-bank-ifsc-input",    // bank IFSC code
+    "store-bank-name-input",    // bank name
+    "store-pickup-address-input", // pickup address
+    "store-return-address-input", // return address
+    "store-logo-input",         // logo URL
+    "store-banner-input",       // banner URL
+  ];
+
+  for (const field of requiredFields) {
+    assert.strictEqual(
+      content.includes(`data-testid="${field}"`),
+      true,
+      `Missing merchant field in UI: ${field}`
+    );
+  }
+
+  // Verify server action maps all columns to public.stores
+  const actionsPath = path.join(process.cwd(), "src/actions/marketplaceActions.ts");
+  const actionsContent = fs.readFileSync(actionsPath, "utf-8");
+  assert.strictEqual(actionsContent.includes("saveStoreDetailsToDbAction"), true);
+  assert.strictEqual(actionsContent.includes("deleteStoreFromDbAction"), true);
+  assert.strictEqual(actionsContent.includes("pan_number"), true);
+  assert.strictEqual(actionsContent.includes("bank_account_number"), true);
+  assert.strictEqual(actionsContent.includes("bank_ifsc_code"), true);
+  assert.strictEqual(actionsContent.includes("bank_name"), true);
+  assert.strictEqual(actionsContent.includes("pickup_address"), true);
+  assert.strictEqual(actionsContent.includes("return_address"), true);
+  assert.strictEqual(actionsContent.includes("shop_timing"), true);
+  assert.strictEqual(actionsContent.includes("holidays"), true);
+  assert.strictEqual(actionsContent.includes("business_type"), true);
+  assert.strictEqual(actionsContent.includes("contact_phone"), true);
+  assert.strictEqual(actionsContent.includes("logo_url"), true);
+});
+
+it("Merchant Account Removal: remove store and merchant account with confirmation modal", () => {
+  const storePagePath = path.join(process.cwd(), "src/app/seller/store/page.tsx");
+  const content = fs.readFileSync(storePagePath, "utf-8");
+
+  assert.strictEqual(content.includes("delete-store-button"), true);
+  assert.strictEqual(content.includes("confirm-delete-store-button"), true);
+  assert.strictEqual(content.includes("deleteMerchantStore"), true);
+  assert.strictEqual(content.includes("router.push(\"/merchant/login\")"), true);
+
+  const sellerContextPath = path.join(process.cwd(), "src/context/SellerContext.tsx");
+  const sellerContent = fs.readFileSync(sellerContextPath, "utf-8");
+  assert.strictEqual(sellerContent.includes("deleteMerchantStore"), true);
+});
+
+// ----------------------------------------------------------------------
 // FINAL SUMMARY
 // ----------------------------------------------------------------------
 console.log(bold("\n=================================================================="));

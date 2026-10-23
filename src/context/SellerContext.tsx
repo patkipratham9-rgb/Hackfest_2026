@@ -3,6 +3,10 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Store, Product } from "@/types";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
+import {
+  saveStoreDetailsToDbAction,
+  deleteStoreFromDbAction,
+} from "@/actions/marketplaceActions";
 
 export type UserRole = "customer" | "seller" | "admin";
 
@@ -25,6 +29,7 @@ interface SellerContextType {
   setUserRole: (role: UserRole) => void;
   toggleStoreOpen: () => void;
   updateStoreProfile: (updates: Partial<Store>) => void;
+  deleteMerchantStore: () => Promise<void>;
   addProduct: (product: Omit<Product, "id">) => Product;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
@@ -138,9 +143,32 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
           }
           localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(storeList));
         }
+
+        // Record store details in Supabase database
+        saveStoreDetailsToDbAction(updated).catch((err) =>
+          console.warn("DB store sync note:", err)
+        );
       } catch {}
       return updated;
     });
+  };
+
+  const deleteMerchantStore = async () => {
+    if (activeStore?.id) {
+      await deleteStoreFromDbAction(activeStore.id);
+    }
+    setActiveStore(EMPTY_STORE);
+    setProducts([]);
+    try {
+      localStorage.removeItem(SELLER_STORE_STORAGE_KEY);
+      localStorage.removeItem(SELLER_PRODUCTS_STORAGE_KEY);
+      const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
+      if (rawRegistered) {
+        const storeList: Store[] = JSON.parse(rawRegistered);
+        const filtered = storeList.filter((s) => s.id !== activeStore.id);
+        localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(filtered));
+      }
+    } catch {}
   };
 
   const addProduct = (newProd: Omit<Product, "id">): Product => {
@@ -234,6 +262,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         setUserRole,
         toggleStoreOpen,
         updateStoreProfile,
+        deleteMerchantStore,
         addProduct,
         updateProduct,
         deleteProduct,

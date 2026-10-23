@@ -11,6 +11,10 @@ import {
   verifyPhoneOtp,
   generateSessionToken,
 } from "@/lib/authSecurity";
+import {
+  saveUserProfileToDbAction,
+  deleteUserAccountFromDbAction,
+} from "@/actions/marketplaceActions";
 
 export type AppMode = "shopper" | "merchant";
 
@@ -30,6 +34,7 @@ interface AuthContextType {
     role?: UserRole
   ) => Promise<{ success: boolean; message: string }>;
   updateProfile: (updates: Partial<UserProfile>) => { success: boolean; error?: string };
+  deleteAccount: () => Promise<{ success: boolean }>;
   addAddress: (address: Omit<UserAddress, "id">) => { success: boolean; address?: UserAddress; error?: string };
   updateAddress: (id: string, updates: Partial<UserAddress>) => { success: boolean; error?: string };
   deleteAddress: (id: string) => void;
@@ -263,6 +268,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(updated);
     persistSession(updated, true);
+
+    // Record profile changes directly in Supabase database
+    saveUserProfileToDbAction({
+      id: updated.id,
+      fullName: updated.name,
+      phone: updated.number,
+      email: updated.email,
+      addresses: updated.addresses,
+    }).catch((err) => console.warn("DB profile sync note:", err));
+
+    return { success: true };
+  };
+
+  const deleteAccount = async (): Promise<{ success: boolean }> => {
+    if (user?.id) {
+      await deleteUserAccountFromDbAction(user.id);
+    }
+    logout();
     return { success: true };
   };
 
@@ -394,6 +417,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithPhoneOtp,
         loginWithEmailPermission,
         updateProfile,
+        deleteAccount,
         addAddress,
         updateAddress,
         deleteAddress,

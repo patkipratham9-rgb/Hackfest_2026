@@ -2,8 +2,10 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { SearchBar } from "@/components/SearchBar";
 import { StoreCard } from "@/components/StoreCard";
 import { ProductCard } from "@/components/ProductCard";
@@ -23,6 +25,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const {
     userLocation,
     setUserLocation,
@@ -36,6 +40,13 @@ export default function HomePage() {
   const [stores, setStores] = useState<Store[]>(MOCK_STORES);
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [locationFeedback, setLocationFeedback] = useState<string | null>(null);
+
+  // Guard: User must log in before loading the front page
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // Sync dynamic stores & products added manually via merchant portal
   useEffect(() => {
@@ -134,6 +145,19 @@ export default function HomePage() {
   }, [products, selectedStoreId, searchQuery]);
 
   const activeStoreObj = stores.find((s) => s.id === selectedStoreId);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-forest-800 flex items-center justify-center text-cream-100 font-bold text-xl shadow-warm">
+          <span className="font-serif">L</span>
+          <span className="w-2 h-2 rounded-full bg-terracotta-500 -ml-0.5 mt-2" />
+        </div>
+        <div className="w-6 h-6 rounded-full border-2 border-terracotta-500 border-t-transparent animate-spin" />
+        <span className="text-xs text-forest-600 font-medium">Redirecting to login...</span>
+      </div>
+    );
+  }
 
   return (
     <motion.div

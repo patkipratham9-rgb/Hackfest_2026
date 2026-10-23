@@ -34,6 +34,18 @@ export interface Store {
   bannerUrl: string;
   phone: string;
   verified: boolean;
+  location?: string;
+  shopTiming?: string;
+  holidays?: string;
+  businessType?: string;
+  contactPhone?: string;
+  panNumber?: string;
+  bankAccountNumber?: string;
+  bankIfscCode?: string;
+  bankName?: string;
+  pickupAddress?: string;
+  returnAddress?: string;
+  logoUrl?: string;
 }
 
 export interface Product {

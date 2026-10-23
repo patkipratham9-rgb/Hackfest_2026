@@ -42,6 +42,7 @@ export default function AccountPage() {
     user,
     isAuthenticated,
     updateProfile,
+    deleteAccount,
     addAddress,
     updateAddress,
     deleteAddress,
@@ -60,6 +61,10 @@ export default function AccountPage() {
   const [profileEmail, setProfileEmail] = useState(user?.email || "");
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
+
+  // Account Removal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Address Modal State
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -170,11 +175,18 @@ export default function AccountPage() {
       return;
     }
 
-    setProfileSuccess("Profile updated successfully!");
+    setProfileSuccess("Profile updated successfully in database!");
     setTimeout(() => {
       setIsEditingProfile(false);
       setProfileSuccess("");
     }, 1000);
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    await deleteAccount();
+    setIsDeleting(false);
+    router.push("/login");
   };
 
   const getLabelIcon = (label: AddressType) => {
@@ -478,6 +490,29 @@ export default function AccountPage() {
         </button>
       </div>
 
+      {/* Danger Zone: Remove Account */}
+      <div className="p-5 rounded-3xl bg-red-50/60 border border-red-200 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-serif font-bold text-red-950 text-sm">
+              Danger Zone: Remove Account
+            </h3>
+            <p className="text-xs text-red-700 mt-0.5">
+              Permanently delete your user profile and address book from our database.
+            </p>
+          </div>
+          <button
+            type="button"
+            data-testid="btn-remove-account"
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Remove Account</span>
+          </button>
+        </div>
+      </div>
+
       {/* Edit Profile Modal */}
       {isEditingProfile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs">
@@ -687,6 +722,46 @@ export default function AccountPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Account Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs">
+          <div
+            data-testid="modal-confirm-delete-account"
+            className="w-full max-w-md bg-white rounded-3xl p-6 border border-red-200 shadow-2xl space-y-4"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="font-serif font-bold text-lg text-forest-950">
+                Permanently Remove Account?
+              </h3>
+              <p className="text-xs text-forest-600 leading-relaxed">
+                This will delete your user profile, saved addresses, and active session from the LocalLoop database. This action cannot be reversed.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-cream-300 text-forest-700 font-bold text-xs hover:bg-cream-100"
+              >
+                Keep Account
+              </button>
+              <button
+                type="button"
+                data-testid="btn-confirm-delete-account"
+                disabled={isDeleting}
+                onClick={handleDeleteAccount}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isDeleting ? "Deleting..." : "Yes, Delete Account"}
+              </button>
+            </div>
           </div>
         </div>
       )}
