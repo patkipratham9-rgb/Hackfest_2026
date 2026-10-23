@@ -2,7 +2,6 @@
 
 import React, { use } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { OrderStatus } from "@/types";
 import {
@@ -63,14 +62,32 @@ export default function OrderTrackingPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const { orders, updateOrderStatus } = useCart();
+  const { getOrderById, updateOrderStatus, isLoaded } = useCart();
   const orderId = resolvedParams.id;
 
-  const order = orders.find((o) => o.id === orderId);
+  const order = getOrderById(orderId);
+
+  // If initial hydration / storage load is still occurring and order not found yet
+  if (!isLoaded && !order) {
+    return (
+      <div
+        data-testid="order-loading"
+        className="max-w-md mx-auto text-center py-20 space-y-4"
+      >
+        <div className="w-12 h-12 border-4 border-terracotta-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-forest-700 font-semibold">
+          Loading order details for <span className="font-mono">{orderId}</span>...
+        </p>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
-      <div className="max-w-md mx-auto text-center py-16 space-y-4">
+      <div
+        data-testid="order-not-found"
+        className="max-w-md mx-auto text-center py-16 space-y-4"
+      >
         <div className="w-16 h-16 rounded-full bg-cream-300 flex items-center justify-center mx-auto text-forest-700">
           <Package className="w-8 h-8" />
         </div>
@@ -91,7 +108,7 @@ export default function OrderTrackingPage({
     );
   }
 
-  const currentStepIndex = ORDER_FLOW.indexOf(order.status);
+  const currentStepIndex = Math.max(0, ORDER_FLOW.indexOf(order.status));
 
   const advanceStatus = () => {
     if (currentStepIndex < ORDER_FLOW.length - 1) {
@@ -121,17 +138,26 @@ export default function OrderTrackingPage({
           <span>All Orders</span>
         </Link>
         <span className="text-[11px] font-semibold text-forest-500">
-          ID: <span className="font-mono text-forest-800">{order.id}</span>
+          ID:{" "}
+          <span data-testid="order-id" className="font-mono text-forest-800 font-bold">
+            {order.id}
+          </span>
         </span>
       </div>
 
       {/* Main Status Header Card */}
-      <div className="p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm">
+      <div
+        data-testid="order-details-card"
+        className="p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-cream-200">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-forest-800 text-cream-100">
-                {order.status === "completed" ? "Completed" : "In Progress"}
+              <span
+                data-testid="order-status"
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-forest-800 text-cream-100"
+              >
+                {order.status}
               </span>
               <span className="text-xs text-forest-500">
                 {new Date(order.createdAt).toLocaleTimeString([], {
@@ -152,7 +178,7 @@ export default function OrderTrackingPage({
                 {order.status === "ready"
                   ? "Your order is ready at the counter!"
                   : order.status === "packed"
-                  ? "Meena is packing your items fresh"
+                  ? "Store is packing your items fresh"
                   : order.status === "completed"
                   ? "Order successfully picked up 🎉"
                   : "Order received by merchant"}
@@ -161,7 +187,12 @@ export default function OrderTrackingPage({
 
             <p className="text-xs text-forest-600 mt-1 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-terracotta-500" />
-              <span>Pickup: {order.pickupTime}</span>
+              <span>
+                Pickup Slot:{" "}
+                <strong data-testid="order-pickup-slot" className="text-forest-900">
+                  {order.pickupTime}
+                </strong>
+              </span>
             </p>
           </div>
 
@@ -173,7 +204,10 @@ export default function OrderTrackingPage({
             <span className="text-[10px] font-bold text-forest-600 uppercase tracking-widest block">
               Pickup Token Code
             </span>
-            <span className="font-mono font-extrabold text-2xl text-terracotta-600 block mt-0.5">
+            <span
+              data-testid="order-pickup-code"
+              className="font-mono font-extrabold text-2xl text-terracotta-600 block mt-0.5"
+            >
               {order.pickupCode}
             </span>
             <span className="text-[10px] text-forest-500 block">
@@ -264,16 +298,18 @@ export default function OrderTrackingPage({
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.95 }}
+            data-testid="order-advance-status-button"
             onClick={advanceStatus}
             disabled={currentStepIndex >= STEPS.length - 1}
-            className="flex-1 sm:flex-none px-3.5 py-1.5 bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            className="flex-1 sm:flex-none px-3.5 py-1.5 bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
           >
             Advance to Next Step →
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
+            data-testid="order-reset-status-button"
             onClick={resetStatus}
-            className="px-2.5 py-1.5 bg-forest-800 hover:bg-forest-700 text-cream-200 rounded-xl text-xs font-medium"
+            className="px-2.5 py-1.5 bg-forest-800 hover:bg-forest-700 text-cream-200 rounded-xl text-xs font-medium cursor-pointer"
           >
             Reset
           </motion.button>
@@ -292,7 +328,9 @@ export default function OrderTrackingPage({
             <h4 className="font-bold text-sm text-forest-900">{order.storeName}</h4>
             <p className="text-xs text-forest-600 flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-terracotta-500 flex-shrink-0" />
-              <span>{order.storeLane}, {order.storeArea} (Hubballi)</span>
+              <span>
+                {order.storeLane}, {order.storeArea} (Hubballi)
+              </span>
             </p>
           </div>
 
@@ -300,7 +338,7 @@ export default function OrderTrackingPage({
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             href="tel:+919845012345"
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest-700 text-cream-100 text-xs font-bold hover:bg-forest-800 transition-colors flex-shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest-700 text-cream-100 text-xs font-bold hover:bg-forest-800 transition-colors flex-shrink-0 cursor-pointer"
           >
             <Phone className="w-3.5 h-3.5" />
             <span>Call Merchant</span>
@@ -314,9 +352,13 @@ export default function OrderTrackingPage({
           Itemized Receipt
         </h3>
 
-        <div className="divide-y divide-cream-200">
+        <div data-testid="order-items-list" className="divide-y divide-cream-200">
           {order.items.map(({ product, quantity }) => (
-            <div key={product.id} className="py-2.5 flex justify-between items-center text-xs">
+            <div
+              key={product.id}
+              data-testid={`order-item-${product.id}`}
+              className="py-2.5 flex justify-between items-center text-xs"
+            >
               <div className="flex items-center gap-3">
                 <img
                   src={product.imageUrl}
@@ -340,15 +382,18 @@ export default function OrderTrackingPage({
         <div className="pt-3 border-t border-cream-200 space-y-1.5 text-xs">
           <div className="flex justify-between text-forest-600">
             <span>Subtotal</span>
-            <span>₹{order.subtotal}</span>
+            <span data-testid="order-subtotal">₹{order.subtotal}</span>
           </div>
           <div className="flex justify-between text-forest-600">
             <span>Local platform fair fee</span>
-            <span>₹{order.platformFee}</span>
+            <span data-testid="order-platform-fee">₹{order.platformFee}</span>
           </div>
           <div className="flex justify-between font-bold text-sm text-forest-950 pt-2 border-t border-cream-300">
-            <span>Total Amount Paid</span>
-            <span className="font-serif text-base text-terracotta-700 font-extrabold">
+            <span>Total Amount</span>
+            <span
+              data-testid="order-total"
+              className="font-serif text-base text-terracotta-700 font-extrabold"
+            >
               ₹{order.total}
             </span>
           </div>
@@ -357,7 +402,12 @@ export default function OrderTrackingPage({
         <div className="pt-3 flex items-center justify-between text-xs text-forest-600">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-forest-700" />
-            <span>Method: {order.paymentMethod === "upi" ? "UPI Paid Online" : "Cash at Counter"}</span>
+            <span>
+              Method:{" "}
+              <strong data-testid="order-payment-method" className="text-forest-900 capitalize">
+                {order.paymentMethod === "upi" ? "UPI Paid Online" : "Cash at Counter"}
+              </strong>
+            </span>
           </span>
           <span className="font-semibold text-forest-800">
             Status: {order.paymentStatus === "paid" ? "Verified" : "Due on pickup"}

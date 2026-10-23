@@ -24,6 +24,7 @@ interface CartContextType {
   recentlyViewed: Product[];
   addRecentlyViewed: (product: Product) => void;
   reorderOrder: (orderId: string) => boolean;
+  getOrderById: (orderId: string) => Order | undefined;
   createOrder: (data: {
     customerName: string;
     customerPhone: string;
@@ -267,6 +268,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const totalAmount = subtotal + platformFee;
   const reorderableCount = orders.length;
 
+  const getOrderById = (orderId: string): Order | undefined => {
+    const fromState = orders.find((o) => o.id === orderId);
+    if (fromState) return fromState;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+        if (raw) {
+          const parsed: Order[] = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            return parsed.find((o) => o.id === orderId);
+          }
+        }
+      } catch (err) {
+        console.warn("Error reading order from localStorage:", err);
+      }
+    }
+    return undefined;
+  };
+
   const createOrder = (data: {
     customerName: string;
     customerPhone: string;
@@ -362,6 +382,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         recentlyViewed,
         addRecentlyViewed,
         reorderOrder,
+        getOrderById,
         createOrder,
         updateOrderStatus,
         totalItems,
