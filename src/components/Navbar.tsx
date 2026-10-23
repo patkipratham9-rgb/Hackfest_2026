@@ -134,6 +134,7 @@ export function Navbar() {
 
           {/* Cart Button */}
           <motion.button
+            data-testid="header-cart-button"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsCartOpen(true)}

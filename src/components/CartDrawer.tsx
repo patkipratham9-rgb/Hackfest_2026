@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,18 +18,30 @@ export function CartDrawer() {
     setIsCheckoutOpen,
   } = useCart();
 
+  // Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isCartOpen) {
+        setIsCartOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isCartOpen, setIsCartOpen]);
+
   return (
     <AnimatePresence>
       {isCartOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
+          {/* Backdrop with Click to Close */}
           <motion.div
+            data-testid="cart-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={() => setIsCartOpen(false)}
-            className="absolute inset-0 bg-forest-950/45 backdrop-blur-xs transition-opacity"
+            className="absolute inset-0 bg-forest-950/45 backdrop-blur-xs transition-opacity cursor-pointer"
           />
 
           {/* Slide-over panel */}
@@ -63,6 +75,7 @@ export function CartDrawer() {
                   </div>
                 </div>
                 <motion.button
+                  data-testid="cart-drawer-close-button"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setIsCartOpen(false)}
@@ -73,12 +86,16 @@ export function CartDrawer() {
                 </motion.button>
               </div>
 
-              {/* Cart Items List with AnimatePresence & layout */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+              {/* Cart Items List */}
+              <div
+                data-testid="cart-items-container"
+                className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3"
+              >
                 <AnimatePresence mode="popLayout">
                   {cart.length === 0 ? (
                     <motion.div
                       key="empty-state"
+                      data-testid="cart-empty-state"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0 }}
@@ -86,16 +103,20 @@ export function CartDrawer() {
                     >
                       <motion.div
                         animate={{ y: [0, -6, 0] }}
-                        transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-                        className="w-16 h-16 rounded-full bg-cream-200 flex items-center justify-center mb-3"
+                        transition={{
+                          repeat: Infinity,
+                          duration: 2.5,
+                          ease: "easeInOut",
+                        }}
+                        className="w-16 h-16 rounded-full bg-cream-200 flex items-center justify-center mb-3 text-terracotta-500"
                       >
-                        <ShoppingBag className="w-8 h-8 text-forest-400" />
+                        <ShoppingBag className="w-8 h-8" />
                       </motion.div>
                       <h3 className="font-serif font-bold text-base text-forest-900">
                         Your basket is waiting
                       </h3>
-                      <p className="text-xs text-forest-600 mt-1 max-w-xs">
-                        Explore neighborhood favorites like Meena's Filter Coffee or Dharwad Pedha.
+                      <p className="text-xs text-forest-600 mt-1 max-w-xs leading-relaxed">
+                        Explore neighborhood favorites like Meena&apos;s Filter Coffee or Dharwad Pedha.
                       </p>
                     </motion.div>
                   ) : (
@@ -114,6 +135,7 @@ export function CartDrawer() {
                         <img
                           src={product.imageUrl}
                           alt={product.name}
+                          data-testid="cart-item-image"
                           className="w-16 h-16 object-cover rounded-xl bg-cream-200 flex-shrink-0"
                         />
                         <div className="flex-1 flex flex-col justify-between">
@@ -125,7 +147,10 @@ export function CartDrawer() {
                               >
                                 {product.name}
                               </h4>
-                              <span className="text-[11px] text-forest-500 font-medium">
+                              <span
+                                data-testid="cart-item-store"
+                                className="text-[11px] text-forest-500 font-medium"
+                              >
                                 {product.storeName} • ₹{product.price}
                               </span>
                             </div>
@@ -203,7 +228,9 @@ export function CartDrawer() {
                     <div className="flex justify-between text-forest-700">
                       <span className="flex items-center gap-1">
                         <span>Local Platform Fee</span>
-                        <span className="text-[10px] text-forest-500 bg-cream-200 px-1 rounded">Fair loop</span>
+                        <span className="text-[10px] text-forest-500 bg-cream-200 px-1 rounded font-medium">
+                          Fair loop
+                        </span>
                       </span>
                       <span
                         data-testid="cart-platform-fee"
@@ -231,7 +258,7 @@ export function CartDrawer() {
                       setIsCartOpen(false);
                       setIsCheckoutOpen(true);
                     }}
-                    className="w-full py-3.5 px-4 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all"
+                    className="w-full py-3.5 px-4 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all cursor-pointer"
                   >
                     <span>Select Pickup & Checkout</span>
                     <ArrowRight className="w-4 h-4" />
