@@ -930,3 +930,47 @@ export async function generateProductListingAction(input: {
     return { success: false, error: err?.message || "Failed to generate AI listing draft" };
   }
 }
+
+/**
+ * Checkpoint CP-AI04: Approve AI Product Listing Draft Server Action
+ * Validates seller role, applies edits/overrides, records approval timestamp
+ */
+export async function approveAIProductListingAction(
+  draft: import("@/lib/aiProvider").ProductListingDraft,
+  options?: {
+    overrides?: Partial<import("@/lib/aiProvider").ProductListingDraft>;
+    role?: string;
+    storeId?: string;
+  }
+): Promise<{
+  success: boolean;
+  approvedDraft?: import("@/lib/aiProvider").ProductListingDraft;
+  approvedAt?: string;
+  error?: string;
+}> {
+  try {
+    const role = options?.role || "seller";
+    if (role !== "seller" && role !== "admin") {
+      return { success: false, error: "Unauthorized: Merchant permissions required" };
+    }
+
+    if (!draft || !draft.title) {
+      return { success: false, error: "Valid product draft is required for approval" };
+    }
+
+    const { approveProductListingDraft } = await import("@/lib/aiProvider");
+    const result = approveProductListingDraft(draft, {
+      approvedBy: role,
+      overrides: options?.overrides,
+    });
+
+    return {
+      success: true,
+      approvedDraft: result.productDraft,
+      approvedAt: result.approvedAt,
+    };
+  } catch (err: any) {
+    console.error("Exception in approveAIProductListingAction:", err);
+    return { success: false, error: err?.message || "Failed to approve AI listing draft" };
+  }
+}

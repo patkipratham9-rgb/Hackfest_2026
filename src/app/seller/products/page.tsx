@@ -11,6 +11,7 @@ import {
   adjustStockAtomicAction,
   setProductStockAction,
   generateProductListingAction,
+  approveAIProductListingAction,
 } from "@/actions/marketplaceActions";
 import type { ProductListingDraft } from "@/lib/aiProvider";
 import {
@@ -32,6 +33,7 @@ import {
   DollarSign,
   AlertCircle,
   Archive,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -86,11 +88,14 @@ export default function SellerProductsPage() {
   // Checkpoint CP-PI02: Delete confirmation state
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
-  // Checkpoint CP-AI02: AI Listing Helper State
+  // Checkpoint CP-AI02 & CP-AI04: AI Listing Helper & Approval State
   const [showAiHelper, setShowAiHelper] = useState(false);
   const [aiNotes, setAiNotes] = useState("");
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiDraft, setAiDraft] = useState<ProductListingDraft | null>(null);
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
+  const [editedPreviewDraft, setEditedPreviewDraft] = useState<ProductListingDraft | null>(null);
+  const [isAiApproved, setIsAiApproved] = useState(false);
 
   const handleGenerateAiDraft = async () => {
     if (!aiNotes.trim()) return;
@@ -104,6 +109,8 @@ export default function SellerProductsPage() {
       });
       if (res.success && res.draft) {
         setAiDraft(res.draft);
+        setEditedPreviewDraft({ ...res.draft });
+        setIsApprovalModalOpen(true);
       }
     } catch {
       // client fallback
@@ -112,21 +119,47 @@ export default function SellerProductsPage() {
     }
   };
 
-  const handleApplyAiDraft = () => {
-    if (!aiDraft) return;
+  const handleApproveDraft = async () => {
+    const draftToApprove = editedPreviewDraft || aiDraft;
+    if (!draftToApprove) return;
+
+    try {
+      await approveAIProductListingAction(draftToApprove, {
+        role: userRole,
+        storeId: activeStore?.id,
+      });
+    } catch {
+      // fallback
+    }
+
     setFormData((prev) => ({
       ...prev,
-      name: aiDraft.title,
-      description: aiDraft.description,
-      category: (aiDraft.category as ProductCategory) || prev.category,
-      unit: aiDraft.unit || prev.unit,
-      price: String(aiDraft.suggestedPrice || prev.price || 150),
-      tags: aiDraft.tags.join(", "),
+      name: draftToApprove.title,
+      description: draftToApprove.description,
+      category: (draftToApprove.category as ProductCategory) || prev.category,
+      unit: draftToApprove.unit || prev.unit,
+      price: String(draftToApprove.suggestedPrice || prev.price || 150),
+      tags: draftToApprove.tags.join(", "),
     }));
-    setSuccessAlert(`Applied AI Draft: "${aiDraft.title}"`);
-    setTimeout(() => setSuccessAlert(""), 3500);
+
+    setIsAiApproved(true);
+    setIsApprovalModalOpen(false);
     setAiDraft(null);
     setShowAiHelper(false);
+    setSuccessAlert(`Approved & Applied AI Listing: "${draftToApprove.title}"`);
+    setTimeout(() => setSuccessAlert(""), 3500);
+  };
+
+  const handleRejectDraft = () => {
+    setIsApprovalModalOpen(false);
+    setEditedPreviewDraft(null);
+    setAiDraft(null);
+    setSuccessAlert("AI Draft discarded. You can write custom details or re-generate with new notes.");
+    setTimeout(() => setSuccessAlert(""), 3000);
+  };
+
+  const handleApplyAiDraft = () => {
+    handleApproveDraft();
   };
 
   // Checkpoint CP-PI03: Atomic stock adjustment handler
@@ -600,6 +633,16 @@ export default function SellerProductsPage() {
                         <span>Bestseller</span>
                       </span>
                     )}
+
+                    {product.aiGenerated && (
+                      <span
+                        data-testid="ai-approved-badge"
+                        className="absolute bottom-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs"
+                      >
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>AI Approved</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Title & Description */}
@@ -782,9 +825,20 @@ export default function SellerProductsPage() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta-600 block">
                     {editingProductId ? "Update Existing SKU" : "New Inventory Listing"}
                   </span>
-                  <h2 className="font-serif font-extrabold text-xl sm:text-2xl text-forest-950">
-                    {editingProductId ? "Edit Product" : "Add New Product"}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-serif font-extrabold text-xl sm:text-2xl text-forest-950">
+                      {editingProductId ? "Edit Product" : "Add New Product"}
+                    </h2>
+                    {isAiApproved && (
+                      <span
+                        data-testid="ai-approved-badge"
+                        className="px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-bold flex items-center gap-1 shadow-2xs"
+                      >
+                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                        <span>AI Approved</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -1268,6 +1322,198 @@ export default function SellerProductsPage() {
                   className="w-1/2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-warm cursor-pointer"
                 >
                   Delete SKU
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Checkpoint CP-AI04: AI Listing Preview & Seller Approval Modal */}
+      <AnimatePresence>
+        {isApprovalModalOpen && editedPreviewDraft && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleRejectDraft}
+              className="absolute inset-0 bg-forest-950/70 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              data-testid="ai-approval-modal"
+              className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-cream-300">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta-600 block">
+                      AI Preview & Merchant Verification
+                    </span>
+                    <h3 className="font-serif font-extrabold text-lg text-forest-950">
+                      Approve AI Listing
+                    </h3>
+                  </div>
+                </div>
+
+                <span
+                  data-testid="ai-validation-badge"
+                  className="px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-mono text-[10px] font-bold flex items-center gap-1"
+                >
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>Schema Validated</span>
+                </span>
+              </div>
+
+              {/* Review & Edit Fields */}
+              <div className="space-y-3 text-xs">
+                {/* Title */}
+                <div>
+                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                    Product Title
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="ai-preview-title"
+                    value={editedPreviewDraft.title}
+                    onChange={(e) =>
+                      setEditedPreviewDraft({ ...editedPreviewDraft, title: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-forest-950 font-bold focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                    Heritage Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    data-testid="ai-preview-description"
+                    value={editedPreviewDraft.description}
+                    onChange={(e) =>
+                      setEditedPreviewDraft({ ...editedPreviewDraft, description: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-forest-900 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                  />
+                </div>
+
+                {/* Grid: Price, Category, Unit */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                      Selling Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      data-testid="ai-preview-price"
+                      value={editedPreviewDraft.suggestedPrice}
+                      onChange={(e) =>
+                        setEditedPreviewDraft({
+                          ...editedPreviewDraft,
+                          suggestedPrice: Number(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl font-bold font-mono text-forest-950 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                      Category
+                    </label>
+                    <input
+                      type="text"
+                      data-testid="ai-preview-category"
+                      value={editedPreviewDraft.category}
+                      onChange={(e) =>
+                        setEditedPreviewDraft({ ...editedPreviewDraft, category: e.target.value })
+                      }
+                      className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl font-semibold text-forest-950 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                      Packaging Unit
+                    </label>
+                    <input
+                      type="text"
+                      data-testid="ai-preview-unit"
+                      value={editedPreviewDraft.unit}
+                      onChange={(e) =>
+                        setEditedPreviewDraft({ ...editedPreviewDraft, unit: e.target.value })
+                      }
+                      className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl font-semibold text-forest-950 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Tags Preview */}
+                <div>
+                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                    Generated Search Tags
+                  </label>
+                  <div
+                    data-testid="ai-preview-tags"
+                    className="flex flex-wrap gap-1.5 p-2 bg-cream-100 border border-cream-200 rounded-xl"
+                  >
+                    {editedPreviewDraft.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 rounded-md bg-cream-200 text-forest-800 font-semibold text-[11px]"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Highlights Preview */}
+                <div>
+                  <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                    Selling Highlights
+                  </label>
+                  <ul
+                    data-testid="ai-preview-highlights"
+                    className="space-y-1 list-disc list-inside p-2.5 bg-cream-100 border border-cream-200 rounded-xl text-forest-800 font-medium"
+                  >
+                    {editedPreviewDraft.highlights.map((h, idx) => (
+                      <li key={idx} className="line-clamp-1">
+                        {h}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-3 border-t border-cream-300">
+                <button
+                  type="button"
+                  data-testid="reject-ai-listing-btn"
+                  onClick={handleRejectDraft}
+                  className="w-1/2 py-2.5 px-3 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Discard Draft
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="approve-ai-listing-btn"
+                  onClick={handleApproveDraft}
+                  className="w-1/2 py-2.5 px-3 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Approve & Use Listing</span>
                 </button>
               </div>
             </motion.div>

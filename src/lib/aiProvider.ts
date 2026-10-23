@@ -327,6 +327,40 @@ export interface ProductListingDraft {
   highlights: string[];
   provider?: string;
   model?: string;
+  aiGenerated?: boolean;
+  aiApprovedAt?: string;
+  aiApprovedBy?: string;
+}
+
+/**
+ * Checkpoint CP-AI04: Approve AI Product Listing Draft
+ * Records explicit merchant review, applies any edits/overrides, and sets approval timestamp
+ */
+export function approveProductListingDraft(
+  draft: ProductListingDraft,
+  options: {
+    approvedBy?: string;
+    overrides?: Partial<ProductListingDraft>;
+  } = {}
+): {
+  approved: boolean;
+  productDraft: ProductListingDraft;
+  approvedAt: string;
+} {
+  const approvedAt = new Date().toISOString();
+  const merged: ProductListingDraft = {
+    ...draft,
+    ...(options.overrides || {}),
+    aiGenerated: true,
+    aiApprovedAt: approvedAt,
+    aiApprovedBy: options.approvedBy || "merchant_seller",
+  };
+
+  return {
+    approved: true,
+    productDraft: merged,
+    approvedAt,
+  };
 }
 
 /**

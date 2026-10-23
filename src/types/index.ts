@@ -50,6 +50,9 @@ export interface Product {
   imageUrl: string;
   isBestseller?: boolean;
   tags?: string[];
+  aiGenerated?: boolean;
+  aiApprovedAt?: string;
+  aiApprovedBy?: string;
 }
 
 export interface CartItem {
