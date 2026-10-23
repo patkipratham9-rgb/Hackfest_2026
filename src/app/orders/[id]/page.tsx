@@ -1,11 +1,12 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { OrderStatus } from "@/types";
+import { supabase } from "@/lib/supabaseClient";
 import {
   CheckCircle2,
   Package,
@@ -208,6 +209,34 @@ function OrderTrackingContent({
   const currentStepIndex = Math.max(0, ORDER_FLOW.indexOf(order.status));
   const statusInfo = STATUS_HEADLINES[order.status] || STATUS_HEADLINES.placed;
 
+  // Checkpoint CP-OB02: Realtime Tracking Subscription for Customer View
+  useEffect(() => {
+    if (!orderId) return;
+
+    const channel = supabase
+      .channel(`customer-order-${orderId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          if (updated && updated.status) {
+            updateOrderStatus(orderId, updated.status as OrderStatus);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [orderId, updateOrderStatus]);
+
   const advanceStatus = () => {
     if (currentStepIndex < ORDER_FLOW.length - 1) {
       const nextStatus = ORDER_FLOW[currentStepIndex + 1];
@@ -260,6 +289,13 @@ function OrderTrackingContent({
                 className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-forest-800 text-cream-100"
               >
                 {order.status}
+              </span>
+              <span
+                data-testid="realtime-tracking-indicator"
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-900 text-[10px] font-bold"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Live Updates Active</span>
               </span>
               <span className="text-xs text-forest-500">
                 {new Date(order.createdAt).toLocaleTimeString([], {

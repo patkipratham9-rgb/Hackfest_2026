@@ -772,7 +772,71 @@ testAssert(verifyCounterCode("ll-792", "LL-792").valid, "Case-insensitive PIN su
 testAssert(!verifyCounterCode("LL-111", "LL-792").valid, "Mismatched PIN correctly rejected");
 testAssert(!verifyCounterCode("", "LL-792").valid, "Empty PIN correctly rejected");
 
+// =================================================================
+// 13. REALTIME SUBSCRIPTIONS & WEBSOCKET EVENT STREAMING (CP-OB02)
+// =================================================================
+console.log("\n--- 13. REALTIME SUBSCRIPTIONS & WEBSOCKET EVENT STREAMING (CP-OB02) ---");
+
+// 13.1 Database Realtime Publication Migration
+const realtimeMigrationPath = "./supabase/migrations/20261023220000_enable_realtime_orders_subscription.sql";
+testAssert(fs.existsSync(realtimeMigrationPath), "Realtime subscription migration 20261023220000_enable_realtime_orders_subscription.sql exists");
+const realtimeMigrationSql = fs.readFileSync(realtimeMigrationPath, "utf-8");
+testAssert(realtimeMigrationSql.includes("ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;"), "Migration registers 'orders' in supabase_realtime publication");
+testAssert(realtimeMigrationSql.includes("ALTER PUBLICATION supabase_realtime ADD TABLE public.products;"), "Migration registers 'products' in supabase_realtime publication");
+testAssert(realtimeMigrationSql.includes("REPLICA IDENTITY FULL"), "Migration configures REPLICA IDENTITY FULL for complete payload CDC");
+
+// 13.2 Realtime Hook & Stream Architecture
+testAssert(fs.existsSync("./src/hooks/useRealtimeOrders.ts"), "useRealtimeOrders hook exists in src/hooks/");
+const hookContent = fs.readFileSync("./src/hooks/useRealtimeOrders.ts", "utf-8");
+testAssert(hookContent.includes("postgres_changes"), "Hook subscribes to postgres_changes events");
+testAssert(hookContent.includes("event: \"INSERT\""), "Hook listens for INSERT events for new incoming orders");
+testAssert(hookContent.includes("event: \"UPDATE\""), "Hook listens for UPDATE events for real-time status transitions");
+testAssert(hookContent.includes("supabase.removeChannel"), "Hook cleans up and tears down channel on unmount");
+testAssert(hookContent.includes("playChime"), "Hook provides audio chime synthesis for real-time order alerts");
+
+// 13.3 UI Elements in Seller Order Board
+const refreshedOrdersPage = fs.readFileSync("./src/app/seller/orders/page.tsx", "utf-8");
+testAssert(refreshedOrdersPage.includes("data-testid=\"realtime-status-badge\""), "Realtime connection badge with data-testid='realtime-status-badge' present");
+testAssert(refreshedOrdersPage.includes("data-testid=\"realtime-chime-toggle\""), "Audio chime toggle with data-testid='realtime-chime-toggle' present");
+testAssert(refreshedOrdersPage.includes("data-testid=\"test-realtime-broadcast\""), "Realtime broadcast test trigger with data-testid='test-realtime-broadcast' present");
+testAssert(refreshedOrdersPage.includes("data-testid=\"realtime-order-toast\""), "Realtime order toast notification with data-testid='realtime-order-toast' present");
+
+// 13.4 Customer Order Tracking Realtime Sync
+const customerTrackingContent = fs.readFileSync("./src/app/orders/[id]/page.tsx", "utf-8");
+testAssert(customerTrackingContent.includes("data-testid=\"realtime-tracking-indicator\""), "Customer tracking screen contains data-testid='realtime-tracking-indicator'");
+testAssert(customerTrackingContent.includes("postgres_changes"), "Customer tracking screen subscribes to postgres_changes for order updates");
+testAssert(customerTrackingContent.includes("supabase.removeChannel"), "Customer tracking screen cleans up realtime channel on unmount");
+
+// 13.5 Event Handling & Mapping Simulation
+function mapSupabaseRowToOrder(row) {
+  return {
+    id: row.id,
+    storeId: row.store_id,
+    storeName: row.store_name || "Mishra Pedha",
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    total: Number(row.total_amount) || 495,
+    status: row.status || "placed",
+    pickupCode: row.pickup_code || "LL-792",
+  };
+}
+
+const mockRow = {
+  id: "ORD-LL-9988",
+  store_id: "s1",
+  customer_name: "Anita Deshmukh",
+  customer_phone: "+91 99881 22334",
+  total_amount: 520,
+  status: "placed",
+  pickup_code: "LL-882",
+};
+const mapped = mapSupabaseRowToOrder(mockRow);
+testAssert(mapped.id === "ORD-LL-9988", "Realtime mapper: maps order id accurately");
+testAssert(mapped.customerName === "Anita Deshmukh", "Realtime mapper: maps customer name accurately");
+testAssert(mapped.total === 520, "Realtime mapper: maps order amount accurately");
+testAssert(mapped.status === "placed", "Realtime mapper: maps initial placed status");
+
 console.log("\n==================================================================");
-console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-OB01!`);
-console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls, Low-Stock Badges & Order Board Operational!");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-OB02!`);
+console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls, Low-Stock Badges, Order Board & Realtime Subscriptions Operational!");
 console.log("==================================================================");

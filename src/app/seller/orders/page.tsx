@@ -25,8 +25,13 @@ import {
   Check,
   ShieldCheck,
   RotateCw,
+  Volume2,
+  VolumeX,
+  Radio,
+  Bell,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 
 export default function SellerOrdersPage() {
   const { activeStore } = useSeller();
@@ -36,6 +41,25 @@ export default function SellerOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+
+  // Checkpoint CP-OB02: Realtime Subscriptions State & Toast
+  const [realtimeToast, setRealtimeToast] = useState<{ id: string; customer: string; amount: number } | null>(null);
+
+  const { connectionState, chimeEnabled, setChimeEnabled, broadcastSimulatedOrder } = useRealtimeOrders({
+    storeId: activeStore.id,
+    storeName: activeStore.name,
+    onNewOrder: (newOrder) => {
+      setRealtimeToast({
+        id: newOrder.id,
+        customer: newOrder.customerName,
+        amount: newOrder.total,
+      });
+      setSuccessToast(`🔔 Realtime Order Received: ${newOrder.id} from ${newOrder.customerName}!`);
+    },
+    onStatusUpdate: (orderId, newStatus) => {
+      updateOrderStatus(orderId, newStatus);
+    },
+  });
 
   // Counter Code Verification Modal State
   const [verifyingOrder, setVerifyingOrder] = useState<Order | null>(null);
@@ -398,7 +422,7 @@ export default function SellerOrdersPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600">
-              Counter Fulfillment Pipeline • Checkpoint CP-OB01
+              Counter Fulfillment Pipeline • CP-OB01 & CP-OB02
             </span>
             {pendingCount > 0 && (
               <span
@@ -408,6 +432,29 @@ export default function SellerOrdersPage() {
                 {pendingCount} Pending
               </span>
             )}
+            {/* Checkpoint CP-OB02: Live Realtime Connection Badge */}
+            <div
+              data-testid="realtime-status-badge"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border transition-colors ${
+                connectionState === "CONNECTED"
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+                  : connectionState === "CONNECTING"
+                  ? "bg-amber-50 border-amber-300 text-amber-900"
+                  : "bg-cream-200 border-cream-300 text-forest-700"
+              }`}
+              title={`Supabase Realtime Stream: ${connectionState}`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  connectionState === "CONNECTED"
+                    ? "bg-emerald-500 animate-pulse"
+                    : connectionState === "CONNECTING"
+                    ? "bg-amber-500 animate-ping"
+                    : "bg-forest-400"
+                }`}
+              />
+              <span>{connectionState === "CONNECTED" ? "Live Stream Active" : connectionState === "CONNECTING" ? "Connecting Stream..." : "Offline Fallback"}</span>
+            </div>
           </div>
           <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950">
             Store Pickup Orders
@@ -417,13 +464,69 @@ export default function SellerOrdersPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {/* Checkpoint CP-OB02: Audio Chime Toggle */}
+          <button
+            type="button"
+            data-testid="realtime-chime-toggle"
+            onClick={() => setChimeEnabled(!chimeEnabled)}
+            className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              chimeEnabled
+                ? "bg-emerald-100 border-emerald-300 text-emerald-900"
+                : "bg-cream-200 border-cream-300 text-forest-500"
+            }`}
+            title={chimeEnabled ? "Audio chime active for new orders" : "Audio chime muted"}
+          >
+            {chimeEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-700" /> : <VolumeX className="w-3.5 h-3.5 text-forest-500" />}
+            <span className="text-[11px] font-semibold">{chimeEnabled ? "Chime On" : "Muted"}</span>
+          </button>
+
+          {/* Checkpoint CP-OB02: Broadcast Simulated Realtime Order */}
+          <button
+            type="button"
+            data-testid="test-realtime-broadcast"
+            onClick={() => {
+              const randomOrderNumber = Math.floor(1000 + Math.random() * 9000);
+              const randomPin = `LL-${Math.floor(100 + Math.random() * 900)}`;
+              const simOrder: Order = {
+                id: `ORD-LL-${randomOrderNumber}`,
+                storeId: activeStore.id,
+                storeName: activeStore.name,
+                storeArea: activeStore.area,
+                storeLane: activeStore.lane,
+                customerName: "Realtime Shopper",
+                customerPhone: "+91 98451 99887",
+                items: [
+                  {
+                    product: MOCK_PRODUCTS[0],
+                    quantity: 1,
+                  },
+                ],
+                subtotal: MOCK_PRODUCTS[0].price,
+                platformFee: 15,
+                total: MOCK_PRODUCTS[0].price + 15,
+                status: "placed",
+                paymentMethod: "counter",
+                paymentStatus: "pending",
+                pickupTime: "In 15 minutes",
+                pickupCode: randomPin,
+                createdAt: new Date().toISOString(),
+              };
+              broadcastSimulatedOrder(simOrder);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-terracotta-100 hover:bg-terracotta-200 text-terracotta-900 border border-terracotta-300 font-bold text-xs transition-colors cursor-pointer"
+            title="Broadcast simulated realtime WebSocket event"
+          >
+            <Radio className="w-3.5 h-3.5 text-terracotta-600 animate-pulse" />
+            <span>Test Broadcast</span>
+          </button>
+
           {/* Simulate New Order Button */}
           <button
             type="button"
             data-testid="simulate-order-button"
             onClick={handleSimulateNewOrder}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 font-bold text-xs shadow-warm transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 font-bold text-xs shadow-warm transition-all cursor-pointer"
             title="Simulate incoming order for demo"
           >
             <Sparkles className="w-3.5 h-3.5 text-terracotta-400" />
@@ -461,6 +564,43 @@ export default function SellerOrdersPage() {
           </div>
         </div>
       </div>
+
+      {/* Checkpoint CP-OB02: Realtime Order Toast Notification */}
+      <AnimatePresence>
+        {realtimeToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.96 }}
+            data-testid="realtime-order-toast"
+            className="p-4 rounded-2xl bg-amber-500 text-white shadow-xl flex items-center justify-between gap-3 border border-amber-600"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <Bell className="w-4 h-4 text-white animate-bounce" />
+              </div>
+              <div className="text-xs">
+                <p className="font-extrabold flex items-center gap-2">
+                  <span>🔔 Realtime Order Received!</span>
+                  <span className="font-mono bg-white/25 px-2 py-0.5 rounded-md text-[11px]">
+                    {realtimeToast.id}
+                  </span>
+                </p>
+                <p className="text-white/95 text-[11px] mt-0.5 font-medium">
+                  {realtimeToast.customer} placed a pickup order for ₹{realtimeToast.amount}.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRealtimeToast(null)}
+              className="px-3 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs cursor-pointer transition-colors"
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Success Notification Alert */}
       <AnimatePresence>
