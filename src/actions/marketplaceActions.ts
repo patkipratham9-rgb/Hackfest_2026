@@ -826,3 +826,68 @@ export async function getStoreOrdersAction(
     return { success: false, error: err?.message || "Failed to fetch store orders" };
   }
 }
+
+/**
+ * Checkpoint CP-AI01: Get AI Provider Configuration & Server Key Status
+ */
+export async function getAIProviderStatusAction(
+  role: string = "seller"
+): Promise<{
+  success: boolean;
+  provider?: string;
+  model?: string;
+  isConfigured?: boolean;
+  maskedKey?: string | null;
+  capabilities?: string[];
+  error?: string;
+}> {
+  try {
+    if (role !== "seller" && role !== "admin") {
+      return { success: false, error: "Unauthorized: Merchant permissions required" };
+    }
+
+    const { getAIProviderConfig } = await import("@/lib/aiProvider");
+    const config = getAIProviderConfig();
+
+    return {
+      success: true,
+      provider: config.provider,
+      model: config.model,
+      isConfigured: config.isConfigured,
+      maskedKey: config.maskedKey,
+      capabilities: config.capabilities,
+    };
+  } catch (err: any) {
+    console.error("Exception in getAIProviderStatusAction:", err);
+    return { success: false, error: err?.message || "Failed to inspect AI provider" };
+  }
+}
+
+/**
+ * Checkpoint CP-AI01: Test AI Provider Connection & Latency
+ */
+export async function testAIProviderConnectionAction(
+  role: string = "seller"
+): Promise<{
+  success: boolean;
+  provider?: string;
+  model?: string;
+  isConfigured?: boolean;
+  maskedKey?: string | null;
+  latencyMs?: number;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    if (role !== "seller" && role !== "admin") {
+      return { success: false, error: "Unauthorized: Merchant permissions required" };
+    }
+
+    const { testAIProviderConnection } = await import("@/lib/aiProvider");
+    const res = await testAIProviderConnection();
+    return res;
+  } catch (err: any) {
+    console.error("Exception in testAIProviderConnectionAction:", err);
+    return { success: false, error: err?.message || "Failed to test AI provider connection" };
+  }
+}
