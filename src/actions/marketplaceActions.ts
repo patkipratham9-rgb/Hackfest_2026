@@ -891,3 +891,40 @@ export async function testAIProviderConnectionAction(
     return { success: false, error: err?.message || "Failed to test AI provider connection" };
   }
 }
+
+/**
+ * Checkpoint CP-AI02: Generate Product Listing Draft Action
+ */
+export async function generateProductListingAction(input: {
+  notes: string;
+  categoryHint?: string;
+  storeName?: string;
+  role?: string;
+}): Promise<{
+  success: boolean;
+  draft?: import("@/lib/aiProvider").ProductListingDraft;
+  latencyMs?: number;
+  error?: string;
+}> {
+  try {
+    const role = input.role || "seller";
+    if (role !== "seller" && role !== "admin") {
+      return { success: false, error: "Unauthorized: Merchant permissions required" };
+    }
+
+    if (!input.notes || !input.notes.trim()) {
+      return { success: false, error: "Raw product notes are required" };
+    }
+
+    const { generateProductListingDraft } = await import("@/lib/aiProvider");
+    const result = await generateProductListingDraft(input.notes.trim(), {
+      categoryHint: input.categoryHint,
+      storeName: input.storeName,
+    });
+
+    return result;
+  } catch (err: any) {
+    console.error("Exception in generateProductListingAction:", err);
+    return { success: false, error: err?.message || "Failed to generate AI listing draft" };
+  }
+}

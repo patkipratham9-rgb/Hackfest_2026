@@ -10,7 +10,9 @@ import {
   deleteProductAction,
   adjustStockAtomicAction,
   setProductStockAction,
+  generateProductListingAction,
 } from "@/actions/marketplaceActions";
+import type { ProductListingDraft } from "@/lib/aiProvider";
 import {
   Package,
   Plus,
@@ -83,6 +85,49 @@ export default function SellerProductsPage() {
 
   // Checkpoint CP-PI02: Delete confirmation state
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  // Checkpoint CP-AI02: AI Listing Helper State
+  const [showAiHelper, setShowAiHelper] = useState(false);
+  const [aiNotes, setAiNotes] = useState("");
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiDraft, setAiDraft] = useState<ProductListingDraft | null>(null);
+
+  const handleGenerateAiDraft = async () => {
+    if (!aiNotes.trim()) return;
+    setIsGeneratingAi(true);
+    try {
+      const res = await generateProductListingAction({
+        notes: aiNotes.trim(),
+        categoryHint: formData.category,
+        storeName: activeStore?.name,
+        role: userRole,
+      });
+      if (res.success && res.draft) {
+        setAiDraft(res.draft);
+      }
+    } catch {
+      // client fallback
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  const handleApplyAiDraft = () => {
+    if (!aiDraft) return;
+    setFormData((prev) => ({
+      ...prev,
+      name: aiDraft.title,
+      description: aiDraft.description,
+      category: (aiDraft.category as ProductCategory) || prev.category,
+      unit: aiDraft.unit || prev.unit,
+      price: String(aiDraft.suggestedPrice || prev.price || 150),
+      tags: aiDraft.tags.join(", "),
+    }));
+    setSuccessAlert(`Applied AI Draft: "${aiDraft.title}"`);
+    setTimeout(() => setSuccessAlert(""), 3500);
+    setAiDraft(null);
+    setShowAiHelper(false);
+  };
 
   // Checkpoint CP-PI03: Atomic stock adjustment handler
   const handleAdjustStock = (productId: string, delta: number) => {
@@ -753,6 +798,116 @@ export default function SellerProductsPage() {
 
               {/* Form */}
               <form onSubmit={handleSave} className="space-y-4">
+                {/* Checkpoint CP-AI02: AI Listing Helper Assistant Banner */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-forest-950 to-forest-900 text-cream-100 border border-forest-800 shadow-md space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-terracotta-500/20 text-terracotta-400">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs text-cream-50 flex items-center gap-1.5">
+                          <span>AI Listing Helper</span>
+                          <span className="text-[9px] font-mono uppercase bg-terracotta-500 text-white px-1.5 py-0.5 rounded font-bold">
+                            Gemini
+                          </span>
+                        </span>
+                        <p className="text-[10px] text-cream-400">
+                          Paste messy merchant notes & let AI draft title, heritage story, and tags
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="ai-listing-helper-trigger"
+                      onClick={() => setShowAiHelper(!showAiHelper)}
+                      className="text-[11px] font-bold text-terracotta-300 hover:text-terracotta-200 underline cursor-pointer"
+                    >
+                      {showAiHelper ? "Hide Assistant" : "✨ Autofill with AI"}
+                    </button>
+                  </div>
+
+                  {showAiHelper && (
+                    <div className="pt-2 border-t border-forest-800/80 space-y-2.5">
+                      <textarea
+                        rows={2}
+                        data-testid="ai-notes-input"
+                        value={aiNotes}
+                        onChange={(e) => setAiNotes(e.target.value)}
+                        placeholder="e.g. Authentic Dharwad Pedha 500g box made with pure milk khawa and green cardamom simmered slow"
+                        className="w-full px-3 py-2 bg-forest-900/90 border border-forest-700 rounded-xl text-xs text-cream-100 font-medium placeholder-cream-500 focus:outline-none focus:ring-1 focus:ring-terracotta-400"
+                      />
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-cream-400">
+                          Autofills title, storytelling, unit, category & tags
+                        </span>
+                        <button
+                          type="button"
+                          data-testid="generate-listing-btn"
+                          disabled={isGeneratingAi || !aiNotes.trim()}
+                          onClick={handleGenerateAiDraft}
+                          className="px-3 py-1.5 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-50 text-white font-bold text-xs shadow-warm flex items-center gap-1.5 cursor-pointer transition-colors"
+                        >
+                          {isGeneratingAi ? (
+                            <>
+                              <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Generating Draft...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Generate Listing</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {aiDraft && (
+                        <div
+                          data-testid="ai-draft-preview"
+                          className="p-3 rounded-xl bg-forest-900 border border-terracotta-500/40 text-xs space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-terracotta-300 uppercase tracking-wide">
+                              AI Draft Preview ({aiDraft.category})
+                            </span>
+                            <button
+                              type="button"
+                              data-testid="apply-ai-draft-btn"
+                              onClick={handleApplyAiDraft}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow-sm flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Apply to Form</span>
+                            </button>
+                          </div>
+                          <p className="font-bold text-cream-100">{aiDraft.title}</p>
+                          <p className="text-[11px] text-cream-300 line-clamp-2">
+                            {aiDraft.description}
+                          </p>
+                          <div className="flex flex-wrap gap-1 text-[10px]">
+                            <span className="px-1.5 py-0.5 rounded bg-forest-800 text-cream-300 font-mono">
+                              ₹{aiDraft.suggestedPrice}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-forest-800 text-cream-300 font-mono">
+                              {aiDraft.unit}
+                            </span>
+                            {aiDraft.tags.slice(0, 3).map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className="px-1.5 py-0.5 rounded bg-forest-800 text-cream-400"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Product Name */}
                 <div>
                   <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
