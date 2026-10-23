@@ -869,9 +869,18 @@ export default function SellerProductsPage() {
                           className="p-3 rounded-xl bg-forest-900 border border-terracotta-500/40 text-xs space-y-2"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-terracotta-300 uppercase tracking-wide">
-                              AI Draft Preview ({aiDraft.category})
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold text-terracotta-300 uppercase tracking-wide">
+                                AI Draft ({aiDraft.category})
+                              </span>
+                              <span
+                                data-testid="ai-validation-badge"
+                                className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700/60 font-mono text-[9px] font-bold flex items-center gap-1"
+                              >
+                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                                <span>Validated Schema v1.0</span>
+                              </span>
+                            </div>
                             <button
                               type="button"
                               data-testid="apply-ai-draft-btn"

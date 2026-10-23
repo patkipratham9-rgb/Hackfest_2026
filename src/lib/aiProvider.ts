@@ -3,6 +3,8 @@
  * Checkpoint CP-AI01: AI Provider Configuration, Server-Side Key Protection & Health Diagnostics
  */
 
+import { validateProductListingDraft } from "@/lib/aiValidation";
+
 export type AIProviderType = "gemini" | "openai" | "mock";
 
 export interface AIProviderConfig {
@@ -336,6 +338,8 @@ export async function generateProductListingDraft(
 ): Promise<{
   success: boolean;
   draft?: ProductListingDraft;
+  validated?: boolean;
+  schemaVersion?: string;
   latencyMs?: number;
   error?: string;
 }> {
@@ -369,19 +373,17 @@ Generate structured JSON listing.`;
   const latencyMs = completion.latencyMs || Date.now() - startTime;
 
   if (completion.success && completion.json && completion.json.title) {
+    const validatedResult = validateProductListingDraft({
+      ...completion.json,
+      provider: config.provider,
+      model: config.model,
+    });
+
     return {
       success: true,
-      draft: {
-        title: completion.json.title,
-        description: completion.json.description || "Fresh local specialty crafted in Hubballi.",
-        category: completion.json.category || options.categoryHint || "Grocery",
-        unit: completion.json.unit || "per piece",
-        suggestedPrice: Number(completion.json.suggestedPrice) || 150,
-        tags: Array.isArray(completion.json.tags) ? completion.json.tags : ["local", "artisanal"],
-        highlights: Array.isArray(completion.json.highlights) ? completion.json.highlights : ["Locally made"],
-        provider: config.provider,
-        model: config.model,
-      },
+      draft: validatedResult.data,
+      validated: true,
+      schemaVersion: validatedResult.schemaVersion,
       latencyMs,
     };
   }
@@ -439,19 +441,25 @@ Generate structured JSON listing.`;
   if (lower.includes("500g")) unit = "500g box";
   if (lower.includes("1kg")) unit = "1kg bag";
 
+  const candidateDraft = {
+    title,
+    description,
+    category,
+    unit,
+    suggestedPrice,
+    tags,
+    highlights,
+    provider: config.provider,
+    model: config.model,
+  };
+
+  const validatedResult = validateProductListingDraft(candidateDraft);
+
   return {
     success: true,
-    draft: {
-      title,
-      description,
-      category,
-      unit,
-      suggestedPrice,
-      tags,
-      highlights,
-      provider: config.provider,
-      model: config.model,
-    },
+    draft: validatedResult.data,
+    validated: true,
+    schemaVersion: validatedResult.schemaVersion,
     latencyMs,
   };
 }

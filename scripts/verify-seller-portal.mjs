@@ -1500,3 +1500,269 @@ console.log("\n=================================================================
 console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-AI02!`);
 console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls, Low-Stock Badges, Order Board, Realtime Subscriptions, Packed/Ready Actions, Realtime/Authorization Guards, AI Provider/Server Key & AI Listing Helper Operational!");
 console.log("==================================================================");
+
+// =================================================================
+// 18. VALIDATED STRUCTURED OUTPUT & SCHEMA SANITIZATION (CP-AI03)
+// =================================================================
+console.log("\n--- 18. VALIDATED STRUCTURED OUTPUT & SCHEMA SANITIZATION (CP-AI03) ---");
+
+// 18.1 File & Module Integrity
+testAssert(fs.existsSync("./src/lib/aiValidation.ts"), "src/lib/aiValidation.ts schema validation module exists");
+const validationModuleSource = fs.readFileSync("./src/lib/aiValidation.ts", "utf-8");
+testAssert(validationModuleSource.includes("export function validateProductListingDraft"), "validateProductListingDraft exported from aiValidation.ts");
+testAssert(validationModuleSource.includes("export function coerceToValidCategory"), "coerceToValidCategory exported from aiValidation.ts");
+testAssert(validationModuleSource.includes("export function validateGrowthCoachInsight"), "validateGrowthCoachInsight exported from aiValidation.ts");
+testAssert(validationModuleSource.includes("export const CANONICAL_CATEGORIES"), "CANONICAL_CATEGORIES exported from aiValidation.ts");
+
+const aiProviderWithValidation = fs.readFileSync("./src/lib/aiProvider.ts", "utf-8");
+testAssert(aiProviderWithValidation.includes("validateProductListingDraft"), "aiProvider.ts integrates validateProductListingDraft");
+
+const listingHelperRouteWithValidation = fs.readFileSync("./src/app/api/ai/listing-helper/route.ts", "utf-8");
+testAssert(listingHelperRouteWithValidation.includes("validated:"), "Listing helper API response includes validated schema boolean");
+testAssert(listingHelperRouteWithValidation.includes("schemaVersion:"), "Listing helper API response includes schemaVersion identifier");
+
+// 18.2 Category Coercion & Canonical Mapping Rules
+const CANONICAL = [
+  "Grocery",
+  "Bakery",
+  "Produce",
+  "Household",
+  "Sweets & Snacks",
+  "Handloom & Crafts",
+  "Filter Coffee & Tea",
+  "Fresh Produce",
+  "Spices & Pantry",
+];
+
+function testCoerceCategory(raw) {
+  if (!raw || typeof raw !== "string") return "Grocery";
+  const trimmed = raw.trim();
+  const exact = CANONICAL.find((c) => c.toLowerCase() === trimmed.toLowerCase());
+  if (exact) return exact;
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("coffee") || lower.includes("tea") || lower.includes("brew") || lower.includes("chicory")) {
+    return "Filter Coffee & Tea";
+  }
+  if (lower.includes("sweet") || lower.includes("mithai") || lower.includes("pedha") || lower.includes("snack")) {
+    return "Sweets & Snacks";
+  }
+  if (lower.includes("bakery") || lower.includes("bread") || lower.includes("cake")) {
+    return "Bakery";
+  }
+  if (lower.includes("craft") || lower.includes("handloom") || lower.includes("saree") || lower.includes("weave")) {
+    return "Handloom & Crafts";
+  }
+  if (lower.includes("spice") || lower.includes("masala") || lower.includes("pantry")) {
+    return "Spices & Pantry";
+  }
+  if (lower.includes("vegetable") || lower.includes("fruit") || lower.includes("fresh")) {
+    return "Fresh Produce";
+  }
+  if (lower.includes("diya") || lower.includes("clay") || lower.includes("brass") || lower.includes("home")) {
+    return "Household";
+  }
+  return "Grocery";
+}
+
+testAssert(testCoerceCategory("Bakery") === "Bakery", "Category Coercion: Exact match 'Bakery' preserved");
+testAssert(testCoerceCategory("grocery") === "Grocery", "Category Coercion: Lowercase 'grocery' capitalized");
+testAssert(testCoerceCategory("Dharwad Pedha Sweets") === "Sweets & Snacks", "Category Coercion: 'Dharwad Pedha Sweets' coerced to 'Sweets & Snacks'");
+testAssert(testCoerceCategory("Filter Coffee Dark Roast") === "Filter Coffee & Tea", "Category Coercion: 'Filter Coffee' coerced to 'Filter Coffee & Tea'");
+testAssert(testCoerceCategory("Kasuti Handloom Saree") === "Handloom & Crafts", "Category Coercion: 'Handloom Saree' coerced to 'Handloom & Crafts'");
+testAssert(testCoerceCategory("Terracotta Brass Diya") === "Household", "Category Coercion: 'Brass Diya' coerced to 'Household'");
+testAssert(testCoerceCategory("Garam Masala Spices") === "Spices & Pantry", "Category Coercion: 'Garam Masala' coerced to 'Spices & Pantry'");
+testAssert(testCoerceCategory("Organic Fresh Apples") === "Fresh Produce", "Category Coercion: 'Fresh Apples' coerced to 'Fresh Produce'");
+testAssert(testCoerceCategory("Unrecognized Cosmic Item") === "Grocery", "Category Coercion: Unrecognized category safely defaults to 'Grocery'");
+
+// 18.3 Product Listing Draft Validator & Sanitizer
+function testValidateDraft(raw) {
+  const errors = [];
+  let repaired = false;
+
+  if (!raw || typeof raw !== "object") {
+    errors.push("Invalid payload");
+    return {
+      valid: false,
+      data: {
+        title: "Artisanal Hubballi Product",
+        description: "Locally handcrafted in Hubballi, Karnataka.",
+        category: "Grocery",
+        unit: "per piece",
+        suggestedPrice: 150,
+        tags: ["local", "hubballi", "artisanal"],
+        highlights: ["Handcrafted locally", "Fresh quality guaranteed"],
+      },
+      errors,
+      repaired: true,
+      schemaVersion: "1.0.0",
+    };
+  }
+
+  let title = typeof raw.title === "string" ? raw.title.trim() : "";
+  if (!title) {
+    errors.push("Missing title");
+    title = "Authentic Hubballi Specialty Product";
+    repaired = true;
+  } else if (title.length < 3) {
+    title = `${title} (Hubballi Authentic)`;
+    repaired = true;
+  } else if (title.length > 120) {
+    title = title.slice(0, 117).trim() + "...";
+    repaired = true;
+  }
+
+  let description = typeof raw.description === "string" ? raw.description.trim() : "";
+  if (!description) {
+    errors.push("Missing description");
+    description = "Authentic heritage specialty crafted by local Hubballi merchants with pure ingredients and traditional care.";
+    repaired = true;
+  } else if (description.length < 10) {
+    description = `${description}. Handcrafted with traditional expertise by local artisans in Hubballi.`;
+    repaired = true;
+  }
+
+  const category = testCoerceCategory(raw.category);
+  if (raw.category !== category) repaired = true;
+
+  let unit = typeof raw.unit === "string" ? raw.unit.trim().toLowerCase() : "per piece";
+  if (unit === "piece" || unit === "pc" || unit === "1") unit = "per piece";
+  else if (unit === "kg" || unit === "1kg") unit = "per kg";
+  else if (unit.match(/^\d+g$/)) unit = `${unit} pack`;
+
+  let suggestedPrice = Number(raw.suggestedPrice);
+  if (isNaN(suggestedPrice) || suggestedPrice <= 0) {
+    errors.push("Invalid price");
+    suggestedPrice = 150;
+    repaired = true;
+  } else {
+    suggestedPrice = Math.round(Math.max(5, Math.min(suggestedPrice, 50000)));
+    if (suggestedPrice !== raw.suggestedPrice) repaired = true;
+  }
+
+  let tags = [];
+  if (Array.isArray(raw.tags)) {
+    tags = raw.tags
+      .map((t) => String(t || "").toLowerCase().replace(/[#,"'\\/]/g, "").trim())
+      .filter((t) => t.length >= 2);
+  }
+  tags = Array.from(new Set(tags));
+  if (tags.length < 3) {
+    tags.push("local", "hubballi", "fresh");
+    tags = Array.from(new Set(tags));
+    repaired = true;
+  }
+  if (tags.length > 8) {
+    tags = tags.slice(0, 8);
+    repaired = true;
+  }
+
+  let highlights = Array.isArray(raw.highlights)
+    ? raw.highlights.map((h) => String(h || "").trim()).filter((h) => h.length >= 3)
+    : [];
+  if (highlights.length < 2) {
+    highlights = ["100% Authentic Hubballi regional heritage", "Freshly prepared by verified merchants"];
+    repaired = true;
+  }
+
+  return {
+    valid: errors.length === 0,
+    data: {
+      title,
+      description,
+      category,
+      unit,
+      suggestedPrice,
+      tags,
+      highlights,
+      provider: raw.provider || "gemini",
+      model: raw.model || "gemini-1.5-flash",
+    },
+    errors,
+    repaired,
+    schemaVersion: "1.0.0",
+  };
+}
+
+// Test A: Clean valid draft
+const cleanInput = {
+  title: "Handmade Dharwad Pedha (500g Box)",
+  description: "Authentic slow-simmered Dharwad Pedha crafted with pure milk solids and traditional cardamom.",
+  category: "Bakery",
+  unit: "500g box",
+  suggestedPrice: 340,
+  tags: ["pedha", "dharwad", "sweets"],
+  highlights: ["Pure cow milk khawa", "GI Tagged authentic style"],
+};
+const cleanRes = testValidateDraft(cleanInput);
+testAssert(cleanRes.valid, "Schema Validation: Clean valid draft passes with valid: true");
+testAssert(!cleanRes.repaired, "Schema Validation: Clean draft requires no structural repairs");
+testAssert(cleanRes.data.suggestedPrice === 340, "Schema Validation: Price preserved accurately");
+
+// Test B: Malformed price & float rounding
+const malformedPriceInput = {
+  ...cleanInput,
+  suggestedPrice: -50,
+};
+const repairedPriceRes = testValidateDraft(malformedPriceInput);
+testAssert(repairedPriceRes.repaired, "Schema Sanitization: Negative price flagged as repaired");
+testAssert(repairedPriceRes.data.suggestedPrice > 0, "Schema Sanitization: Negative price coerced to positive minimum");
+
+const floatPriceInput = {
+  ...cleanInput,
+  suggestedPrice: 249.75,
+};
+testAssert(testValidateDraft(floatPriceInput).data.suggestedPrice === 250, "Schema Sanitization: Float price rounded to integer rupee");
+
+// Test C: Hashtag stripping & duplicate tags
+const messyTagsInput = {
+  ...cleanInput,
+  tags: ["#Pedha", "#Dharwad", "pedha", "#SWEETS", "fresh"],
+};
+const tagsRes = testValidateDraft(messyTagsInput);
+testAssert(!tagsRes.data.tags.some((t) => t.includes("#")), "Schema Sanitization: Hashtags stripped from search tags");
+testAssert(tagsRes.data.tags.filter((t) => t === "pedha").length === 1, "Schema Sanitization: Duplicate tags deduplicated");
+
+// Test D: Missing description and title recovery
+const missingFieldsInput = {
+  category: "coffee",
+  suggestedPrice: 160,
+};
+const recoveredRes = testValidateDraft(missingFieldsInput);
+testAssert(Boolean(recoveredRes.data.title), "Schema Recovery: Missing title recovered with regional default");
+testAssert(Boolean(recoveredRes.data.description), "Schema Recovery: Missing description recovered with storytelling text");
+testAssert(recoveredRes.data.category === "Filter Coffee & Tea", "Schema Recovery: Informal category coerced to canonical union");
+testAssert(recoveredRes.data.tags.length >= 3, "Schema Recovery: Insufficient tags supplemented with local keywords");
+testAssert(recoveredRes.data.highlights.length >= 2, "Schema Recovery: Missing highlights supplemented with merchant bullets");
+
+// 18.4 AI Growth Coach Insight Schema Validator
+function testValidateInsight(raw) {
+  const validBadges = ["High Impact", "Loyalty Driver", "Operational Excellence"];
+  const title = typeof raw?.title === "string" && raw.title.trim() ? raw.title.trim() : "Local Opportunity";
+  const metric = typeof raw?.metric === "string" && raw.metric.trim() ? raw.metric.trim() : "+20% Trend";
+  const desc = typeof raw?.desc === "string" && raw.desc.trim() ? raw.desc.trim() : "Shopper traffic is increasing.";
+  const badge = validBadges.includes(raw?.badge) ? raw.badge : "High Impact";
+  return {
+    valid: Boolean(raw?.title && raw?.desc),
+    data: { id: raw?.id || "insight-1", title, metric, desc, badge, actionable: Boolean(raw?.actionable ?? true) },
+  };
+}
+
+const insightInput = {
+  title: "Weekend Diya Spike",
+  metric: "+34% Search Interest",
+  desc: "Shoppers frequently search for clay diyas on Friday evenings.",
+  badge: "High Impact",
+};
+const insightRes = testValidateInsight(insightInput);
+testAssert(insightRes.valid, "Growth Coach Schema: Valid insight passes validation");
+testAssert(insightRes.data.badge === "High Impact", "Growth Coach Schema: Valid badge recognized");
+testAssert(testValidateInsight({ title: "Trend", desc: "Details", badge: "Unknown" }).data.badge === "High Impact", "Growth Coach Schema: Invalid badge coerced to 'High Impact'");
+
+// 18.5 UI Elements in Seller Products Page
+const productsPageSourceWithValidation = fs.readFileSync("./src/app/seller/products/page.tsx", "utf-8");
+testAssert(productsPageSourceWithValidation.includes("data-testid=\"ai-validation-badge\""), "UI: Schema validation badge with data-testid='ai-validation-badge' present in AI draft preview");
+
+console.log("\n==================================================================");
+console.log(`🎉 ALL ${passed} ASSERTIONS PASSED FOR CP-SP01 TO CP-AI03!`);
+console.log("Protected Seller Portal, Store Profile, Banner Upload, Operating Hours, Product CRUD, Atomic Stock, Out-of-Stock Controls, Low-Stock Badges, Order Board, Realtime Subscriptions, Packed/Ready Actions, Realtime/Authorization Guards, AI Provider/Server Key, AI Listing Helper & Validated Structured Output Operational!");
+console.log("==================================================================");

@@ -903,6 +903,8 @@ export async function generateProductListingAction(input: {
 }): Promise<{
   success: boolean;
   draft?: import("@/lib/aiProvider").ProductListingDraft;
+  validated?: boolean;
+  schemaVersion?: string;
   latencyMs?: number;
   error?: string;
 }> {

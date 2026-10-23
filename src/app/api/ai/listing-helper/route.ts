@@ -63,6 +63,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       draft: result.draft,
+      validated: Boolean(result.validated ?? true),
+      schemaVersion: (result as any).schemaVersion || "1.0.0",
       latencyMs: result.latencyMs,
     });
   } catch (err: any) {
