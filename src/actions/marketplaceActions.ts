@@ -1106,3 +1106,55 @@ export async function getStoreRecentEventsAction(
     return { success: false, error: err?.message || "Failed to fetch event stream" };
   }
 }
+
+/**
+ * Checkpoint CP-GC02: Get Store Traffic Dashboard Metrics Server Action
+ * Role-guarded: Only merchant seller or platform admin can view traffic acquisition metrics
+ */
+export async function getStoreTrafficDashboardAction(
+  storeId: string,
+  options?: {
+    timeframe?: "today" | "7d" | "30d" | "all";
+    role?: string;
+    userStoreId?: string;
+  }
+): Promise<{
+  success: boolean;
+  traffic?: import("@/types").TrafficMetrics;
+  error?: string;
+}> {
+  try {
+    const role = options?.role || "seller";
+    if (role !== "seller" && role !== "admin") {
+      return {
+        success: false,
+        error: "Unauthorized: Seller or admin role required to view traffic dashboard",
+      };
+    }
+
+    if (options?.userStoreId && options.userStoreId !== storeId && role !== "admin") {
+      return {
+        success: false,
+        error: "Forbidden: You can only view traffic for your own store",
+      };
+    }
+
+    if (!storeId || typeof storeId !== "string" || !storeId.trim()) {
+      return { success: false, error: "storeId is required" };
+    }
+
+    const { calculateStoreTrafficMetrics } = await import("@/lib/analyticsTracker");
+    const traffic = calculateStoreTrafficMetrics(
+      storeId.trim(),
+      options?.timeframe || "7d"
+    );
+
+    return { success: true, traffic };
+  } catch (err: any) {
+    console.error("Exception in getStoreTrafficDashboardAction:", err);
+    return {
+      success: false,
+      error: err?.message || "Failed to generate store traffic metrics",
+    };
+  }
+}

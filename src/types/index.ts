@@ -127,3 +127,42 @@ export interface StoreAnalyticsSummary {
   recentEvents: StoreAnalyticsEvent[];
   timeframe: "today" | "7d" | "30d" | "all";
 }
+
+export interface TrafficSource {
+  channel: string;
+  visitors: number;
+  percentage: number;
+  iconName?: string;
+}
+
+export interface NeighborhoodTraffic {
+  area: string;
+  visitors: number;
+  percentage: number;
+}
+
+export interface HourlyTrafficPoint {
+  hour: string;
+  visitors: number;
+  isPeak?: boolean;
+}
+
+export interface DailyTrafficTrend {
+  date: string;
+  visitors: number;
+  pageViews: number;
+}
+
+export interface TrafficMetrics {
+  storeId: string;
+  uniqueVisitors: number;
+  totalSessions: number;
+  avgSessionDuration: string;
+  bounceRate: number; // percentage
+  peakHour: string;
+  sources: TrafficSource[];
+  neighborhoods: NeighborhoodTraffic[];
+  hourlyDistribution: HourlyTrafficPoint[];
+  dailyTrend: DailyTrafficTrend[];
+  timeframe: "today" | "7d" | "30d" | "all";
+}

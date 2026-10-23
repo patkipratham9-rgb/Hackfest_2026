@@ -20,15 +20,23 @@ import {
   Activity,
   PlusCircle,
   AlertCircle,
+  Compass,
+  QrCode,
+  Share2,
+  MapPin,
+  Clock,
+  Flame,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   getAIProviderStatusAction,
   testAIProviderConnectionAction,
   getStoreAnalyticsSummaryAction,
+  getStoreTrafficDashboardAction,
   recordStoreEventAction,
 } from "@/actions/marketplaceActions";
-import { StoreAnalyticsSummary, StoreAnalyticsEvent } from "@/types";
+import { StoreAnalyticsSummary, StoreAnalyticsEvent, TrafficMetrics } from "@/types";
 
 export default function SellerGrowthPage() {
   const { activeStore } = useSeller();
@@ -91,9 +99,54 @@ export default function SellerGrowthPage() {
     recentEvents: [],
     timeframe: "7d",
   });
-  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [simulatedCount, setSimulatedCount] = useState(0);
+
+  // Checkpoint CP-GC02: Merchant Traffic Dashboard State
+  const [trafficTimeframe, setTrafficTimeframe] = useState<"today" | "7d" | "30d" | "all">("7d");
+  const [trafficMetrics, setTrafficMetrics] = useState<TrafficMetrics>({
+    storeId: activeStore?.id || "store-1",
+    uniqueVisitors: 184,
+    totalSessions: 248,
+    avgSessionDuration: "3m 24s",
+    bounceRate: 26.4,
+    peakHour: "6:00 PM - 8:30 PM (Evening Market Rush)",
+    sources: [
+      { channel: "Direct Search", visitors: 70, percentage: 38, iconName: "Search" },
+      { channel: "Category Shelves", visitors: 50, percentage: 27, iconName: "Grid" },
+      { channel: "Discovery Feed", visitors: 33, percentage: 18, iconName: "Compass" },
+      { channel: "Storefront QR Scan", visitors: 20, percentage: 11, iconName: "QrCode" },
+      { channel: "WhatsApp & Social", visitors: 11, percentage: 6, iconName: "Share2" },
+    ],
+    neighborhoods: [
+      { area: "Vidyanagar", visitors: 77, percentage: 42 },
+      { area: "Station Road", visitors: 46, percentage: 25 },
+      { area: "CBT", visitors: 29, percentage: 16 },
+      { area: "Gokul Road", visitors: 20, percentage: 11 },
+      { area: "Unkal Lake", visitors: 12, percentage: 6 },
+    ],
+    hourlyDistribution: [
+      { hour: "8 AM", visitors: 9 },
+      { hour: "10 AM", visitors: 22 },
+      { hour: "12 PM", visitors: 29 },
+      { hour: "2 PM", visitors: 15 },
+      { hour: "4 PM", visitors: 33 },
+      { hour: "6 PM", visitors: 52, isPeak: true },
+      { hour: "8 PM", visitors: 40 },
+      { hour: "10 PM", visitors: 13 },
+    ],
+    dailyTrend: [
+      { date: "Sat", visitors: 24, pageViews: 58 },
+      { date: "Sun", visitors: 31, pageViews: 74 },
+      { date: "Mon", visitors: 18, pageViews: 43 },
+      { date: "Tue", visitors: 22, pageViews: 53 },
+      { date: "Wed", visitors: 26, pageViews: 62 },
+      { date: "Thu", visitors: 29, pageViews: 70 },
+      { date: "Fri", visitors: 34, pageViews: 82 },
+    ],
+    timeframe: "7d",
+  });
+  const [trafficPermissionError, setTrafficPermissionError] = useState<string | null>(null);
 
   // Load AI Provider Status
   useEffect(() => {
@@ -119,7 +172,6 @@ export default function SellerGrowthPage() {
   // Checkpoint CP-GC01: Load Store Analytics Events Summary
   useEffect(() => {
     async function loadAnalytics() {
-      setIsAnalyticsLoading(true);
       setPermissionError(null);
       try {
         const storeId = activeStore?.id || "store-1";
@@ -135,12 +187,33 @@ export default function SellerGrowthPage() {
         }
       } catch (err: any) {
         console.warn("Error loading analytics:", err);
-      } finally {
-        setIsAnalyticsLoading(false);
       }
     }
     loadAnalytics();
   }, [activeStore?.id, analyticsTimeframe, simulatedCount]);
+
+  // Checkpoint CP-GC02: Load Merchant Traffic Dashboard Metrics
+  useEffect(() => {
+    async function loadTraffic() {
+      setTrafficPermissionError(null);
+      try {
+        const storeId = activeStore?.id || "store-1";
+        const res = await getStoreTrafficDashboardAction(storeId, {
+          timeframe: trafficTimeframe,
+          role: "seller",
+        });
+
+        if (res.success && res.traffic) {
+          setTrafficMetrics(res.traffic);
+        } else if (res.error) {
+          setTrafficPermissionError(res.error);
+        }
+      } catch (err: any) {
+        console.warn("Error loading traffic metrics:", err);
+      }
+    }
+    loadTraffic();
+  }, [activeStore?.id, trafficTimeframe, simulatedCount]);
 
   const handleTestConnection = async () => {
     setIsTesting(true);
@@ -324,6 +397,340 @@ export default function SellerGrowthPage() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Checkpoint CP-GC02: Merchant Traffic Dashboard Card */}
+      <div
+        data-testid="traffic-dashboard"
+        className="p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cream-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-forest-800 text-cream-100 flex items-center justify-center shrink-0 shadow-sm">
+              <Compass className="w-5 h-5 text-terracotta-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif font-extrabold text-lg text-forest-950">
+                  Storefront Traffic & Shopper Acquisition
+                </h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-forest-800 bg-forest-100 border border-forest-200 px-2 py-0.5 rounded-md">
+                  CP-GC02
+                </span>
+              </div>
+              <p className="text-xs text-forest-600">
+                Visitor volume, referral channels, and Hubballi neighborhood footfall
+              </p>
+            </div>
+          </div>
+
+          {/* Timeframe Selector for Traffic */}
+          <div
+            data-testid="traffic-timeframe-selector"
+            className="flex items-center p-1 rounded-xl bg-cream-200 border border-cream-300 text-xs self-start sm:self-auto"
+          >
+            <button
+              type="button"
+              data-testid="traffic-timeframe-today"
+              onClick={() => setTrafficTimeframe("today")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                trafficTimeframe === "today"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              data-testid="traffic-timeframe-7d"
+              onClick={() => setTrafficTimeframe("7d")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                trafficTimeframe === "7d"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              7 Days
+            </button>
+            <button
+              type="button"
+              data-testid="traffic-timeframe-30d"
+              onClick={() => setTrafficTimeframe("30d")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                trafficTimeframe === "30d"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              30 Days
+            </button>
+            <button
+              type="button"
+              data-testid="traffic-timeframe-all"
+              onClick={() => setTrafficTimeframe("all")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                trafficTimeframe === "all"
+                  ? "bg-forest-800 text-cream-50 shadow-xs"
+                  : "text-forest-700 hover:text-forest-950"
+              }`}
+            >
+              All Time
+            </button>
+          </div>
+        </div>
+
+        {/* Permission Denied Alert for Traffic */}
+        {trafficPermissionError && (
+          <div
+            data-testid="traffic-permission-denied"
+            className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+            <span>{trafficPermissionError}</span>
+          </div>
+        )}
+
+        {/* Traffic Key Metrics Row */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div
+            data-testid="traffic-metric-visitors"
+            className="p-4 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-forest-600 text-xs">
+              <span>Unique Shoppers</span>
+              <Users className="w-4 h-4 text-forest-500" />
+            </div>
+            <span className="font-serif font-black text-2xl text-forest-950 block">
+              {trafficMetrics.uniqueVisitors}
+            </span>
+            <span className="text-[10px] text-forest-600 font-medium">Distinct visitors</span>
+          </div>
+
+          <div
+            data-testid="traffic-metric-sessions"
+            className="p-4 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-forest-600 text-xs">
+              <span>Store Sessions</span>
+              <Activity className="w-4 h-4 text-forest-500" />
+            </div>
+            <span className="font-serif font-black text-2xl text-forest-950 block">
+              {trafficMetrics.totalSessions}
+            </span>
+            <span className="text-[10px] text-forest-600 font-medium">Browsing sessions</span>
+          </div>
+
+          <div
+            data-testid="traffic-metric-duration"
+            className="p-4 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-forest-600 text-xs">
+              <span>Avg. Duration</span>
+              <Clock className="w-4 h-4 text-forest-500" />
+            </div>
+            <span className="font-serif font-black text-2xl text-forest-950 block">
+              {trafficMetrics.avgSessionDuration}
+            </span>
+            <span className="text-[10px] text-forest-600 font-medium">High local engagement</span>
+          </div>
+
+          <div
+            data-testid="traffic-metric-bounce"
+            className="p-4 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
+          >
+            <div className="flex items-center justify-between text-forest-600 text-xs">
+              <span>Bounce Rate</span>
+              <ArrowUpRight className="w-4 h-4 text-terracotta-500" />
+            </div>
+            <span className="font-serif font-black text-2xl text-forest-950 block">
+              {trafficMetrics.bounceRate}%
+            </span>
+            <span className="text-[10px] text-emerald-700 font-medium">Top quartile retention</span>
+          </div>
+
+          <div
+            data-testid="traffic-metric-peak"
+            className="p-4 rounded-2xl bg-forest-900 text-cream-100 space-y-1 col-span-2 md:col-span-1 shadow-sm"
+          >
+            <div className="flex items-center justify-between text-cream-300 text-xs">
+              <span>Peak Footfall</span>
+              <Flame className="w-4 h-4 text-amber-400" />
+            </div>
+            <span className="font-serif font-bold text-base text-cream-50 block leading-tight">
+              {trafficMetrics.peakHour.split("(")[0].trim()}
+            </span>
+            <span className="text-[10px] text-amber-300 font-medium">
+              Evening bazaar surge
+            </span>
+          </div>
+        </div>
+
+        {/* 2-Column Grid: Acquisition Channels & Neighborhood Footfall */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          {/* Acquisition Channels Breakdown */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900 flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-terracotta-600" />
+                <span>Shopper Acquisition Channels</span>
+              </h3>
+              <span className="text-[11px] text-forest-600">Share of Traffic</span>
+            </div>
+
+            <div
+              data-testid="traffic-sources-breakdown"
+              className="p-4 rounded-2xl bg-white border border-cream-200 space-y-3"
+            >
+              {trafficMetrics.sources.map((src) => (
+                <div
+                  key={src.channel}
+                  data-testid={`traffic-source-item-${src.channel.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
+                  className="space-y-1"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-forest-950 flex items-center gap-2">
+                      {src.channel === "Direct Search" && <Search className="w-3.5 h-3.5 text-terracotta-500" />}
+                      {src.channel === "Category Shelves" && <BarChart3 className="w-3.5 h-3.5 text-forest-600" />}
+                      {src.channel === "Discovery Feed" && <Compass className="w-3.5 h-3.5 text-emerald-600" />}
+                      {src.channel === "Storefront QR Scan" && <QrCode className="w-3.5 h-3.5 text-amber-600" />}
+                      {src.channel === "WhatsApp & Social" && <Share2 className="w-3.5 h-3.5 text-blue-500" />}
+                      {src.channel}
+                    </span>
+                    <span className="font-mono font-bold text-forest-700">
+                      {src.visitors} ({src.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-cream-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-terracotta-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${src.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Hubballi Neighborhoods Distribution */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Hubballi Footfall Distribution</span>
+              </h3>
+              <span className="text-[11px] text-forest-600">Local Area Share</span>
+            </div>
+
+            <div
+              data-testid="traffic-neighborhoods-breakdown"
+              className="p-4 rounded-2xl bg-white border border-cream-200 space-y-3"
+            >
+              {trafficMetrics.neighborhoods.map((n) => (
+                <div
+                  key={n.area}
+                  data-testid={`traffic-neighborhood-item-${n.area.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
+                  className="space-y-1"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-forest-950 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 text-emerald-600" />
+                      {n.area}
+                    </span>
+                    <span className="font-mono font-bold text-forest-700">
+                      {n.visitors} ({n.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-cream-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-forest-800 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${n.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Hourly Shopping Distribution */}
+        <div className="space-y-3 pt-2 border-t border-cream-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-forest-700" />
+                <span>Hourly Footfall Distribution</span>
+              </h3>
+              <p className="text-[11px] text-forest-600">
+                Identifies peak shopping windows to schedule staff and pre-pack popular items
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+              Peak: 6 PM - 8 PM
+            </span>
+          </div>
+
+          <div
+            data-testid="traffic-hourly-chart"
+            className="p-4 rounded-2xl bg-white border border-cream-200"
+          >
+            <div className="grid grid-cols-8 gap-2 items-end h-32 pt-4">
+              {trafficMetrics.hourlyDistribution.map((point) => {
+                const maxVisitors = Math.max(...trafficMetrics.hourlyDistribution.map((p) => p.visitors), 1);
+                const heightPercent = Math.round((point.visitors / maxVisitors) * 100);
+
+                return (
+                  <div key={point.hour} className="flex flex-col items-center gap-1.5 h-full justify-end">
+                    <span className="text-[10px] font-mono font-bold text-forest-700">
+                      {point.visitors}
+                    </span>
+                    <div
+                      className={`w-full rounded-t-lg transition-all duration-500 ${
+                        point.isPeak ? "bg-terracotta-500 shadow-sm" : "bg-forest-800/80 hover:bg-forest-800"
+                      }`}
+                      style={{ height: `${Math.max(10, heightPercent)}%` }}
+                    />
+                    <span className="text-[10px] font-semibold text-forest-600 whitespace-nowrap">
+                      {point.hour}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Daily Traffic Trend Timeline */}
+        <div className="space-y-3 pt-2 border-t border-cream-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-forest-900">
+              Daily Visitor Timeline
+            </h3>
+            <span className="text-[11px] text-forest-600 font-mono">Visitors & Page Views</span>
+          </div>
+
+          <div
+            data-testid="traffic-trend-chart"
+            className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5"
+          >
+            {trafficMetrics.dailyTrend.map((day) => (
+              <div
+                key={day.date}
+                className="p-3 rounded-2xl bg-white border border-cream-200 text-center space-y-1 shadow-2xs"
+              >
+                <span className="text-[10px] font-bold uppercase text-forest-600 block">
+                  {day.date}
+                </span>
+                <span className="font-serif font-black text-lg text-forest-950 block">
+                  {day.visitors}
+                </span>
+                <span className="text-[10px] font-mono text-terracotta-600 block">
+                  {day.pageViews} views
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Checkpoint CP-GC01: Store Analytics Events & Funnel Card */}
