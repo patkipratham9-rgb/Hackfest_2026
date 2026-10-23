@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Order, OrderStatus } from "@/types";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { mapRealtimeOrderPayload } from "@/lib/orderAuth";
 
 export type RealtimeConnectionState = "CONNECTING" | "CONNECTED" | "DISCONNECTED" | "ERROR";
 
@@ -82,25 +83,7 @@ export function useRealtimeOrders(options: UseRealtimeOrdersOptions = {}) {
           });
 
           if (options.onNewOrder) {
-            const mappedOrder: Order = {
-              id: row.id,
-              storeId: row.store_id,
-              storeName: row.store_name || options.storeName || "Local Shop",
-              storeArea: row.store_area || "Vidyanagar",
-              storeLane: row.store_lane || "Main Market Cross",
-              customerName: row.customer_name || "Customer",
-              customerPhone: row.customer_phone || "+91 98451 22334",
-              items: Array.isArray(row.items) ? row.items : [],
-              subtotal: Number(row.subtotal) || 0,
-              platformFee: Number(row.platform_fee) || 15,
-              total: Number(row.total_amount || row.total) || 0,
-              status: (row.status as OrderStatus) || "placed",
-              paymentMethod: row.payment_method || "counter",
-              paymentStatus: row.payment_status || "pending",
-              pickupTime: row.pickup_time || "In 20 minutes",
-              pickupCode: row.pickup_code || "LL-100",
-              createdAt: row.created_at || new Date().toISOString(),
-            };
+            const mappedOrder = mapRealtimeOrderPayload(row, options.storeName || "Local Shop");
             options.onNewOrder(mappedOrder);
           }
         }

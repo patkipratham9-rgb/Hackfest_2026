@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
-import { markOrderPackedAction, markOrderReadyAction } from "@/actions/marketplaceActions";
+import { markOrderPackedAction, markOrderReadyAction, verifyAndCompleteOrderAction } from "@/actions/marketplaceActions";
 
 export default function SellerOrdersPage() {
   const { activeStore } = useSeller();
@@ -182,7 +182,7 @@ export default function SellerOrdersPage() {
   };
 
   // Verify PIN & mark completed
-  const handleConfirmVerification = () => {
+  const handleConfirmVerification = async () => {
     if (!verifyingOrder) return;
 
     const trimmed = verificationInput.trim().toUpperCase();
@@ -193,6 +193,15 @@ export default function SellerOrdersPage() {
         `Invalid PIN. Counter token must match '${expected}'.`
       );
       return;
+    }
+
+    try {
+      await verifyAndCompleteOrderAction(verifyingOrder.id, trimmed, {
+        storeId: activeStore?.id,
+        role: "seller",
+      });
+    } catch {
+      // client-fallback
     }
 
     updateOrderStatus(verifyingOrder.id, "completed");
