@@ -30,6 +30,7 @@ export default function LoginPage() {
     signup,
     sendOtp,
     loginWithPhoneOtp,
+    loginWithFirebaseToken,
     loginWithEmailPermission,
     setActiveAppMode,
   } = useAuth();
@@ -121,7 +122,7 @@ export default function LoginPage() {
     setStatusMessage("");
     setIsLoading(true);
 
-    const res = sendOtp(phone);
+    const res = await sendOtp(phone);
 
     if (!res.success) {
       setIsLoading(false);
@@ -182,21 +183,13 @@ export default function LoginPage() {
     setIsLoading(true);
     setOtpError("");
 
-    // If Firebase confirmation is active, verify and exchange token
+    // If Firebase confirmation is active, verify via Firebase ID token
     if (firebaseConfirmation) {
       try {
         const fbResult = await firebaseConfirmation.confirm(fullOtp);
         const idToken = await fbResult.user.getIdToken();
-        const fbVerifyRes = await fetch("/api/auth/firebase/verify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({ role: "customer" }),
-        });
-        const fbVerifyData = await fbVerifyRes.json();
-        if (fbVerifyRes.ok && fbVerifyData.success) {
+        const fbVerifyRes = await loginWithFirebaseToken(idToken, undefined, "customer");
+        if (fbVerifyRes.success) {
           setStatusMessage("Firebase Phone Verification Successful! Welcome back.");
           setActiveAppMode("shopper");
           setTimeout(() => {
@@ -205,7 +198,7 @@ export default function LoginPage() {
           return;
         }
       } catch (fbErr: any) {
-        console.warn("Firebase confirmation notice:", fbErr);
+        console.warn("Firebase confirmation notice, falling back to local OTP verify:", fbErr);
       }
     }
 

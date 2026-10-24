@@ -6,13 +6,18 @@ import {
   sanitizeInput,
 } from "@/lib/authSecurity";
 import { UserRole, UserProfile } from "@/types";
+import { saveUserProfileToDbAction } from "@/actions/marketplaceActions";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { phone, otp, role = "customer", name, email } = body;
+    const body = await req.json().catch(() => ({}));
+    const phone =
+      body.phone || body.number || body.phoneNumber || body.mobile || "";
+    const otp =
+      body.otp || body.code || body.otpCode || body.token || body.pin || "";
+    const { role = "customer", name, email } = body;
 
     if (!phone || !otp) {
       return NextResponse.json(
@@ -21,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const verification = verifyPhoneOtp(phone, otp);
+    const verification = verifyPhoneOtp(phone, String(otp));
 
     if (!verification.success) {
       return NextResponse.json(
@@ -29,6 +34,7 @@ export async function POST(req: NextRequest) {
           success: false,
           message: verification.message,
           remainingAttempts: verification.remainingAttempts,
+          lockedUntil: verification.lockedUntil,
         },
         { status: 400 }
       );
@@ -38,7 +44,9 @@ export async function POST(req: NextRequest) {
     const phoneValidation = validatePhoneNumber(phone);
     const userId = `user_${Date.now()}`;
     const cleanRole: UserRole = role === "seller" ? "seller" : "customer";
-    const userName = sanitizeInput(name) || (cleanRole === "seller" ? "Hubballi Merchant" : "Hubballi Shopper");
+    const userName =
+      sanitizeInput(name) ||
+      (cleanRole === "seller" ? "Hubballi Merchant" : "Hubballi Shopper");
 
     const verifiedUser: UserProfile = {
       id: userId,
@@ -55,6 +63,17 @@ export async function POST(req: NextRequest) {
     };
 
     const sessionToken = generateSessionToken(userId, cleanRole);
+
+    // Synchronize to database
+    try {
+      saveUserProfileToDbAction({
+        id: verifiedUser.id,
+        fullName: verifiedUser.name,
+        phone: verifiedUser.number,
+        email: verifiedUser.email,
+        addresses: verifiedUser.addresses,
+      }).catch(() => {});
+    } catch {}
 
     return NextResponse.json({
       success: true,

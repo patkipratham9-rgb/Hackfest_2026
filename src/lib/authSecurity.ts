@@ -18,8 +18,17 @@ interface OtpRateLimitRecord {
   generatedOtp: string;
 }
 
-// In-memory rate limiting store (backed by storage in client)
-const otpStore: Map<string, OtpRateLimitRecord> = new Map();
+// In-memory rate limiting store (backed by globalThis for cross-route & dev reload sharing)
+declare global {
+  // eslint-disable-next-line no-var
+  var __localloop_otp_store__: Map<string, OtpRateLimitRecord> | undefined;
+}
+
+const otpStore: Map<string, OtpRateLimitRecord> =
+  globalThis.__localloop_otp_store__ || new Map();
+if (process.env.NODE_ENV !== "production") {
+  globalThis.__localloop_otp_store__ = otpStore;
+}
 
 /**
  * 1. Sanitizes user input to prevent XSS, HTML injection, and script execution.

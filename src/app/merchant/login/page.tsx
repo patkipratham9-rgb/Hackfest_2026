@@ -41,7 +41,13 @@ const CATEGORIES: ProductCategory[] = [
 
 export default function MerchantLoginPage() {
   const router = useRouter();
-  const { signup, sendOtp, loginWithPhoneOtp, loginWithEmailPermission } = useAuth();
+  const {
+    signup,
+    sendOtp,
+    loginWithPhoneOtp,
+    loginWithFirebaseToken,
+    loginWithEmailPermission,
+  } = useAuth();
   const { setUserRole, updateStoreProfile } = useSeller();
 
   // Mode: "signup" (Create Merchant Account) vs "login" (Already registered? Log in)
@@ -141,7 +147,7 @@ export default function MerchantLoginPage() {
     setErrorMsg("");
     setSuccessMsg("");
 
-    const res = sendOtp(phoneNumber);
+    const res = await sendOtp(phoneNumber);
     if (!res.success) {
       setErrorMsg(res.message);
       return;
@@ -189,16 +195,8 @@ export default function MerchantLoginPage() {
       try {
         const fbResult = await firebaseConfirmation.confirm(otpCode);
         const idToken = await fbResult.user.getIdToken();
-        const fbRes = await fetch("/api/auth/firebase/verify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({ role: "seller" }),
-        });
-        const fbData = await fbRes.json();
-        if (fbRes.ok && fbData.success) {
+        const fbRes = await loginWithFirebaseToken(idToken, undefined, "seller");
+        if (fbRes.success) {
           setUserRole("seller");
           setSuccessMsg("Merchant signed in successfully! Redirecting to Merchant Cockpit...");
           setTimeout(() => {
@@ -207,7 +205,7 @@ export default function MerchantLoginPage() {
           return;
         }
       } catch (fbErr) {
-        console.warn("Firebase merchant confirmation notice:", fbErr);
+        console.warn("Firebase merchant confirmation notice, falling back to local OTP verify:", fbErr);
       }
     }
 

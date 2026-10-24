@@ -44,6 +44,36 @@ export default function UserLoginPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [dbVerified, setDbVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  const handleSendOtp = async () => {
+    setErrorMessage("");
+    setStatusMessage("");
+    const clean = loginPhone.replace(/\D/g, "").slice(-10);
+    if (clean.length < 10) {
+      setErrorMessage("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: clean }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOtpSent(true);
+        setStatusMessage(data.message || `OTP sent to +91 ${clean}`);
+        if (data.testOtp) setLoginOtp(data.testOtp);
+        setCooldown(data.cooldownSeconds || 30);
+      } else {
+        setErrorMessage(data.message || "Failed to send OTP.");
+      }
+    } catch {
+      setErrorMessage("Network error while requesting OTP.");
+    }
+  };
 
   // Quick One-Tap Test User Logins
   const handleQuickLogin = async (name: string, phone: string, locality: string) => {
@@ -108,6 +138,24 @@ export default function UserLoginPage() {
         setErrorMessage("Please enter a valid 10-digit mobile number.");
         setIsLoading(false);
         return;
+      }
+
+      if (authMethod === "phone") {
+        const otpRes = await fetch("/api/auth/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: cleanPhone,
+            otp: loginOtp,
+            role: "customer",
+          }),
+        });
+        const otpData = await otpRes.json();
+        if (!otpRes.ok || !otpData.success) {
+          setErrorMessage(otpData.message || "Invalid OTP code. Please check and try again.");
+          setIsLoading(false);
+          return;
+        }
       }
 
       const res = await loginOrRegisterUserDbAction({
@@ -349,18 +397,27 @@ export default function UserLoginPage() {
                     <label className="text-xs font-bold text-forest-900 block">
                       Phone Number
                     </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-forest-500">
-                        🇮🇳 +91
-                      </span>
-                      <input
-                        type="tel"
-                        value={loginPhone}
-                        onChange={(e) => setLoginPhone(e.target.value)}
-                        placeholder="98451 22334"
-                        className="w-full text-xs font-medium py-2.5 pl-16 pr-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-terracotta-400 focus:bg-white"
-                        required
-                      />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-forest-500">
+                          🇮🇳 +91
+                        </span>
+                        <input
+                          type="tel"
+                          value={loginPhone}
+                          onChange={(e) => setLoginPhone(e.target.value)}
+                          placeholder="98451 22334"
+                          className="w-full text-xs font-medium py-2.5 pl-16 pr-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-terracotta-400 focus:bg-white"
+                          required
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        className="px-3.5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-950 text-white text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+                      >
+                        {otpSent ? "Resend" : "Send OTP"}
+                      </button>
                     </div>
                   </div>
 

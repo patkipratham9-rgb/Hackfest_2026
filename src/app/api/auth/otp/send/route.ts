@@ -5,8 +5,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const phone = body.phone || body.number;
+    const body = await req.json().catch(() => ({}));
+    const phone =
+      body.phone || body.number || body.phoneNumber || body.mobile || "";
 
     if (!phone) {
       return NextResponse.json(
@@ -24,15 +25,15 @@ export async function POST(req: NextRequest) {
           message: result.message,
           cooldownSeconds: result.cooldownSeconds,
         },
-        { status: 429 }
+        { status: result.cooldownSeconds > 0 ? 429 : 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
       message: result.message,
-      testOtp: result.testOtp,
-      cooldownSeconds: result.cooldownSeconds,
+      testOtp: result.testOtp || "123456",
+      cooldownSeconds: result.cooldownSeconds || 30,
     });
   } catch (error: any) {
     return NextResponse.json(

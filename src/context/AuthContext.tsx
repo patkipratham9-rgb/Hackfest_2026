@@ -24,7 +24,9 @@ interface AuthContextType {
   isLoading: boolean;
   activeAppMode: AppMode;
   setActiveAppMode: (mode: AppMode) => void;
-  sendOtp: (phone: string) => { success: boolean; message: string; testOtp?: string; cooldownSeconds: number };
+  sendOtp: (
+    phone: string
+  ) => Promise<{ success: boolean; message: string; testOtp?: string; cooldownSeconds: number }>;
   signup: (data: {
     name: string;
     phone: string;
@@ -120,18 +122,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   };
 
-  const sendOtp = (phone: string) => {
-    // Synchronous immediate response using security engine
-    const localRes = requestPhoneOtp(phone);
-    // Background async dispatch to API for multi-client verification
+  const sendOtp = async (phone: string) => {
+    // 1. Dispatch to server-side OTP API endpoint
     try {
-      fetch("/api/auth/otp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-      }).catch(() => {});
-    } catch {}
-    return localRes;
+      if (typeof window !== "undefined" && typeof fetch === "function") {
+        const res = await fetch("/api/auth/otp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone }),
+        });
+        const data = await res.json();
+        // Keep local security engine synchronized
+        requestPhoneOtp(phone);
+        return {
+          success: Boolean(data.success),
+          message: data.message || `OTP sent to ${phone}`,
+          testOtp: data.testOtp || "123456",
+          cooldownSeconds:
+            typeof data.cooldownSeconds === "number" ? data.cooldownSeconds : 30,
+        };
+      }
+    } catch {
+      // Fallback to local security engine
+    }
+    return requestPhoneOtp(phone);
   };
 
   const signup = async (data: {
@@ -218,6 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithPhoneOtp = async (phone: string, otp: string, role: UserRole = "customer") => {
     // 1. First verify through API endpoint if in browser environment
+    let verifiedUserFromApi: UserProfile | null = null;
     if (typeof window !== "undefined" && typeof fetch === "function") {
       try {
         const res = await fetch("/api/auth/otp/verify", {
@@ -231,6 +246,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             success: false,
             message: data.message || "Invalid OTP code. Please check and try again.",
           };
+        }
+        if (data.user) {
+          verifiedUserFromApi = data.user;
         }
       } catch (networkErr) {
         // Fall back to local security engine if API route is unreachable
@@ -249,14 +267,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const phoneValidation = validatePhoneNumber(phone);
     const existingAddresses = user?.addresses && user.addresses.length > 0 ? user.addresses : DEFAULT_ADDRESSES;
 
-    const loggedInUser: UserProfile = {
+    const loggedInUser: UserProfile = verifiedUserFromApi || {
       id: user?.id || `user_${Date.now()}`,
       name: user?.name || (role === "seller" ? "Hubballi Merchant" : "Hubballi Shopper"),
       number: phoneValidation.cleanNumber,
       email: user?.email,
       role,
-      storeId: role === "seller" ? "store-1" : undefined,
-      storeName: role === "seller" ? "Meena's Diyas & Filter Coffee" : undefined,
+      storeId: role === "seller" ? (user?.storeId || "store-1") : undefined,
+      storeName: role === "seller" ? (user?.storeName || "Meena's Diyas & Filter Coffee") : undefined,
       addresses: existingAddresses,
       emailPermissionsGranted: Boolean(user?.emailPermissionsGranted),
       createdAt: user?.createdAt || new Date().toISOString(),
