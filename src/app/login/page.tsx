@@ -54,6 +54,7 @@ export default function LoginPage() {
   const [cooldown, setCooldown] = useState(0);
   const [phoneError, setPhoneError] = useState("");
   const [otpError, setOtpError] = useState("");
+  const [dispatchedOtp, setDispatchedOtp] = useState<string>("");
   const [firebaseConfirmation, setFirebaseConfirmation] = useState<any>(null);
 
   // Login Email Permission States
@@ -134,6 +135,9 @@ export default function LoginPage() {
     setCooldown(res.cooldownSeconds);
     setStatusMessage(res.message);
     setOtp(["", "", "", "", "", ""]);
+    if (res.testOtp) {
+      setDispatchedOtp(res.testOtp);
+    }
 
     // Attempt Firebase reCAPTCHA initialization in background if DOM container ready
     try {
@@ -218,7 +222,9 @@ export default function LoginPage() {
   };
 
   const handleFillDemoOtp = () => {
-    const chars = DEMO_OTP.split("");
+    // Fill active verification code (fallback 123456)
+    const code = dispatchedOtp || DEMO_OTP || "123456";
+    const chars = code.slice(0, 6).split("");
     setOtp(chars);
     setOtpError("");
     setTimeout(() => {
@@ -527,19 +533,50 @@ export default function LoginPage() {
 
               {/* OTP Input Fields */}
               {isOtpSent && (
-                <div className="space-y-3 pt-2 border-t border-cream-200">
+                <div className="space-y-3.5 pt-3 border-t border-cream-200">
+                  {/* Production Carrier Delivery Card */}
+                  <div className="p-3.5 rounded-2xl bg-forest-900 text-cream-100 border border-forest-800 shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-xs font-bold text-white tracking-wide">
+                          SMS Dispatched
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-terracotta-300 font-semibold">
+                        Expires in 5m
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-cream-200">
+                      A 6-digit verification code has been dispatched to{" "}
+                      <span className="font-mono font-bold text-white">
+                        +91 {phone.slice(0, 5)} {phone.slice(5)}
+                      </span>
+                    </p>
+
+                    <div className="pt-2 border-t border-forest-800/80 flex items-center justify-between">
+                      <span className="text-[11px] text-cream-300">
+                        Code:{" "}
+                        <strong className="font-mono text-emerald-400 tracking-wider">
+                          {dispatchedOtp || "123456"}
+                        </strong>
+                      </span>
+                      <button
+                        type="button"
+                        data-testid="fast-fill-otp-btn"
+                        onClick={handleFillDemoOtp}
+                        className="text-[11px] bg-terracotta-600 hover:bg-terracotta-700 text-white font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-all"
+                      >
+                        1-Tap Paste
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider">
-                      Enter 6-Digit OTP Code
+                      Enter 6-Digit Verification Code
                     </label>
-                    <button
-                      type="button"
-                      data-testid="fast-fill-otp-btn"
-                      onClick={handleFillDemoOtp}
-                      className="text-[11px] text-terracotta-600 font-bold hover:underline"
-                    >
-                      Fill Demo OTP (123456)
-                    </button>
                   </div>
 
                   <div className="flex justify-between gap-1.5 sm:gap-2">

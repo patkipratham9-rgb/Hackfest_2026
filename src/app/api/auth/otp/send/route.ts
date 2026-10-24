@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requestPhoneOtp } from "@/lib/authSecurity";
+import { dispatchSmsOtp } from "@/lib/smsGateway";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +30,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Dispatch carrier SMS
+    const smsResult = await dispatchSmsOtp(
+      phone,
+      result.testOtp || "123456"
+    );
+
     return NextResponse.json({
       success: true,
-      message: result.message,
+      message: `OTP sent via SMS to ${smsResult.maskedPhone}`,
       testOtp: result.testOtp || "123456",
       cooldownSeconds: result.cooldownSeconds || 30,
+      provider: smsResult.provider,
+      expiresInSeconds: 300,
     });
   } catch (error: any) {
     return NextResponse.json(

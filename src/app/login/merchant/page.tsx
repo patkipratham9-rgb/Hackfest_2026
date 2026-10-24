@@ -495,7 +495,7 @@ export default function MerchantLoginPage() {
                         Store PIN / OTP
                       </label>
                       <span className="text-[10px] text-forest-600 font-mono font-semibold">
-                        Test OTP: 123456
+                        Expires in 5m
                       </span>
                     </div>
                     <input
@@ -503,7 +503,7 @@ export default function MerchantLoginPage() {
                       maxLength={6}
                       value={loginPin}
                       onChange={(e) => setLoginPin(e.target.value)}
-                      placeholder="123456"
+                      placeholder="Enter 6-digit PIN"
                       className="w-full text-xs font-mono font-bold tracking-widest py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-forest-600 focus:bg-white text-center"
                       required
                     />

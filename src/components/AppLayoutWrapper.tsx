@@ -12,6 +12,28 @@ import { Footer } from "@/components/Footer";
 
 export function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  React.useEffect(() => {
+    // Intercept and suppress non-Error unhandled rejections (e.g., [object Event] from blocked third-party resources)
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event?.reason;
+      const isEventReason =
+        reason instanceof Event ||
+        Object.prototype.toString.call(reason) === "[object Event]" ||
+        (reason && typeof reason === "object" && !reason.message && !reason.stack);
+
+      if (isEventReason) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleUnhandledRejection, true);
+    return () => {
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection, true);
+    };
+  }, []);
+
   const isAuthPage =
     pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login");
   const isMerchantApp =

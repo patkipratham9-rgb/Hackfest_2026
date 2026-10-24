@@ -66,7 +66,7 @@ export default function RootLayout({
         </AuthProvider>
         <Script
           src="https://sdk.cashfree.com/js/v3/cashfree.js"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       </body>
     </html>

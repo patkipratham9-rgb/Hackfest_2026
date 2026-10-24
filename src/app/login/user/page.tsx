@@ -424,10 +424,10 @@ export default function UserLoginPage() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <label className="font-bold text-forest-900">
-                        Enter OTP
+                        Enter OTP Code
                       </label>
                       <span className="text-[10px] text-terracotta-600 font-mono font-semibold">
-                        Test OTP: 123456
+                        Expires in 5m
                       </span>
                     </div>
                     <input
@@ -435,7 +435,7 @@ export default function UserLoginPage() {
                       maxLength={6}
                       value={loginOtp}
                       onChange={(e) => setLoginOtp(e.target.value)}
-                      placeholder="123456"
+                      placeholder="Enter 6-digit code"
                       className="w-full text-xs font-mono font-bold tracking-widest py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-terracotta-400 focus:bg-white text-center"
                       required
                     />

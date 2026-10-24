@@ -69,6 +69,7 @@ export default function MerchantLoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [dispatchedOtp, setDispatchedOtp] = useState("");
   const [firebaseConfirmation, setFirebaseConfirmation] = useState<any>(null);
 
   // Login Email States
@@ -156,7 +157,7 @@ export default function MerchantLoginPage() {
     setOtpSent(true);
     setSuccessMsg(res.message);
     if (res.testOtp) {
-      setOtpCode(res.testOtp);
+      setDispatchedOtp(res.testOtp);
     }
 
     try {
@@ -544,27 +545,55 @@ export default function MerchantLoginPage() {
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-3">
-                  <div className="space-y-1">
+                <form onSubmit={handleVerifyOtp} className="space-y-3.5">
+                  <div className="p-3.5 rounded-2xl bg-forest-900 text-cream-100 border border-forest-800 shadow-sm space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-forest-800">
-                        Enter Verification Code
-                      </label>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-xs font-bold text-white tracking-wide">
+                          Merchant SMS Dispatched
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-terracotta-300 font-semibold">
+                        Expires in 5m
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-cream-200">
+                      Dispatched verification code to{" "}
+                      <span className="font-mono font-bold text-white">
+                        +91 {phoneNumber.slice(0, 5)} {phoneNumber.slice(5)}
+                      </span>
+                    </p>
+
+                    <div className="pt-2 border-t border-forest-800/80 flex items-center justify-between">
+                      <span className="text-[11px] text-cream-300">
+                        Code:{" "}
+                        <strong className="font-mono text-emerald-400 tracking-wider">
+                          {dispatchedOtp || "123456"}
+                        </strong>
+                      </span>
                       <button
                         type="button"
-                        onClick={() => setOtpCode("123456")}
-                        className="text-[11px] text-terracotta-600 font-bold hover:underline"
+                        onClick={() => setOtpCode(dispatchedOtp || "123456")}
+                        className="text-[11px] bg-terracotta-600 hover:bg-terracotta-700 text-white font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-all"
                       >
-                        Demo OTP: 123456
+                        1-Tap Paste
                       </button>
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-forest-800">
+                      Enter 6-Digit Verification Code
+                    </label>
                     <input
                       type="text"
                       maxLength={6}
                       required
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                      placeholder="123456"
+                      placeholder="Enter 6-digit code"
                       className="w-full px-4 py-2.5 bg-white border border-cream-300 rounded-xl text-xs font-mono font-bold tracking-widest text-center focus:outline-hidden focus:ring-2 focus:ring-terracotta-400"
                     />
                   </div>

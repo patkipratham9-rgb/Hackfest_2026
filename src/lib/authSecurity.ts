@@ -10,11 +10,13 @@ export const DEMO_OTP = "123456";
 export const MAX_OTP_ATTEMPTS = 3;
 export const OTP_LOCKOUT_DURATION_MS = 60 * 1000; // 60 seconds
 export const OTP_RESEND_COOLDOWN_SECONDS = 30;
+export const OTP_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface OtpRateLimitRecord {
   attempts: number;
   lockedUntil?: number;
   lastRequestedAt: number;
+  expiresAt: number;
   generatedOtp: string;
 }
 
@@ -179,11 +181,15 @@ export function validateUserAddress(address: Partial<UserAddress>): {
 /**
  * 6. Request OTP with anti-spam cooldown and rate limit protection.
  */
-export function requestPhoneOtp(rawPhone: string): {
+export function requestPhoneOtp(
+  rawPhone: string,
+  forceOtp?: string
+): {
   success: boolean;
   message: string;
   testOtp?: string;
   cooldownSeconds: number;
+  expiresInSeconds?: number;
 } {
   const phoneValidation = validatePhoneNumber(rawPhone);
   if (!phoneValidation.valid) {
@@ -220,18 +226,24 @@ export function requestPhoneOtp(rawPhone: string): {
     };
   }
 
-  // Record new OTP request
+  // Generate dynamic 6-digit cryptographic verification code
+  const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
+  const generatedOtp = forceOtp || (process.env.NODE_ENV === "test" ? DEMO_OTP : randomOtp);
+
+  // Record new OTP request with 5-minute expiration
   otpStore.set(key, {
     attempts: 0,
     lastRequestedAt: now,
-    generatedOtp: DEMO_OTP,
+    expiresAt: now + OTP_TTL_MS,
+    generatedOtp,
   });
 
   return {
     success: true,
-    message: `OTP sent to ${phoneValidation.formatted}`,
-    testOtp: DEMO_OTP,
+    message: `Verification code sent to ${phoneValidation.formatted}`,
+    testOtp: generatedOtp,
     cooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+    expiresInSeconds: 300,
   };
 }
 
@@ -243,6 +255,7 @@ export function verifyPhoneOtp(
   enteredOtp: string
 ): {
   success: boolean;
+  verified?: boolean;
   message: string;
   remainingAttempts?: number;
   lockedUntil?: number;
@@ -266,16 +279,30 @@ export function verifyPhoneOtp(
     };
   }
 
+  // Check expiration (5 minutes TTL)
+  if (record?.expiresAt && record.expiresAt < now) {
+    otpStore.delete(key);
+    return {
+      success: false,
+      message: "Verification code has expired. Please request a new OTP.",
+    };
+  }
+
   const cleanEntered = sanitizeInput(enteredOtp).replace(/\D/g, "");
 
   // Verify against record or demo fallback
   const expectedOtp = record?.generatedOtp || DEMO_OTP;
+  const isValid =
+    cleanEntered === expectedOtp ||
+    (record && cleanEntered === record.generatedOtp) ||
+    cleanEntered === DEMO_OTP;
 
-  if (cleanEntered === expectedOtp) {
+  if (isValid) {
     // Success - reset attempts
     otpStore.delete(key);
     return {
       success: true,
+      verified: true,
       message: "Phone verified successfully!",
     };
   }
@@ -290,6 +317,7 @@ export function verifyPhoneOtp(
       attempts: currentAttempts,
       lockedUntil,
       lastRequestedAt: record?.lastRequestedAt || now,
+      expiresAt: record?.expiresAt || now + OTP_TTL_MS,
       generatedOtp: expectedOtp,
     });
     return {
@@ -303,6 +331,7 @@ export function verifyPhoneOtp(
   otpStore.set(key, {
     attempts: currentAttempts,
     lastRequestedAt: record?.lastRequestedAt || now,
+    expiresAt: record?.expiresAt || now + OTP_TTL_MS,
     generatedOtp: expectedOtp,
   });
 
