@@ -43,7 +43,13 @@ export function BottomNav() {
     },
   ];
 
-  if (pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login")) {
+  // Hide consumer bottom navigation (Categories, Orders Again, Recent) from Merchant & Auth apps
+  if (
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/merchant/login") ||
+    pathname?.startsWith("/seller") ||
+    pathname?.startsWith("/merchant")
+  ) {
     return null;
   }
 

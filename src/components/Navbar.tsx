@@ -40,7 +40,13 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  if (pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login")) {
+  // Exclude shopper navbar from Merchant Application & Auth pages
+  if (
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/merchant/login") ||
+    pathname?.startsWith("/seller") ||
+    pathname?.startsWith("/merchant")
+  ) {
     return null;
   }
 

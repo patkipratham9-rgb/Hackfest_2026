@@ -14,8 +14,12 @@ export function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage =
     pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login");
+  const isMerchantApp =
+    pathname?.startsWith("/seller") || pathname?.startsWith("/merchant");
 
-  if (isAuthPage) {
+  // Merchant Application is completely separated from consumer shopper layout:
+  // Categories, Orders Again, Cart, and Recent options are excluded from Merchant pages.
+  if (isAuthPage || isMerchantApp) {
     return <main className="min-h-screen w-full">{children}</main>;
   }
 
