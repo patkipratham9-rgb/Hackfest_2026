@@ -1,3 +1,7 @@
-import RecentExploredPage from "@/app/recent/page";
+"use client";
 
-export default RecentExploredPage;
+import { RecentView } from "@/components/RecentView";
+
+export default function RecentExploredPage() {
+  return <RecentView />;
+}

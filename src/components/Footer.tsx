@@ -4,9 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Store,
-  MapPin,
-  Phone,
-  Mail,
   ShieldCheck,
   Heart,
   ExternalLink,
@@ -126,64 +123,43 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Col 4: Contact & Hubballi Coordinates */}
+          {/* Col 4: Platform Policies & Trust */}
           <div className="space-y-3">
             <h4 className="font-serif font-bold text-sm text-forest-950 uppercase tracking-wider">
-              Direct Contact
+              Policies &amp; Trust
             </h4>
-            <ul className="space-y-2.5 text-xs text-forest-700">
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-terracotta-600 shrink-0" />
-                <a
-                  href="tel:+919845122334"
-                  className="font-bold text-forest-900 hover:text-terracotta-600 transition-colors cursor-pointer"
-                  title="Call LocalLoop Support"
+            <ul className="space-y-2 text-xs text-forest-700 font-medium">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal("terms")}
+                  className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
                 >
-                  +91 98451 22334
-                </a>
+                  Terms of Service
+                </button>
               </li>
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-terracotta-600 shrink-0" />
-                <a
-                  href="mailto:pratham.patki@kletech.ac.in"
-                  className="font-bold text-forest-900 hover:text-terracotta-600 transition-colors cursor-pointer truncate"
-                  title="Email LocalLoop Team"
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal("privacy")}
+                  className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
                 >
-                  pratham.patki@kletech.ac.in
-                </a>
+                  Privacy &amp; Consumer Safety
+                </button>
               </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-terracotta-600 shrink-0 mt-0.5" />
-                <span className="text-[11px] leading-relaxed">
-                  KLE Tech Campus, Vidyanagar, Hubballi-Dharwad, Karnataka 580031
-                </span>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal("merchant")}
+                  className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
+                >
+                  Fair Share Merchant Code
+                </button>
               </li>
             </ul>
 
-            <div className="pt-1 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveModal("terms")}
-                className="text-[11px] text-forest-600 hover:underline"
-              >
-                Terms
-              </button>
-              <span className="text-forest-400">•</span>
-              <button
-                type="button"
-                onClick={() => setActiveModal("privacy")}
-                className="text-[11px] text-forest-600 hover:underline"
-              >
-                Privacy
-              </button>
-              <span className="text-forest-400">•</span>
-              <button
-                type="button"
-                onClick={() => setActiveModal("merchant")}
-                className="text-[11px] text-forest-600 hover:underline"
-              >
-                Fair Trade Code
-              </button>
+            <div className="pt-2 text-[11px] text-forest-600 leading-relaxed border-t border-cream-300">
+              Empowering local commerce across Hubli-Dharwad with zero predatory commissions.
             </div>
           </div>
         </div>

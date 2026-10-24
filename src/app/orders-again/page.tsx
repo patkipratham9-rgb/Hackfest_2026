@@ -1,3 +1,7 @@
-import OrdersAgainPage from "@/app/orders/page";
+"use client";
 
-export default OrdersAgainPage;
+import { OrdersView } from "@/components/OrdersView";
+
+export default function OrdersAgainPage() {
+  return <OrdersView />;
+}
