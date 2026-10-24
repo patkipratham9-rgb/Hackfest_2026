@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductCategory } from "@/types";
 import { notifyNewStore } from "@/lib/notificationSystem";
+import { createRecaptchaVerifier, sendFirebasePhoneOtp } from "@/lib/firebaseClient";
 
 const CATEGORIES: ProductCategory[] = [
   "Grocery",
@@ -62,6 +63,7 @@ export default function MerchantLoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [firebaseConfirmation, setFirebaseConfirmation] = useState<any>(null);
 
   // Login Email States
   const [email, setEmail] = useState("");
@@ -134,7 +136,7 @@ export default function MerchantLoginPage() {
   };
 
   // Handle Send OTP
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
@@ -149,6 +151,18 @@ export default function MerchantLoginPage() {
     setSuccessMsg(res.message);
     if (res.testOtp) {
       setOtpCode(res.testOtp);
+    }
+
+    try {
+      const verifier = await createRecaptchaVerifier("recaptcha-container-merchant");
+      if (verifier) {
+        const fbRes = await sendFirebasePhoneOtp(phoneNumber, verifier);
+        if (fbRes.success && fbRes.confirmationResult) {
+          setFirebaseConfirmation(fbRes.confirmationResult);
+        }
+      }
+    } catch (fbErr) {
+      console.warn("Firebase merchant reCAPTCHA notice:", fbErr);
     }
 
     setCooldown(res.cooldownSeconds);
@@ -169,6 +183,33 @@ export default function MerchantLoginPage() {
     setErrorMsg("");
     setSuccessMsg("");
     setIsSubmitting(true);
+
+    // If Firebase confirmation active, verify via Firebase ID token
+    if (firebaseConfirmation) {
+      try {
+        const fbResult = await firebaseConfirmation.confirm(otpCode);
+        const idToken = await fbResult.user.getIdToken();
+        const fbRes = await fetch("/api/auth/firebase/verify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ role: "seller" }),
+        });
+        const fbData = await fbRes.json();
+        if (fbRes.ok && fbData.success) {
+          setUserRole("seller");
+          setSuccessMsg("Merchant signed in successfully! Redirecting to Merchant Cockpit...");
+          setTimeout(() => {
+            router.push("/seller");
+          }, 700);
+          return;
+        }
+      } catch (fbErr) {
+        console.warn("Firebase merchant confirmation notice:", fbErr);
+      }
+    }
 
     try {
       const result = await loginWithPhoneOtp(phoneNumber, otpCode, "seller");
@@ -485,6 +526,9 @@ export default function MerchantLoginPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Firebase reCAPTCHA Container */}
+                  <div id="recaptcha-container-merchant" className="my-1 empty:hidden"></div>
 
                   <button
                     type="submit"

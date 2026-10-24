@@ -34,6 +34,12 @@ interface AuthContextType {
     initialAddress?: Omit<UserAddress, "id">;
   }) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
   loginWithPhoneOtp: (phone: string, otp: string, role?: UserRole) => Promise<{ success: boolean; message: string }>;
+  loginWithFirebaseToken: (
+    idToken: string,
+    name?: string,
+    role?: UserRole,
+    storeName?: string
+  ) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
   loginWithEmailPermission: (
     email: string,
     name: string,
@@ -270,6 +276,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: true, message: "Welcome back to LocalLoop!" };
   };
 
+  const loginWithFirebaseToken = async (
+    idToken: string,
+    name?: string,
+    role: UserRole = "customer",
+    storeName?: string
+  ) => {
+    try {
+      const res = await fetch("/api/auth/firebase/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ name, role, storeName }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        return {
+          success: false,
+          message: data.message || "Firebase verification failed.",
+        };
+      }
+
+      const verifiedUser: UserProfile = data.user;
+      setUser(verifiedUser);
+      setIsAuthenticated(true);
+      persistSession(verifiedUser, true);
+
+      if (role === "seller") {
+        setActiveAppMode("merchant");
+      } else {
+        setActiveAppMode("shopper");
+      }
+
+      return {
+        success: true,
+        message: data.message || "Registration successful!",
+        user: verifiedUser,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || "Failed to complete Firebase authentication.",
+      };
+    }
+  };
+
   const loginWithEmailPermission = async (
     email: string,
     name: string,
@@ -496,6 +551,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sendOtp,
         signup,
         loginWithPhoneOtp,
+        loginWithFirebaseToken,
         loginWithEmailPermission,
         updateProfile,
         deleteAccount,

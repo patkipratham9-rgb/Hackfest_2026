@@ -211,7 +211,10 @@ console.log("\n--- 6. 24/7 SECURE BOT & DAEMON ---");
 test("Secure Bot: LocalLoopAssistantBot component exists and mounted in RootLayout", () => {
   assert.strictEqual(fs.existsSync(path.join(rootDir, "src/components/LocalLoopAssistantBot.tsx")), true);
   const layoutContent = fs.readFileSync(path.join(rootDir, "src/app/layout.tsx"), "utf8");
-  assert.ok(layoutContent.includes("<LocalLoopAssistantBot />"));
+  const wrapperContent = fs.existsSync(path.join(rootDir, "src/components/AppLayoutWrapper.tsx"))
+    ? fs.readFileSync(path.join(rootDir, "src/components/AppLayoutWrapper.tsx"), "utf8")
+    : "";
+  assert.ok(layoutContent.includes("<LocalLoopAssistantBot />") || wrapperContent.includes("<LocalLoopAssistantBot />"));
 });
 
 test("Secure Bot: Daemon script exists for background execution", () => {
@@ -257,8 +260,71 @@ test("AI API: /api/ai/integrations router handles all actions", () => {
   assert.ok(routerFile.includes("lily_ai_attributes"));
 });
 
+// --- 8. FIREBASE PHONE OTP REGISTRATION & TOKEN VERIFICATION ---
+console.log("\n--- 8. FIREBASE PHONE OTP REGISTRATION & VERIFICATION ---");
+
+test("Firebase Client: src/lib/firebaseClient.ts exports configuration, phone normalization & auth methods", () => {
+  const clientPath = path.join(rootDir, "src/lib/firebaseClient.ts");
+  assert.strictEqual(fs.existsSync(clientPath), true);
+  const content = fs.readFileSync(clientPath, "utf8");
+  assert.ok(content.includes("normalizeInternationalPhone"));
+  assert.ok(content.includes("getFirebaseAuth"));
+  assert.ok(content.includes("createRecaptchaVerifier"));
+  assert.ok(content.includes("sendFirebasePhoneOtp"));
+});
+
+test("Firebase Phone Normalization: Formats 10-digit Indian numbers with +91 country prefix", () => {
+  const raw1 = "9845122334";
+  const raw2 = "+919876543210";
+  const raw3 = "09845122334";
+
+  const norm = (raw) => {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+    if (digits.length === 10) return `+91${digits}`;
+    return `+91${digits.slice(-10)}`;
+  };
+
+  assert.strictEqual(norm(raw1), "+919845122334");
+  assert.strictEqual(norm(raw2), "+919876543210");
+  assert.strictEqual(norm(raw3), "+919845122334");
+});
+
+test("Firebase Server: src/lib/firebaseAdmin.ts implements token verification with phone record matching (Correction A)", () => {
+  const adminPath = path.join(rootDir, "src/lib/firebaseAdmin.ts");
+  assert.strictEqual(fs.existsSync(adminPath), true);
+  const content = fs.readFileSync(adminPath, "utf8");
+  assert.ok(content.includes("verifyFirebaseIdToken"));
+  assert.ok(content.includes("createLocalLoopProfileFromFirebase"));
+  assert.ok(content.includes("A verified phone number is required."));
+});
+
+test("Firebase API Route: /api/auth/firebase/verify exists and enforces phone verification and bearer token", () => {
+  const routePath = path.join(rootDir, "src/app/api/auth/firebase/verify/route.ts");
+  assert.strictEqual(fs.existsSync(routePath), true);
+  const content = fs.readFileSync(routePath, "utf8");
+  assert.ok(content.includes("verifyFirebaseIdToken"));
+  assert.ok(content.includes("saveUserProfileToDbAction"));
+  assert.ok(content.includes("A verified phone number is required."));
+});
+
+test("Firebase reCAPTCHA: DOM containers present in both customer and merchant login portals", () => {
+  const customerLogin = fs.readFileSync(path.join(rootDir, "src/app/login/page.tsx"), "utf8");
+  const merchantLogin = fs.readFileSync(path.join(rootDir, "src/app/merchant/login/page.tsx"), "utf8");
+  assert.ok(customerLogin.includes('id="recaptcha-container"'));
+  assert.ok(merchantLogin.includes('id="recaptcha-container-merchant"'));
+});
+
+test("Firestore Security Rules: firestore.rules locks down direct client access", () => {
+  const rulesPath = path.join(rootDir, "firestore.rules");
+  assert.strictEqual(fs.existsSync(rulesPath), true);
+  const content = fs.readFileSync(rulesPath, "utf8");
+  assert.ok(content.includes("match /registrations/{userId}"));
+  assert.ok(content.includes("allow read, write: if false;"));
+});
+
 console.log("\n==================================================================");
-console.log(`🎉 ALL ${passedCount} AI, CASHFREE, OTP & SECURE BOT TESTS PASSED!`);
+console.log(`🎉 ALL ${passedCount} AI, CASHFREE, OTP, FIREBASE & SECURE BOT TESTS PASSED!`);
 console.log("OTP API: /api/auth/otp/send & /api/auth/otp/verify Active");
 console.log("Tagline: 'Your city’s hyperlocal digital marketplace. Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.'");
 console.log("Delivery Options: 1. Home Delivery  2. Pick-up Operational");

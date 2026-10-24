@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Registrations collection is managed strictly server-side by the Firebase Admin SDK.
+    // Direct client reads and writes are blocked.
+    match /registrations/{userId} {
+      allow read, write: if false;
+    }
+  }
+}

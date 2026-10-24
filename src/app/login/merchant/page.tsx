@@ -245,34 +245,20 @@ export default function MerchantLoginPage() {
   return (
     <div className="py-8 px-4 sm:px-6 flex-1 flex items-center justify-center">
       <div className="w-full max-w-lg space-y-6">
-        {/* Card Header & Portal Indicator */}
+        {/* Card Header */}
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest-900 text-cream-100 text-xs font-bold border border-forest-800 shadow-2xs">
             <Store className="w-3.5 h-3.5 text-terracotta-400" />
-            <span>Merchant Studio • Partner Sign In / Register</span>
+            <span>Merchant Login</span>
           </div>
           <h1 className="font-serif font-black text-2xl sm:text-3xl text-forest-950">
-            {mode === "login" ? "Merchant Partner Command Center" : "List Your Hubballi Store"}
+            {mode === "login" ? "Merchant Login" : "Register Store"}
           </h1>
           <p className="text-xs text-forest-600 max-w-sm mx-auto">
             {mode === "login"
-              ? "Live fulfillment board, counter PIN verifications, and real-time inventory management."
-              : "Register your corner shop and connect with neighborhood shoppers across Hubballi-Dharwad."}
+              ? "Sign in to manage your store and orders."
+              : "Register your store to start selling locally."}
           </p>
-        </div>
-
-        {/* Database Connection Pill */}
-        <div className="p-2.5 rounded-xl bg-forest-900 text-cream-100 flex items-center justify-between text-xs shadow-warm">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold flex items-center gap-1">
-              <Database className="w-3.5 h-3.5 text-emerald-300" />
-              <span>Supabase Database: Linked</span>
-            </span>
-          </div>
-          <span className="text-[11px] text-cream-300 font-mono">
-            stores &amp; profiles tables synced
-          </span>
         </div>
 
         {/* Main Card */}
@@ -292,7 +278,7 @@ export default function MerchantLoginPage() {
                   : "text-forest-600 hover:text-forest-900"
               }`}
             >
-              Sign In (Existing Store)
+              Sign In
             </button>
             <button
               type="button"
@@ -307,7 +293,7 @@ export default function MerchantLoginPage() {
                   : "text-forest-600 hover:text-forest-900"
               }`}
             >
-              Register New Store
+              Register Store
             </button>
           </div>
 
@@ -317,9 +303,9 @@ export default function MerchantLoginPage() {
               <div className="flex items-center justify-between text-xs font-bold text-forest-800">
                 <span className="flex items-center gap-1 text-[11px] text-terracotta-700 uppercase tracking-wider">
                   <Sparkles className="w-3 h-3" />
-                  <span>1-Tap Demo Store Accounts</span>
+                  <span>Quick Demo Login</span>
                 </span>
-                <span className="text-[10px] text-forest-500 font-normal">Pre-seeded merchants</span>
+                <span className="text-[10px] text-forest-500 font-normal">Click to test</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
@@ -402,7 +388,7 @@ export default function MerchantLoginPage() {
                   }`}
                 >
                   <Smartphone className="w-3.5 h-3.5" />
-                  <span>Store Registered Phone</span>
+                  <span>Phone &amp; PIN</span>
                 </button>
                 <button
                   type="button"
@@ -414,7 +400,7 @@ export default function MerchantLoginPage() {
                   }`}
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Merchant Email &amp; Password</span>
+                  <span>Email</span>
                 </button>
               </div>
 
@@ -422,7 +408,7 @@ export default function MerchantLoginPage() {
                 <>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-forest-900 block">
-                      Registered Merchant Contact Number
+                      Phone Number
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-forest-500">
@@ -442,7 +428,7 @@ export default function MerchantLoginPage() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <label className="font-bold text-forest-900">
-                        Store Security PIN / OTP
+                        Security PIN
                       </label>
                       <span className="text-[10px] text-forest-600 font-mono font-semibold">
                         Test PIN: 123456
@@ -497,10 +483,10 @@ export default function MerchantLoginPage() {
                 className="w-full py-2.5 rounded-xl bg-forest-900 hover:bg-forest-950 disabled:opacity-50 text-cream-50 text-xs font-bold shadow-warm flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isLoading ? (
-                  <span>Accessing Merchant Portal...</span>
+                  <span>Signing in...</span>
                 ) : (
                   <>
-                    <span>Sign In to Merchant Studio</span>
+                    <span>Sign In</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -512,7 +498,7 @@ export default function MerchantLoginPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-forest-900 block">
-                    Owner Full Name
+                    Owner Name
                   </label>
                   <input
                     type="text"
@@ -526,7 +512,7 @@ export default function MerchantLoginPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-forest-900 block">
-                    Store Commercial Name
+                    Store Name
                   </label>
                   <input
                     type="text"
@@ -542,7 +528,7 @@ export default function MerchantLoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">
-                  Store Contact Number
+                  Phone Number
                 </label>
                 <input
                   type="tel"
@@ -556,13 +542,13 @@ export default function MerchantLoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">
-                  Counter Pickup Location / Street Address
+                  Store Address
                 </label>
                 <input
                   type="text"
                   value={pickupAddress}
                   onChange={(e) => setPickupAddress(e.target.value)}
-                  placeholder="e.g. Shop #12, Market Road, Near CBT Bus Stand"
+                  placeholder="e.g. Shop #12, Market Road, Near CBT"
                   className="w-full text-xs font-medium py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-forest-600"
                   required
                 />
@@ -570,7 +556,7 @@ export default function MerchantLoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">
-                  Merchant Email (Optional)
+                  Email (Optional)
                 </label>
                 <input
                   type="email"
@@ -587,10 +573,10 @@ export default function MerchantLoginPage() {
                 className="w-full py-2.5 rounded-xl bg-forest-900 hover:bg-forest-950 disabled:opacity-50 text-cream-50 text-xs font-bold shadow-warm flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isLoading ? (
-                  <span>Saving Store to Supabase Database...</span>
+                  <span>Registering store...</span>
                 ) : (
                   <>
-                    <span>Register Store &amp; Link Database</span>
+                    <span>Register Store</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -601,13 +587,13 @@ export default function MerchantLoginPage() {
           {/* Switch to Shopper Callout */}
           <div className="pt-3 border-t border-cream-200 text-center">
             <p className="text-xs text-forest-600">
-              Looking to discover and order handmade local goods?{" "}
+              Looking to shop?{" "}
               <Link
                 href="/login/user"
                 className="font-bold text-terracotta-700 hover:text-terracotta-800 underline inline-flex items-center gap-1"
               >
                 <User className="w-3 h-3" />
-                <span>Go to Shopper Sign In &rarr;</span>
+                <span>Shopper Login &rarr;</span>
               </Link>
             </p>
           </div>

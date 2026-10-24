@@ -49,7 +49,7 @@ export default function UserLoginPage() {
   const handleQuickLogin = async (name: string, phone: string, locality: string) => {
     setIsLoading(true);
     setErrorMessage("");
-    setStatusMessage(`Connecting to Supabase Database for ${name}...`);
+    setStatusMessage(`Signing in as ${name}...`);
 
     try {
       const res = await loginOrRegisterUserDbAction({
@@ -86,7 +86,7 @@ export default function UserLoginPage() {
           router.refresh();
         }, 800);
       } else {
-        setErrorMessage("Database authentication failed. Please try again.");
+        setErrorMessage("Login failed. Please try again.");
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "Failed to log in.");
@@ -100,7 +100,7 @@ export default function UserLoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage("");
-    setStatusMessage("Querying Supabase database profiles...");
+    setStatusMessage("Signing in...");
 
     try {
       const cleanPhone = loginPhone.replace(/\D/g, "").slice(-10);
@@ -155,7 +155,7 @@ export default function UserLoginPage() {
 
     setIsLoading(true);
     setErrorMessage("");
-    setStatusMessage("Saving new shopper profile to Supabase Database...");
+    setStatusMessage("Saving your profile...");
 
     try {
       const res = await loginOrRegisterUserDbAction({
@@ -167,7 +167,7 @@ export default function UserLoginPage() {
 
       if (res.success) {
         setDbVerified(true);
-        setStatusMessage("Account successfully registered in Supabase!");
+        setStatusMessage("Account successfully registered!");
         localStorage.setItem(
           "localloop_auth_session_v1",
           JSON.stringify({
@@ -192,34 +192,20 @@ export default function UserLoginPage() {
   return (
     <div className="py-8 px-4 sm:px-6 flex-1 flex items-center justify-center">
       <div className="w-full max-w-lg space-y-6">
-        {/* Card Header & Portal Indicator */}
+        {/* Card Header */}
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-terracotta-100 text-terracotta-800 text-xs font-bold border border-terracotta-300 shadow-2xs">
             <User className="w-3.5 h-3.5 text-terracotta-600" />
-            <span>Shopper Portal • User Sign In / Register</span>
+            <span>Shopper Login</span>
           </div>
           <h1 className="font-serif font-black text-2xl sm:text-3xl text-forest-950">
-            {mode === "login" ? "Welcome Back to LocalLoop" : "Join Your Neighborhood Marketplace"}
+            {mode === "login" ? "Welcome Back" : "Create Account"}
           </h1>
           <p className="text-xs text-forest-600 max-w-sm mx-auto">
             {mode === "login"
-              ? "Access your saved profile, track ongoing orders, and shop local authentic goods."
-              : "Create your shopper profile linked with our real-time Supabase database."}
+              ? "Sign in to track orders and shop from local stores."
+              : "Sign up to start shopping."}
           </p>
-        </div>
-
-        {/* Database Connection Pill */}
-        <div className="p-2.5 rounded-xl bg-cream-50 border border-cream-300 flex items-center justify-between text-xs text-forest-700 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold flex items-center gap-1">
-              <Database className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Database Connection: Active</span>
-            </span>
-          </div>
-          <span className="text-[11px] text-forest-500 font-mono">
-            profiles table synced
-          </span>
         </div>
 
         {/* Main Card */}
@@ -239,7 +225,7 @@ export default function UserLoginPage() {
                   : "text-forest-600 hover:text-forest-900"
               }`}
             >
-              Sign In (Existing User)
+              Sign In
             </button>
             <button
               type="button"
@@ -254,7 +240,7 @@ export default function UserLoginPage() {
                   : "text-forest-600 hover:text-forest-900"
               }`}
             >
-              Create Account (New User)
+              Sign Up
             </button>
           </div>
 
@@ -264,9 +250,9 @@ export default function UserLoginPage() {
               <div className="flex items-center justify-between text-xs font-bold text-forest-800">
                 <span className="flex items-center gap-1 text-[11px] text-terracotta-700 uppercase tracking-wider">
                   <Sparkles className="w-3 h-3" />
-                  <span>1-Tap Demo Shoppers</span>
+                  <span>Quick Demo Login</span>
                 </span>
-                <span className="text-[10px] text-forest-500 font-normal">Pre-seeded test accounts</span>
+                <span className="text-[10px] text-forest-500 font-normal">Click to test</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
@@ -276,7 +262,7 @@ export default function UserLoginPage() {
                 >
                   <p className="font-bold text-xs text-forest-900">Pratham Patki</p>
                   <p className="text-[10px] text-forest-500 font-mono">+91 98451 22334</p>
-                  <p className="text-[10px] text-terracotta-600 font-medium">Vidyanagar • Primary Home</p>
+                  <p className="text-[10px] text-terracotta-600 font-medium">Vidyanagar</p>
                 </button>
 
                 <button
@@ -286,7 +272,7 @@ export default function UserLoginPage() {
                 >
                   <p className="font-bold text-xs text-forest-900">Anita Kulkarni</p>
                   <p className="text-[10px] text-forest-500 font-mono">+91 98450 11223</p>
-                  <p className="text-[10px] text-terracotta-600 font-medium">Keshwapur • Office Desk</p>
+                  <p className="text-[10px] text-terracotta-600 font-medium">Keshwapur</p>
                 </button>
               </div>
             </div>
@@ -334,7 +320,7 @@ export default function UserLoginPage() {
                   }`}
                 >
                   <Smartphone className="w-3.5 h-3.5" />
-                  <span>Phone Number &amp; OTP</span>
+                  <span>Phone &amp; OTP</span>
                 </button>
                 <button
                   type="button"
@@ -346,7 +332,7 @@ export default function UserLoginPage() {
                   }`}
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Email &amp; Password</span>
+                  <span>Email</span>
                 </button>
               </div>
 
@@ -354,7 +340,7 @@ export default function UserLoginPage() {
                 <>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-forest-900 block">
-                      Mobile Number (India)
+                      Phone Number
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-forest-500">
@@ -374,10 +360,10 @@ export default function UserLoginPage() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <label className="font-bold text-forest-900">
-                        One-Time Password (OTP)
+                        Enter OTP
                       </label>
                       <span className="text-[10px] text-terracotta-600 font-mono font-semibold">
-                        Universal Test OTP: 123456
+                        Test OTP: 123456
                       </span>
                     </div>
                     <input
@@ -429,10 +415,10 @@ export default function UserLoginPage() {
                 className="w-full py-2.5 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-50 text-white text-xs font-bold shadow-warm flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isLoading ? (
-                  <span>Authenticating with Database...</span>
+                  <span>Signing in...</span>
                 ) : (
                   <>
-                    <span>Sign In as Shopper</span>
+                    <span>Sign In</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -471,7 +457,7 @@ export default function UserLoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">
-                  Email Address (Optional)
+                  Email (Optional)
                 </label>
                 <input
                   type="email"
@@ -483,7 +469,7 @@ export default function UserLoginPage() {
               </div>
 
               <p className="text-[11px] text-forest-600 bg-cream-100 p-2.5 rounded-xl border border-cream-200">
-                💡 No address needed right now. Delivery addresses can be selected or updated anytime during checkout or in your profile.
+                💡 You can add your delivery address later at checkout.
               </p>
 
               <button
@@ -492,10 +478,10 @@ export default function UserLoginPage() {
                 className="w-full py-2.5 rounded-xl bg-forest-800 hover:bg-forest-900 disabled:opacity-50 text-white text-xs font-bold shadow-warm flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isLoading ? (
-                  <span>Registering with Supabase...</span>
+                  <span>Creating account...</span>
                 ) : (
                   <>
-                    <span>Create User Profile &amp; Link DB</span>
+                    <span>Create Account</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -506,13 +492,13 @@ export default function UserLoginPage() {
           {/* Switch to Merchant Callout */}
           <div className="pt-3 border-t border-cream-200 text-center">
             <p className="text-xs text-forest-600">
-              Are you an artisan shop owner or corner maker?{" "}
+              Are you a store owner?{" "}
               <Link
                 href="/login/merchant"
                 className="font-bold text-terracotta-700 hover:text-terracotta-800 underline inline-flex items-center gap-1"
               >
                 <Store className="w-3 h-3" />
-                <span>Go to Merchant Sign In &rarr;</span>
+                <span>Merchant Login &rarr;</span>
               </Link>
             </p>
           </div>
