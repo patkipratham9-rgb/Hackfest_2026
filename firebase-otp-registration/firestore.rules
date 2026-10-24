@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Registrations are written exclusively through the trusted Express backend
+    // using the Firebase Admin SDK. Direct client read/write is denied.
+    match /registrations/{userId} {
+      allow read, write: if false;
+    }
+  }
+}
