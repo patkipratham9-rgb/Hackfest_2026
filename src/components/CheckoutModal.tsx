@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Map4MePicker } from "@/components/Map4MePicker";
+import { CashfreePaymentGatewayModal } from "@/components/CashfreePaymentGatewayModal";
 import {
   X,
   Clock,
@@ -109,6 +110,8 @@ export function CheckoutModal() {
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "counter">("upi");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState("");
+  const [isGatewayOpen, setIsGatewayOpen] = useState(false);
+  const [pendingCashfreeOrderId, setPendingCashfreeOrderId] = useState("");
 
   // Parse distance from primary item's store or default to 4.2 km to demonstrate per-km fee
   const initialDistance = React.useMemo(() => {
@@ -230,6 +233,7 @@ export function CheckoutModal() {
 
         const cfData = await cfRes.json();
         const cfOrderId = cfData.order_id || cfData.orderId || `cf_ord_${Date.now()}`;
+        setPendingCashfreeOrderId(cfOrderId);
 
         // Launch Cashfree Hosted Checkout if Cashfree SDK is loaded and a live session is active
         if (
@@ -253,47 +257,9 @@ export function CheckoutModal() {
           }
         }
 
-        setPaymentStatusMessage("Verifying Cashfree payment settlement...");
-        let isPaid = true;
-        let cfPaymentId = `cf_pay_${Date.now()}`;
-
-        try {
-          const verifyRes = await fetch("/api/checkout/cashfree/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: cfOrderId, cfOrderId }),
-          });
-          const verifyData = await verifyRes.json();
-          if (verifyData.success) {
-            isPaid = true;
-            cfPaymentId = verifyData.paymentDetails?.cf_payment_id || cfPaymentId;
-          }
-        } catch {
-          // Keep true for verified simulated local testing
-        }
-
-        setPaymentStatusMessage("Payment received via Cashfree! Generating order...");
-
-        const order = createOrder({
-          customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
-          pickupTime: deliveryOption === "delivery" ? "Doorstep Delivery (35-45 mins)" : (selectedSlot?.time || "Express 20 Mins"),
-          paymentMethod: "upi",
-          paymentStatus: "paid",
-          deliveryOption,
-          deliveryAddress: selectedAddr,
-          deliveryFee,
-          deliveryDistance: deliveryOption === "delivery" ? deliveryDistance : 0,
-          gst: gstAmount,
-          cashfreeOrderId: cfOrderId,
-          cashfreePaymentId: cfPaymentId,
-        });
-
+        // Open Interactive Cashfree Payment Gateway Modal
         setIsSubmitting(false);
-        if (order) {
-          setIsCheckoutOpen(false);
-          router.push(`/orders/${order.id}`);
-        }
+        setIsGatewayOpen(true);
         return;
       } catch (err) {
         console.warn("Cashfree initiation notice:", err);
@@ -321,6 +287,56 @@ export function CheckoutModal() {
         router.push(`/orders/${order.id}`);
       }
     }, 600);
+  };
+
+  const handleGatewayPaymentSuccess = async (details: {
+    paymentId: string;
+    cfOrderId: string;
+    paymentMethod: string;
+  }) => {
+    setIsSubmitting(true);
+    setPaymentStatusMessage("Verifying Cashfree payment settlement...");
+
+    const cfOrderId = details.cfOrderId || pendingCashfreeOrderId || `cf_ord_${Date.now()}`;
+    const cfPaymentId = details.paymentId || `cf_pay_${Date.now()}`;
+
+    try {
+      await fetch("/api/checkout/cashfree/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: cfOrderId, cfOrderId }),
+      });
+    } catch (err) {
+      console.warn("Cashfree verify call notice:", err);
+    }
+
+    const selectedAddr = user?.addresses?.find((a) => a.id === selectedAddressId) || defaultAddr;
+
+    const order = createOrder({
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      pickupTime:
+        deliveryOption === "delivery"
+          ? "Doorstep Delivery (35-45 mins)"
+          : selectedSlot?.time || "Express 20 Mins",
+      paymentMethod: "upi",
+      paymentStatus: "paid",
+      deliveryOption,
+      deliveryAddress: selectedAddr,
+      deliveryFee,
+      deliveryDistance: deliveryOption === "delivery" ? deliveryDistance : 0,
+      gst: gstAmount,
+      cashfreeOrderId: cfOrderId,
+      cashfreePaymentId: cfPaymentId,
+    });
+
+    setIsGatewayOpen(false);
+    setIsSubmitting(false);
+    setIsCheckoutOpen(false);
+
+    if (order) {
+      router.push(`/payment-result?order_id=${order.id}`);
+    }
   };
 
   return (
@@ -994,6 +1010,22 @@ export function CheckoutModal() {
           </div>
         </div>
       )}
+
+      {/* Cashfree Payment Gateway Interactive Checkout Modal */}
+      <CashfreePaymentGatewayModal
+        isOpen={isGatewayOpen}
+        onClose={() => setIsGatewayOpen(false)}
+        orderId={pendingCashfreeOrderId || `cf_ord_${Date.now()}`}
+        amount={finalTotal}
+        customerName={customerName}
+        customerPhone={customerPhone}
+        customerEmail={user?.email}
+        deliveryOption={deliveryOption}
+        onPaymentSuccess={handleGatewayPaymentSuccess}
+        onPaymentFailure={(err) => {
+          setPaymentStatusMessage(err || "Payment failed");
+        }}
+      />
     </AnimatePresence>
   );
 }
