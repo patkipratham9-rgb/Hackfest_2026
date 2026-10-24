@@ -349,39 +349,20 @@ export default function MerchantLoginPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                  Primary Store Category
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as ProductCategory)}
-                  className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                  Business Entity Type
-                </label>
-                <select
-                  value={businessType}
-                  onChange={(e) => setBusinessType(e.target.value)}
-                  className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
-                >
-                  <option value="Sole Proprietorship">Sole Proprietorship</option>
-                  <option value="Partnership">Partnership</option>
-                  <option value="Private Limited">Private Limited</option>
-                  <option value="Individual Artisan">Individual Artisan</option>
-                </select>
-              </div>
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Business Entity Type
+              </label>
+              <select
+                value={businessType}
+                onChange={(e) => setBusinessType(e.target.value)}
+                className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
+              >
+                <option value="Sole Proprietorship">Sole Proprietorship</option>
+                <option value="Partnership">Partnership</option>
+                <option value="Private Limited">Private Limited</option>
+                <option value="Individual Artisan">Individual Artisan</option>
+              </select>
             </div>
 
             <div>
@@ -405,36 +386,17 @@ export default function MerchantLoginPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                  Hubballi Area
-                </label>
-                <select
-                  value={storeArea}
-                  onChange={(e) => setStoreArea(e.target.value)}
-                  className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
-                >
-                  <option value="Vidyanagar">Vidyanagar</option>
-                  <option value="Gokul Road">Gokul Road</option>
-                  <option value="CBT">CBT</option>
-                  <option value="Station Road">Station Road</option>
-                  <option value="Unkal Lake">Unkal Lake</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                  Pickup Lane / Address
-                </label>
-                <input
-                  type="text"
-                  value={pickupAddress}
-                  onChange={(e) => setPickupAddress(e.target.value)}
-                  placeholder="e.g. Near KIMS Circle"
-                  className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
-                />
-              </div>
+            <div>
+              <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
+                Pickup Lane / Counter Address
+              </label>
+              <input
+                type="text"
+                value={pickupAddress}
+                onChange={(e) => setPickupAddress(e.target.value)}
+                placeholder="e.g. Near KIMS Circle, Market Road"
+                className="w-full px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              />
             </div>
 
             <button

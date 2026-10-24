@@ -12,11 +12,9 @@ import {
   AlertCircle,
   Sparkles,
   ArrowRight,
-  MapPin,
   Building2,
   User,
   Database,
-  Tag,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
@@ -62,9 +60,7 @@ export default function MerchantLoginPage() {
   // Sign Up Form States
   const [ownerName, setOwnerName] = useState("");
   const [shopName, setShopName] = useState("");
-  const [category, setCategory] = useState<ProductCategory>("Filter Coffee & Tea");
   const [storePhone, setStorePhone] = useState("");
-  const [storeArea, setStoreArea] = useState<NeighborhoodArea>("Vidyanagar");
   const [pickupAddress, setPickupAddress] = useState("");
   const [storeEmail, setStoreEmail] = useState("");
 
@@ -210,10 +206,8 @@ export default function MerchantLoginPage() {
       const res = await loginOrRegisterMerchantDbAction({
         ownerName: ownerName.trim(),
         shopName: shopName.trim(),
-        category,
         phone: cleanPhone,
-        area: storeArea,
-        pickupAddress: pickupAddress.trim() || `${storeArea} Main Market`,
+        pickupAddress: pickupAddress.trim() || undefined,
         email: storeEmail.trim() || undefined,
       });
 
@@ -232,10 +226,8 @@ export default function MerchantLoginPage() {
         setUserRole("seller");
         updateStoreProfile({
           name: shopName.trim(),
-          category,
-          area: storeArea,
           phone: cleanPhone,
-          lane: pickupAddress.trim() || `${storeArea} Main Market`,
+          lane: pickupAddress.trim() || "Hubballi",
         });
 
         setTimeout(() => {
@@ -547,41 +539,6 @@ export default function MerchantLoginPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-forest-900 block">
-                    Product Category
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as ProductCategory)}
-                    className="w-full text-xs p-2.5 rounded-xl bg-cream-50 border border-cream-300 text-forest-900"
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-forest-900 block">
-                    Market Area (Hubballi)
-                  </label>
-                  <select
-                    value={storeArea}
-                    onChange={(e) => setStoreArea(e.target.value as NeighborhoodArea)}
-                    className="w-full text-xs p-2.5 rounded-xl bg-cream-50 border border-cream-300 text-forest-900"
-                  >
-                    {AREAS.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">

@@ -130,10 +130,10 @@ export async function loginOrRegisterUserDbAction(input: {
 export async function loginOrRegisterMerchantDbAction(input: {
   ownerName: string;
   shopName: string;
-  category: string;
+  category?: string;
   phone: string;
-  area: string;
-  pickupAddress: string;
+  area?: string;
+  pickupAddress?: string;
   email?: string;
   gstin?: string;
 }): Promise<{
@@ -144,6 +144,9 @@ export async function loginOrRegisterMerchantDbAction(input: {
   message: string;
   fromDb: boolean;
 }> {
+  const storeCategory = input.category || "General Local Store";
+  const storeArea = input.area || "Hubballi";
+  const storePickup = input.pickupAddress || "Hubballi Counter Pickup";
   try {
     const supabase = createServerSupabaseClient();
     const cleanPhone = input.phone.replace(/\D/g, "").slice(-10);
@@ -183,10 +186,10 @@ export async function loginOrRegisterMerchantDbAction(input: {
       id: storeId,
       owner_id: userId,
       name: input.shopName.trim(),
-      tagline: `Authentic ${input.category} artisan in ${input.area}`,
-      category: input.category,
-      area: input.area,
-      lane: input.pickupAddress || `${input.area} Main Market`,
+      tagline: `Authentic ${storeCategory} artisan in ${storeArea}`,
+      category: storeCategory,
+      area: storeArea,
+      lane: storePickup,
       phone: cleanPhone,
       is_open: true,
       verified: true,
@@ -205,8 +208,8 @@ export async function loginOrRegisterMerchantDbAction(input: {
         {
           id: `addr_store_${Date.now()}`,
           label: "Office",
-          locality: input.area,
-          street: input.pickupAddress || `${input.area} Market Cross`,
+          locality: storeArea,
+          street: storePickup,
           city: "Hubballi",
           pincode: "580021",
           isDefault: true,
