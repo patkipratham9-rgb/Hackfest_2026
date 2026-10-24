@@ -62,6 +62,8 @@ export interface Product {
   imageUrl: string;
   isBestseller?: boolean;
   tags?: string[];
+  availableSizes?: string;
+  availableFormats?: string;
   aiGenerated?: boolean;
   aiApprovedAt?: string;
   aiApprovedBy?: string;
@@ -85,7 +87,10 @@ export interface Order {
   customerPhone: string;
   items: CartItem[];
   subtotal: number;
+  gst?: number;
   platformFee: number;
+  deliveryFee?: number;
+  deliveryDistance?: number;
   total: number;
   status: OrderStatus;
   paymentMethod: "upi" | "counter";

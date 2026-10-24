@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
       imageUrl: row.image_url || "",
       isBestseller: Boolean(row.is_bestseller),
       tags: row.tags || [],
+      availableSizes: row.available_sizes || undefined,
+      availableFormats: row.available_formats || undefined,
     }));
 
     return NextResponse.json({ products });
@@ -56,7 +58,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { storeId, name, description, price, originalPrice, category, stock, unit, imageUrl, isBestseller, tags } = body;
+    const { storeId, name, description, price, originalPrice, category, stock, unit, imageUrl, isBestseller, tags, availableSizes, availableFormats } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Product name is required" }, { status: 400 });
@@ -83,6 +85,8 @@ export async function POST(req: NextRequest) {
       image_url: imageUrl || "https://images.unsplash.com/photo-1604928141064-207cea6f571f?w=600&auto=format&fit=crop&q=80",
       is_bestseller: Boolean(isBestseller),
       tags: Array.isArray(tags) ? tags : typeof tags === "string" ? tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+      available_sizes: availableSizes || null,
+      available_formats: availableFormats || null,
     };
 
     const { data, error } = await supabase
@@ -107,6 +111,8 @@ export async function POST(req: NextRequest) {
         imageUrl: insertPayload.image_url,
         isBestseller: insertPayload.is_bestseller,
         tags: insertPayload.tags,
+        availableSizes: insertPayload.available_sizes || undefined,
+        availableFormats: insertPayload.available_formats || undefined,
       };
       return NextResponse.json({ success: true, product: fallbackProduct });
     }
@@ -125,6 +131,8 @@ export async function POST(req: NextRequest) {
       imageUrl: data.image_url || "",
       isBestseller: Boolean(data.is_bestseller),
       tags: data.tags || [],
+      availableSizes: data.available_sizes || undefined,
+      availableFormats: data.available_formats || undefined,
     };
 
     return NextResponse.json({ success: true, product: createdProduct }, { status: 201 });

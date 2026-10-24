@@ -119,6 +119,13 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="text-xs text-forest-700/80 line-clamp-2 mt-1 leading-relaxed">
             {product.description}
           </p>
+          {(product.availableSizes || product.availableFormats) && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              <span className="text-[10px] bg-cream-200/80 text-forest-700 px-2 py-0.5 rounded-md font-medium truncate max-w-full" title={product.availableSizes || product.availableFormats}>
+                {product.availableSizes ? `Sizes: ${product.availableSizes}` : `Formats: ${product.availableFormats}`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
