@@ -457,7 +457,7 @@ export default function UserLoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">
-                  Email (Optional)
+                  Email Address (Optional)
                 </label>
                 <input
                   type="email"

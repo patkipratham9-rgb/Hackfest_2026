@@ -249,15 +249,15 @@ export default function MerchantLoginPage() {
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest-900 text-cream-100 text-xs font-bold border border-forest-800 shadow-2xs">
             <Store className="w-3.5 h-3.5 text-terracotta-400" />
-            <span>Merchant Login</span>
+            <span>Store Owner Login</span>
           </div>
           <h1 className="font-serif font-black text-2xl sm:text-3xl text-forest-950">
-            {mode === "login" ? "Merchant Login" : "Register Store"}
+            {mode === "login" ? "Welcome Back" : "Register Your Store"}
           </h1>
           <p className="text-xs text-forest-600 max-w-sm mx-auto">
             {mode === "login"
               ? "Sign in to manage your store and orders."
-              : "Register your store to start selling locally."}
+              : "Create an account to sell local goods in Hubballi."}
           </p>
         </div>
 
@@ -428,7 +428,7 @@ export default function MerchantLoginPage() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <label className="font-bold text-forest-900">
-                        Security PIN
+                        Store PIN
                       </label>
                       <span className="text-[10px] text-forest-600 font-mono font-semibold">
                         Test PIN: 123456
@@ -528,7 +528,7 @@ export default function MerchantLoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">
-                  Phone Number
+                  Store Phone
                 </label>
                 <input
                   type="tel"
@@ -548,7 +548,7 @@ export default function MerchantLoginPage() {
                   type="text"
                   value={pickupAddress}
                   onChange={(e) => setPickupAddress(e.target.value)}
-                  placeholder="e.g. Shop #12, Market Road, Near CBT"
+                  placeholder="e.g. Shop #12, Market Road, Near CBT Bus Stand"
                   className="w-full text-xs font-medium py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-forest-600"
                   required
                 />
@@ -556,7 +556,7 @@ export default function MerchantLoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-forest-900 block">
-                  Email (Optional)
+                  Merchant Email (Optional)
                 </label>
                 <input
                   type="email"
@@ -587,7 +587,7 @@ export default function MerchantLoginPage() {
           {/* Switch to Shopper Callout */}
           <div className="pt-3 border-t border-cream-200 text-center">
             <p className="text-xs text-forest-600">
-              Looking to shop?{" "}
+              Looking to shop from local stores?{" "}
               <Link
                 href="/login/user"
                 className="font-bold text-terracotta-700 hover:text-terracotta-800 underline inline-flex items-center gap-1"
