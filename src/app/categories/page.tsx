@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { Product } from "@/types";
-import { Sparkles, PlusCircle, ShoppingBag, ArrowLeft, Search } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CategoriesPage() {
@@ -13,18 +13,50 @@ export default function CategoriesPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const rawProducts = localStorage.getItem("localloop_seller_products_v1");
-      if (rawProducts) {
-        const parsed = JSON.parse(rawProducts);
-        if (Array.isArray(parsed)) {
-          setProducts(parsed);
+    const syncProducts = async () => {
+      try {
+        const productList: Product[] = [];
+        const rawProducts = typeof window !== "undefined" ? localStorage.getItem("localloop_seller_products_v1") : null;
+        if (rawProducts) {
+          const parsed = JSON.parse(rawProducts);
+          if (Array.isArray(parsed)) {
+            productList.push(...parsed);
+          }
         }
-      } else {
-        setProducts([]);
-      }
-    } catch {}
-    setIsLoaded(true);
+
+        try {
+          const res = await fetch("/api/products");
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.products)) {
+              data.products.forEach((p: Product) => {
+                if (p && p.id && !productList.some((item) => item.id === p.id)) {
+                  productList.push(p);
+                }
+              });
+            }
+          }
+        } catch {
+          // Graceful fallback
+        }
+
+        setProducts(productList);
+      } catch {}
+      setIsLoaded(true);
+    };
+
+    syncProducts();
+
+    const handleUpdate = () => syncProducts();
+    window.addEventListener("storage", handleUpdate);
+    window.addEventListener("localloop_catalog_updated", handleUpdate);
+    window.addEventListener("focus", handleUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleUpdate);
+      window.removeEventListener("localloop_catalog_updated", handleUpdate);
+      window.removeEventListener("focus", handleUpdate);
+    };
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -67,13 +99,6 @@ export default function CategoriesPage() {
           </p>
         </div>
 
-        <Link
-          href="/seller/products"
-          className="self-start sm:self-auto px-4 py-2 bg-terracotta-600 hover:bg-terracotta-700 text-white text-xs font-bold rounded-xl shadow-warm flex items-center gap-1.5 transition-colors"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>Add Products Manually</span>
-        </Link>
       </div>
 
       {/* Search Bar */}
@@ -93,28 +118,32 @@ export default function CategoriesPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="p-10 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-4 shadow-warm"
+          className="p-10 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3 shadow-warm"
         >
-          <div className="w-16 h-16 rounded-3xl bg-terracotta-100 flex items-center justify-center mx-auto text-terracotta-600 shadow-xs">
-            <ShoppingBag className="w-8 h-8" />
+          <div className="w-14 h-14 rounded-2xl bg-cream-200 flex items-center justify-center mx-auto text-forest-600 shadow-xs">
+            <ShoppingBag className="w-7 h-7" />
           </div>
           <div className="space-y-1 max-w-md mx-auto">
             <h3 className="font-serif font-bold text-lg text-forest-950">
-              No Items in Catalog
+              {searchQuery ? `No items found matching "${searchQuery}"` : "No Products in Catalog Yet"}
             </h3>
             <p className="text-xs sm:text-sm text-forest-600 leading-relaxed">
-              All demo items have been cleared. Merchants can create inventory items manually with custom photos, prices, descriptions, and stock counts.
+              {searchQuery
+                ? "Try checking your spelling or clear your search to see all goods."
+                : "Products from verified local neighborhood stores will appear here."}
             </p>
           </div>
-          <div className="pt-2 flex justify-center">
-            <Link
-              href="/seller/products"
-              className="px-5 py-2.5 bg-terracotta-600 hover:bg-terracotta-700 text-white text-xs font-bold rounded-xl shadow-warm flex items-center gap-2 transition-transform active:scale-95"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Add Items in Seller Portal</span>
-            </Link>
-          </div>
+          {searchQuery && (
+            <div className="pt-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="px-4 py-2 bg-forest-900 text-cream-100 text-xs font-bold rounded-xl hover:bg-forest-950 transition-colors cursor-pointer"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
         </motion.div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

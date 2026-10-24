@@ -174,13 +174,49 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   const addProduct = (newProd: Omit<Product, "id">): Product => {
     const id = `prod-custom-${Date.now()}`;
     const created: Product = { ...newProd, id };
+
+    // Ensure active merchant store is recorded in registered stores collection
+    try {
+      const storeName = newProd.storeName || activeStore.name || "Local Neighborhood Shop";
+      const storeId = newProd.storeId || activeStore.id || "store-manual-01";
+      const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
+      let storeList: Store[] = rawRegistered ? JSON.parse(rawRegistered) : [];
+      if (!storeList.some((s) => s.id === storeId)) {
+        storeList.unshift({
+          ...activeStore,
+          id: storeId,
+          name: storeName,
+          category: newProd.category,
+          area: activeStore.area || "Vidyanagar",
+          lane: activeStore.lane || "Market Road",
+          isOpen: true,
+          verified: true,
+        });
+        localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(storeList));
+      }
+    } catch {}
+
     setProducts((prev) => {
       const next = [created, ...prev];
       try {
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("localloop_catalog_updated", { detail: created }));
+          window.dispatchEvent(new Event("storage"));
+        }
       } catch {}
       return next;
     });
+
+    // Also persist to API in background
+    if (typeof window !== "undefined") {
+      fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(created),
+      }).catch(console.warn);
+    }
+
     return created;
   };
 
@@ -189,6 +225,10 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       const next = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
       try {
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("localloop_catalog_updated"));
+          window.dispatchEvent(new Event("storage"));
+        }
       } catch {}
       return next;
     });
@@ -199,6 +239,10 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       const next = prev.filter((p) => p.id !== id);
       try {
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("localloop_catalog_updated"));
+          window.dispatchEvent(new Event("storage"));
+        }
       } catch {}
       return next;
     });

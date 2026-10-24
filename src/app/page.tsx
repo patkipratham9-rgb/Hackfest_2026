@@ -20,11 +20,12 @@ import {
   Store as StoreIcon,
   Heart,
   Navigation,
-  PlusCircle,
+  ShoppingBag,
   AlertCircle,
   Check,
   Compass,
   ArrowRight,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -68,46 +69,120 @@ export default function HomePage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Sync dynamic stores & products added manually via merchant portal
+  // Sync dynamic stores & products added manually via merchant portal & database
   useEffect(() => {
-    try {
-      const storeList: Store[] = [];
+    const syncStoresAndProducts = async () => {
+      try {
+        const storeMap = new Map<string, Store>();
+        const productList: Product[] = [];
 
-      // 1. Registered stores collection
-      const rawRegistered = localStorage.getItem("localloop_registered_stores_v1");
-      if (rawRegistered) {
-        const parsed = JSON.parse(rawRegistered);
-        if (Array.isArray(parsed)) {
-          storeList.push(...parsed);
-        }
-      }
-
-      // 2. Active seller store (if created or updated)
-      const rawSellerStore = localStorage.getItem("localloop_seller_store_v1");
-      if (rawSellerStore) {
-        const parsedStore: Store = JSON.parse(rawSellerStore);
-        if (parsedStore && parsedStore.name && parsedStore.name.trim() !== "") {
-          if (!storeList.some((s) => s.id === parsedStore.id)) {
-            storeList.unshift(parsedStore);
+        // 1. Registered stores collection from localStorage
+        const rawRegistered = typeof window !== "undefined" ? localStorage.getItem("localloop_registered_stores_v1") : null;
+        if (rawRegistered) {
+          const parsed = JSON.parse(rawRegistered);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((s) => {
+              if (s && s.id) storeMap.set(s.id, s);
+            });
           }
         }
-      }
 
-      setStores(storeList);
-
-      // 3. Products added manually via merchant portal
-      const rawProducts = localStorage.getItem("localloop_seller_products_v1");
-      if (rawProducts) {
-        const parsedProducts = JSON.parse(rawProducts);
-        if (Array.isArray(parsedProducts)) {
-          setProducts(parsedProducts);
+        // 2. Active seller store (if created or updated)
+        const rawSellerStore = typeof window !== "undefined" ? localStorage.getItem("localloop_seller_store_v1") : null;
+        if (rawSellerStore) {
+          const parsedStore: Store = JSON.parse(rawSellerStore);
+          if (parsedStore && parsedStore.name && parsedStore.name.trim() !== "") {
+            storeMap.set(parsedStore.id || "store-manual-01", parsedStore);
+          }
         }
-      } else {
-        setProducts([]);
+
+        // 3. Products added manually via merchant portal
+        const rawProducts = typeof window !== "undefined" ? localStorage.getItem("localloop_seller_products_v1") : null;
+        if (rawProducts) {
+          const parsedProducts = JSON.parse(rawProducts);
+          if (Array.isArray(parsedProducts)) {
+            productList.push(...parsedProducts);
+          }
+        }
+
+        // 4. Fetch any additional stores and products from API / database
+        try {
+          const [storesRes, prodsRes] = await Promise.all([
+            fetch("/api/stores").catch(() => null),
+            fetch("/api/products").catch(() => null),
+          ]);
+
+          if (storesRes && storesRes.ok) {
+            const apiStoresData = await storesRes.json();
+            if (Array.isArray(apiStoresData.stores)) {
+              apiStoresData.stores.forEach((s: Store) => {
+                if (s && s.id && !storeMap.has(s.id)) {
+                  storeMap.set(s.id, s);
+                }
+              });
+            }
+          }
+
+          if (prodsRes && prodsRes.ok) {
+            const apiProdsData = await prodsRes.json();
+            if (Array.isArray(apiProdsData.products)) {
+              apiProdsData.products.forEach((p: Product) => {
+                if (p && p.id && !productList.some((item) => item.id === p.id)) {
+                  productList.push(p);
+                }
+              });
+            }
+          }
+        } catch {
+          // Graceful fallback to client storage
+        }
+
+        // 5. Ensure any merchant product without an explicit store has a visible store card
+        productList.forEach((prod) => {
+          const targetStoreId = prod.storeId || "store-manual-01";
+          if (!storeMap.has(targetStoreId)) {
+            const synthesizedStore: Store = {
+              id: targetStoreId,
+              name: prod.storeName || "Authentic Corner Shop",
+              tagline: "Local handcrafted goods & daily essentials",
+              category: prod.category || "Household",
+              area: "Vidyanagar",
+              lane: "Market Road",
+              distance: "0.4 km",
+              rating: 5.0,
+              reviewCount: 1,
+              isOpen: true,
+              openingHours: "8:00 AM - 9:00 PM",
+              imageUrl: prod.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&auto=format&fit=crop&q=80",
+              bannerUrl: prod.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&auto=format&fit=crop&q=80",
+              phone: "+91 98450 12345",
+              verified: true,
+            };
+            storeMap.set(targetStoreId, synthesizedStore);
+          }
+        });
+
+        setStores(Array.from(storeMap.values()));
+        setProducts(productList);
+      } catch (e) {
+        console.warn("Storage sync note:", e);
       }
-    } catch (e) {
-      console.warn("Storage sync note:", e);
-    }
+    };
+
+    // Initial sync
+    syncStoresAndProducts();
+
+    // Event listeners for cross-tab, navigation & merchant catalog updates
+    const handleCatalogUpdate = () => syncStoresAndProducts();
+    window.addEventListener("storage", handleCatalogUpdate);
+    window.addEventListener("localloop_catalog_updated", handleCatalogUpdate);
+    window.addEventListener("focus", handleCatalogUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleCatalogUpdate);
+      window.removeEventListener("localloop_catalog_updated", handleCatalogUpdate);
+      window.removeEventListener("focus", handleCatalogUpdate);
+    };
   }, []);
 
   const handleShareGps = async () => {
@@ -225,11 +300,11 @@ export default function HomePage() {
               <span>{userLocation ? "Change Location" : "Add / Share Location"}</span>
             </button>
             <Link
-              href="/seller/store"
+              href="/categories"
               className="px-5 py-2.5 rounded-full bg-cream-100/10 hover:bg-cream-100/20 text-cream-100 font-bold text-xs border border-cream-200/30 flex items-center gap-2 transition-colors"
             >
-              <PlusCircle className="w-4 h-4 text-terracotta-400" />
-              <span>Register Your Store</span>
+              <ShoppingBag className="w-4 h-4 text-terracotta-400" />
+              <span>Explore Catalog</span>
             </Link>
           </div>
         </div>
@@ -375,94 +450,70 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Local Corner Shops Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950">
-              Local Corner Shops
-            </h2>
-            <span
-              data-testid="store-count-badge"
-              className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cream-300 text-forest-800"
-            >
-              {filteredStores.length}
-            </span>
+      {(!searchQuery || filteredStores.length > 0) && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950">
+                Local Corner Shops
+              </h2>
+              <span
+                data-testid="store-count-badge"
+                className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cream-300 text-forest-800"
+              >
+                {filteredStores.length}
+              </span>
+            </div>
+            {userLocation && (
+              <span className="text-xs font-medium text-forest-600 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-terracotta-500" />
+                <span className="truncate max-w-[150px]">{userLocation}</span>
+              </span>
+            )}
           </div>
-          {userLocation && (
-            <span className="text-xs font-medium text-forest-600 flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-terracotta-500" />
-              <span className="truncate max-w-[150px]">{userLocation}</span>
-            </span>
+
+          {/* Empty State when no stores are registered */}
+          {filteredStores.length === 0 ? (
+            <motion.div
+              data-testid="stores-empty-state"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-8 sm:p-10 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3 shadow-warm"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-terracotta-100 flex items-center justify-center mx-auto text-terracotta-600 shadow-xs">
+                <StoreIcon className="w-7 h-7" />
+              </div>
+              <div className="space-y-1.5 max-w-md mx-auto">
+                <h3 className="font-serif font-bold text-base sm:text-lg text-forest-950">
+                  No Shops Registered Yet
+                </h3>
+                <p className="text-xs sm:text-sm text-forest-600 leading-relaxed">
+                  Local neighborhood shops will appear here once listed.
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              layout
+              data-testid="stores-grid"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            >
+              {filteredStores.map((store) => (
+                <StoreCard
+                  key={store.id}
+                  store={store}
+                  isSelected={selectedStoreId === store.id}
+                  onSelect={() => {
+                    setSelectedStoreId(
+                      selectedStoreId === store.id ? null : store.id
+                    );
+                  }}
+                />
+              ))}
+            </motion.div>
           )}
-        </div>
-
-        {/* Empty State when no stores are registered or match search */}
-        {filteredStores.length === 0 ? (
-          <motion.div
-            data-testid="stores-empty-state"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="p-8 sm:p-12 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-4 shadow-warm"
-          >
-            <div className="w-16 h-16 rounded-3xl bg-terracotta-100 flex items-center justify-center mx-auto text-terracotta-600 shadow-xs">
-              <StoreIcon className="w-8 h-8" />
-            </div>
-            <div className="space-y-1.5 max-w-md mx-auto">
-              <h3 className="font-serif font-bold text-lg sm:text-xl text-forest-950">
-                {searchQuery ? "No matching shops found" : "No Shops Registered Yet"}
-              </h3>
-              <p className="text-xs sm:text-sm text-forest-600 leading-relaxed">
-                {searchQuery
-                  ? `No registered stores match "${searchQuery}". Try clearing your search.`
-                  : "All sample shop names and items have been removed. LocalLoop is ready for manual shop onboarding. As a merchant, add your store details to get listed."}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <Link
-                href="/seller/store"
-                className="px-5 py-2.5 bg-terracotta-600 hover:bg-terracotta-700 text-white text-xs font-bold rounded-xl shadow-warm flex items-center gap-2 transition-transform active:scale-95"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Add Store Manually</span>
-              </Link>
-              <Link
-                href="/seller/products"
-                className="px-5 py-2.5 bg-cream-200 hover:bg-cream-300 text-forest-900 text-xs font-bold rounded-xl border border-cream-300 flex items-center gap-2 transition-colors"
-              >
-                <span>Add Products Manually</span>
-              </Link>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="px-4 py-2 bg-forest-900 text-cream-100 text-xs font-bold rounded-xl hover:bg-forest-950 transition-colors"
-                >
-                  Clear Search
-                </button>
-              )}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            layout
-            data-testid="stores-grid"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-          >
-            {filteredStores.map((store) => (
-              <StoreCard
-                key={store.id}
-                store={store}
-                isSelected={selectedStoreId === store.id}
-                onSelect={() => {
-                  setSelectedStoreId(
-                    selectedStoreId === store.id ? null : store.id
-                  );
-                }}
-              />
-            ))}
-          </motion.div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Personalized Recommendations Section (User Interest & Recent Searches) */}
       {recommendations.length > 0 && products.length > 0 && (
@@ -526,23 +577,31 @@ export default function HomePage() {
         {filteredProducts.length === 0 ? (
           <div
             data-testid="products-empty-state"
-            className="p-8 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3 shadow-warm"
+            className="p-8 sm:p-12 text-center bg-cream-50 rounded-3xl border border-cream-300 space-y-3 shadow-warm"
           >
-            <p className="text-sm text-forest-600 font-medium">
-              No products found in the catalog.
-            </p>
-            <p className="text-xs text-forest-500 max-w-sm mx-auto">
-              Merchants can list goods with images, descriptions, pricing, and stock count in the Seller Portal.
-            </p>
-            <div className="pt-2 flex justify-center">
-              <Link
-                href="/seller/products"
-                className="px-4 py-2 bg-terracotta-600 text-white text-xs font-bold rounded-xl shadow-warm hover:bg-terracotta-700 transition-colors inline-flex items-center gap-1.5"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Add Products in Seller Cockpit</span>
-              </Link>
+            <div className="w-12 h-12 rounded-2xl bg-cream-200 flex items-center justify-center mx-auto text-forest-700">
+              <Search className="w-6 h-6 text-forest-600" />
             </div>
+            <p className="text-sm sm:text-base text-forest-950 font-semibold">
+              {searchQuery
+                ? `No items found matching "${searchQuery}".`
+                : "No products available in the catalog yet."}
+            </p>
+            {searchQuery ? (
+              <div className="pt-2 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="px-4 py-2 bg-forest-900 text-cream-100 text-xs font-bold rounded-xl hover:bg-forest-950 transition-colors cursor-pointer"
+                >
+                  Clear Search
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-forest-500 max-w-sm mx-auto">
+                Items from local shops will appear here once listed.
+              </p>
+            )}
           </div>
         ) : (
           <motion.div
