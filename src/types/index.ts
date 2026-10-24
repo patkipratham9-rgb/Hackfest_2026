@@ -67,6 +67,7 @@ export interface Product {
   aiGenerated?: boolean;
   aiApprovedAt?: string;
   aiApprovedBy?: string;
+  storeDistance?: string;
 }
 
 export interface CartItem {
@@ -76,6 +77,21 @@ export interface CartItem {
 
 export type OrderStatus = "placed" | "packed" | "ready" | "completed" | "cancelled";
 export type DeliveryOption = "delivery" | "pickup";
+
+export interface DeliveryPartner {
+  id: string;
+  name: string;
+  phone: string;
+  vehicle: string;
+  vehicleNumber: string;
+  rating: number;
+  totalDeliveries: number;
+  avatarUrl: string;
+  assignedAt: string;
+  estimatedArrivalMins: number;
+  estimatedArrivalTime: string;
+  liveStatus: "assigned" | "reaching_store" | "out_for_delivery" | "arriving_shortly" | "delivered";
+}
 
 export interface Order {
   id: string;
@@ -101,6 +117,8 @@ export interface Order {
   deliveryAddress?: UserAddress | { label: string; street: string; locality: string; pincode: string; landmark?: string };
   cashfreeOrderId?: string;
   cashfreePaymentId?: string;
+  deliveryPartner?: DeliveryPartner;
+  estimatedArrival?: string;
   createdAt: string;
   packedAt?: string;
   readyAt?: string;

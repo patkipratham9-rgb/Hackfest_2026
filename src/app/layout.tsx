@@ -34,10 +34,11 @@ export const metadata: Metadata = {
   authors: [{ name: "Team Digital Titans", url: "https://kletech.ac.in" }],
   icons: {
     icon: [
+      { url: "/logo.png", type: "image/png" },
       { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
     ],
-    apple: "/icon.svg",
+    apple: "/logo.png",
   },
   openGraph: {
     title: "LocalLoop • Hubballi's Hyperlocal Digital Marketplace",
@@ -46,6 +47,7 @@ export const metadata: Metadata = {
     siteName: "LocalLoop Hubballi",
     locale: "en_IN",
     type: "website",
+    images: [{ url: "/logo.png", width: 1200, height: 800, alt: "LocalLoop Logo" }],
   },
 };
 

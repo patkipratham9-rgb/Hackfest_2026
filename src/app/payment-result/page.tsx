@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Clock, ArrowRight, RefreshCw, ShieldCheck, ShoppingBag, Store } from "lucide-react";
+import { CheckCircle2, Clock, ArrowRight, RefreshCw, ShieldCheck, ShoppingBag, Store, Truck, Phone, Star } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 function money(amount: number) {
@@ -16,9 +16,10 @@ function money(amount: number) {
 function PaymentResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { clearCart } = useCart();
+  const { clearCart, getOrderById } = useCart();
 
   const orderId = searchParams.get("order_id") || searchParams.get("orderId");
+  const currentOrder = orderId ? getOrderById(orderId) : undefined;
   const [checking, setChecking] = useState(false);
   const [message, setMessage] = useState("Verifying payment with Cashfree Gateway...");
   const [paymentResult, setPaymentResult] = useState<{
@@ -136,6 +137,75 @@ function PaymentResultContent() {
               >
                 {paymentResult.status}
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* Delivery Partner Details & Estimated Arrival Time (ETA) after Payment */}
+        {isPaid && (
+          <div
+            data-testid="post-payment-delivery-eta"
+            className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 text-left space-y-3 shadow-xs"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest block">
+                    {currentOrder?.deliveryOption === "delivery" ? "Doorstep Delivery Fleet" : "Express Counter Pickup"}
+                  </span>
+                  <h4 className="font-bold text-xs text-forest-950">
+                    {currentOrder?.deliveryOption === "delivery" ? "Delivery Partner Assigned" : "Counter Manager Assigned"}
+                  </h4>
+                </div>
+              </div>
+
+              {/* ETA Display */}
+              <div className="text-right">
+                <span className="text-[9px] font-bold uppercase text-emerald-700 tracking-wider flex items-center gap-1 justify-end">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                  Estimated Arrival
+                </span>
+                <span data-testid="payment-result-eta" className="font-serif font-black text-emerald-950 text-sm">
+                  {currentOrder?.estimatedArrival || new Date(Date.now() + 25 * 60 * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </div>
+            </div>
+
+            {/* Delivery Partner Profile Card */}
+            <div className="flex items-center justify-between p-3 bg-white/90 rounded-xl border border-emerald-100/80 gap-3">
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={currentOrder?.deliveryPartner?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"}
+                  alt={currentOrder?.deliveryPartner?.name || "Ramesh Kulkarni"}
+                  className="w-10 h-10 rounded-xl object-cover border border-emerald-200 shrink-0"
+                />
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span data-testid="payment-result-delivery-name" className="font-bold text-xs text-forest-950">
+                      {currentOrder?.deliveryPartner?.name || "Ramesh Kulkarni"}
+                    </span>
+                    <span className="text-[10px] text-amber-700 font-semibold flex items-center gap-0.5">
+                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                      {currentOrder?.deliveryPartner?.rating || 4.9}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-forest-500">
+                    {currentOrder?.deliveryPartner?.vehicle || "Hero Electric Optima"} • <strong className="font-mono text-forest-700">{currentOrder?.deliveryPartner?.vehicleNumber || "KA-25-EM-4821"}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <a
+                data-testid="payment-result-call-delivery"
+                href={`tel:${currentOrder?.deliveryPartner?.phone || "+919845088219"}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-forest-900 text-cream-100 text-xs font-bold shadow-xs hover:bg-forest-950 transition-colors shrink-0"
+              >
+                <Phone className="w-3 h-3 text-terracotta-400" />
+                <span>Call</span>
+              </a>
             </div>
           </div>
         )}

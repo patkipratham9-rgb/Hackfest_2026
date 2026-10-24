@@ -246,7 +246,14 @@ export default function MerchantLoginPage() {
     <div className="py-8 px-4 sm:px-6 flex-1 flex items-center justify-center">
       <div className="w-full max-w-lg space-y-6">
         {/* Card Header */}
-        <div className="text-center space-y-1.5">
+        <div className="text-center space-y-2">
+          <div className="flex justify-center mb-1">
+            <img
+              src="/logo.png"
+              alt="LocalLoop Logo"
+              className="h-20 w-auto object-contain rounded-2xl shadow-xs"
+            />
+          </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest-900 text-cream-100 text-xs font-bold border border-forest-800 shadow-2xs">
             <Store className="w-3.5 h-3.5 text-terracotta-400" />
             <span>Store Owner Login</span>

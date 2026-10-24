@@ -269,11 +269,15 @@ export default function LoginPage() {
       />
 
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-forest-900 text-cream-50 shadow-md">
-          <ShoppingBag className="w-8 h-8 text-terracotta-400" />
+      <div className="text-center space-y-2.5">
+        <div className="flex justify-center">
+          <img
+            src="/logo.png"
+            alt="LocalLoop Logo"
+            className="h-24 w-auto object-contain rounded-2xl shadow-xs"
+          />
         </div>
-        <div className="inline-block px-2.5 py-0.5 rounded-full bg-cream-200 text-forest-700 text-[11px] font-bold">
+        <div className="inline-block px-3 py-1 rounded-full bg-cream-200 text-forest-700 text-[11px] font-bold">
           Shopper Application
         </div>
         <h1 className="font-serif font-extrabold text-2xl text-forest-950">

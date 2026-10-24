@@ -271,9 +271,16 @@ export default function MerchantLoginPage() {
       />
 
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="w-14 h-14 rounded-2xl bg-terracotta-500 text-white flex items-center justify-center mx-auto shadow-warm">
-          <Store className="w-7 h-7" />
+      <div className="text-center space-y-2.5">
+        <div className="flex justify-center">
+          <img
+            src="/logo.png"
+            alt="LocalLoop Logo"
+            className="h-24 w-auto object-contain rounded-2xl shadow-xs"
+          />
+        </div>
+        <div className="inline-block px-3 py-1 rounded-full bg-terracotta-100 text-terracotta-800 text-[11px] font-bold">
+          Merchant Partner Cockpit
         </div>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold text-forest-950">
           Your city’s hyperlocal digital marketplace.

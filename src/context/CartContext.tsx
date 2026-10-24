@@ -1,9 +1,64 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { CartItem, Product, Order, OrderStatus, NeighborhoodArea } from "@/types";
+import { CartItem, Product, Order, OrderStatus, NeighborhoodArea, DeliveryPartner } from "@/types";
 import { placeOrderAtomicAction, updateOrderStatusAction } from "@/actions/marketplaceActions";
 import { recordStoreAnalyticsEvent } from "@/lib/analyticsTracker";
+
+export function createDefaultDeliveryPartner(orderTime = new Date()): DeliveryPartner {
+  const arrivalTime = new Date(orderTime.getTime() + 25 * 60 * 1000);
+  const formattedTime = arrivalTime.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const partners = [
+    {
+      name: "Ramesh Kulkarni",
+      phone: "+91 98450 88219",
+      vehicle: "Hero Electric Optima",
+      vehicleNumber: "KA-25-EM-4821",
+      rating: 4.9,
+      totalDeliveries: 540,
+      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    },
+    {
+      name: "Suresh Patil",
+      phone: "+91 98450 77312",
+      vehicle: "Ather 450X Gen 3",
+      vehicleNumber: "KA-25-EU-9204",
+      rating: 4.95,
+      totalDeliveries: 420,
+      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+    },
+    {
+      name: "Ganesh Desai",
+      phone: "+91 98450 66491",
+      vehicle: "TVS iQube S",
+      vehicleNumber: "KA-25-EV-3185",
+      rating: 4.88,
+      totalDeliveries: 610,
+      avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+    },
+  ];
+
+  const chosen = partners[Math.floor(Math.random() * partners.length)];
+
+  return {
+    id: `dp-${Date.now()}`,
+    name: chosen.name,
+    phone: chosen.phone,
+    vehicle: chosen.vehicle,
+    vehicleNumber: chosen.vehicleNumber,
+    rating: chosen.rating,
+    totalDeliveries: chosen.totalDeliveries,
+    avatarUrl: chosen.avatarUrl,
+    assignedAt: orderTime.toISOString(),
+    estimatedArrivalMins: 25,
+    estimatedArrivalTime: formattedTime,
+    liveStatus: "out_for_delivery",
+  };
+}
 
 
 interface CartContextType {
@@ -43,6 +98,9 @@ interface CartContextType {
     cashfreePaymentId?: string;
     paymentStatus?: "paid" | "pending";
     items?: CartItem[];
+    deliveryFee?: number;
+    deliveryDistance?: number;
+    gst?: number;
   }) => Order | null;
   updateOrderStatus: (
     orderId: string,
@@ -51,8 +109,11 @@ interface CartContextType {
   ) => void;
   totalItems: number;
   subtotal: number;
+  gstAmount: number;
   platformFee: number;
   totalAmount: number;
+  minBillAmount: number;
+  isMinBillMet: boolean;
   reorderableCount: number;
 }
 
@@ -292,8 +353,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const gstAmount = Math.round(subtotal * 0.05);
   const platformFee = totalItems > 0 ? 15 : 0;
-  const totalAmount = subtotal + platformFee;
+  const minBillAmount = 599;
+  const isMinBillMet = subtotal >= minBillAmount;
+  const totalAmount = subtotal + gstAmount + platformFee;
   const reorderableCount = orders.length;
 
   const getOrderById = (orderId: string): Order | undefined => {
@@ -326,6 +390,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     cashfreePaymentId?: string;
     paymentStatus?: "paid" | "pending";
     items?: CartItem[];
+    deliveryFee?: number;
+    deliveryDistance?: number;
+    gst?: number;
   }): Order | null => {
     const orderItems = data.items && data.items.length > 0 ? data.items : cart;
     if (orderItems.length === 0) return null;
@@ -338,8 +405,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const orderSubtotal = data.items
       ? data.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
       : subtotal;
+    const orderGst = typeof data.gst === "number" ? data.gst : Math.round(orderSubtotal * 0.05);
     const orderPlatformFee = 15;
-    const orderTotal = orderSubtotal + orderPlatformFee;
+    const orderDeliveryFee = typeof data.deliveryFee === "number" ? data.deliveryFee : 0;
+    const orderDeliveryDistance = typeof data.deliveryDistance === "number" ? data.deliveryDistance : 0;
+    const orderTotal = orderSubtotal + orderGst + orderPlatformFee + orderDeliveryFee;
+
+    const orderCreatedAt = new Date();
+    const partner = createDefaultDeliveryPartner(orderCreatedAt);
 
     const newOrder: Order = {
       id: `ORD-LL-${orderNumber}`,
@@ -351,7 +424,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       customerPhone: data.customerPhone,
       items: [...orderItems],
       subtotal: orderSubtotal,
+      gst: orderGst,
       platformFee: orderPlatformFee,
+      deliveryFee: orderDeliveryFee,
+      deliveryDistance: orderDeliveryDistance,
       total: orderTotal,
       status: "placed",
       paymentMethod: data.paymentMethod,
@@ -362,7 +438,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       deliveryAddress: data.deliveryAddress,
       cashfreeOrderId: data.cashfreeOrderId,
       cashfreePaymentId: data.cashfreePaymentId,
-      createdAt: new Date().toISOString(),
+      deliveryPartner: partner,
+      estimatedArrival: partner.estimatedArrivalTime,
+      createdAt: orderCreatedAt.toISOString(),
     };
 
     const updated = [newOrder, ...orders];
@@ -468,8 +546,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateOrderStatus,
         totalItems,
         subtotal,
+        gstAmount,
         platformFee,
         totalAmount,
+        minBillAmount,
+        isMinBillMet,
         reorderableCount,
       }}
     >

@@ -53,9 +53,12 @@ export function Footer() {
               aria-label="LocalLoop Home"
               className="inline-flex items-center gap-2.5 group cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-2xl bg-terracotta-600 flex items-center justify-center text-cream-50 font-bold text-xl shadow-xs group-hover:scale-105 transition-transform">
-                <span className="font-serif">L</span>
-                <span className="w-2 h-2 rounded-full bg-cream-50 -ml-0.5 mt-2" />
+              <div className="w-12 h-12 rounded-2xl bg-white border border-cream-300 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform overflow-hidden p-0.5">
+                <img
+                  src="/logo.png"
+                  alt="LocalLoop Logo"
+                  className="w-full h-full object-contain rounded-xl"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="font-serif text-2xl font-bold tracking-tight text-forest-950 leading-none">

@@ -13,10 +13,16 @@ export function CartDrawer() {
     updateQuantity,
     removeFromCart,
     subtotal,
+    gstAmount,
     platformFee,
     totalAmount,
+    minBillAmount,
+    isMinBillMet,
     setIsCheckoutOpen,
   } = useCart();
+
+  const remainingForMin = Math.max(0, minBillAmount - subtotal);
+  const minBillProgress = Math.min(100, Math.round((subtotal / minBillAmount) * 100));
 
   // Close drawer on Escape key press
   useEffect(() => {
@@ -227,6 +233,20 @@ export function CartDrawer() {
                     </div>
                     <div className="flex justify-between text-forest-700">
                       <span className="flex items-center gap-1">
+                        <span>GST (5%)</span>
+                        <span className="text-[10px] text-forest-500 bg-cream-200 px-1 rounded font-medium">
+                          Tax
+                        </span>
+                      </span>
+                      <span
+                        data-testid="cart-gst-amount"
+                        className="font-semibold text-forest-900"
+                      >
+                        ₹{gstAmount}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-forest-700">
+                      <span className="flex items-center gap-1">
                         <span>Local Platform Fee</span>
                         <span className="text-[10px] text-forest-500 bg-cream-200 px-1 rounded font-medium">
                           Fair loop
@@ -250,17 +270,49 @@ export function CartDrawer() {
                     </div>
                   </div>
 
+                  {/* Minimum Bill Notice & Progress (₹599) */}
+                  <div className="pt-1">
+                    {!isMinBillMet ? (
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl space-y-1.5 text-[11px] text-amber-900">
+                        <div className="flex justify-between font-bold">
+                          <span>Minimum Bill: ₹599</span>
+                          <span className="text-terracotta-700">Add ₹{remainingForMin} more</span>
+                        </div>
+                        <div className="w-full bg-amber-200/60 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-terracotta-500 h-full rounded-full transition-all duration-300"
+                            style={{ width: `${minBillProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-bold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Minimum bill requirement met (₹599+)</span>
+                      </div>
+                    )}
+                  </div>
+
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: isMinBillMet ? 1.02 : 1 }}
+                    whileTap={{ scale: isMinBillMet ? 0.97 : 1 }}
                     data-testid="cart-checkout-button"
+                    disabled={!isMinBillMet}
                     onClick={() => {
                       setIsCartOpen(false);
                       setIsCheckoutOpen(true);
                     }}
-                    className="w-full py-3.5 px-4 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all cursor-pointer"
+                    className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all ${
+                      isMinBillMet
+                        ? "bg-terracotta-500 hover:bg-terracotta-600 text-white cursor-pointer"
+                        : "bg-cream-300 text-forest-400 cursor-not-allowed opacity-80"
+                    }`}
                   >
-                    <span>Select Pickup & Checkout</span>
+                    <span>
+                      {isMinBillMet
+                        ? "Select Pickup & Checkout"
+                        : `Add ₹${remainingForMin} More to Order`}
+                    </span>
                     <ArrowRight className="w-4 h-4" />
                   </motion.button>
                 </div>

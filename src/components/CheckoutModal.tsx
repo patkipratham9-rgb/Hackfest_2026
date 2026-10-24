@@ -85,6 +85,9 @@ export function CheckoutModal() {
     totalAmount,
     subtotal,
     platformFee,
+    gstAmount,
+    minBillAmount,
+    isMinBillMet,
     createOrder,
     cart,
   } = useCart();
@@ -96,15 +99,33 @@ export function CheckoutModal() {
   );
   const defaultAddr = user?.addresses?.find((a) => a.isDefault) || user?.addresses?.[0];
   const [selectedAddressId, setSelectedAddressId] = useState<string>(defaultAddr?.id || "");
-  const [deliveryOption, setDeliveryOption] = useState<"delivery" | "pickup">("pickup");
+  const [deliveryOption, setDeliveryOption] = useState<"delivery" | "pickup">("delivery");
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const [selectedSlotId, setSelectedSlotId] = useState<string>("quick-20");
   const [nameError, setNameError] = useState<string>("");
   const [phoneError, setPhoneError] = useState<string>("");
   const [slotError, setSlotError] = useState<string>("");
+  const [billError, setBillError] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "counter">("upi");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState("");
+
+  // Parse distance from primary item's store or default to 4.2 km to demonstrate per-km fee
+  const initialDistance = React.useMemo(() => {
+    if (cart.length > 0 && cart[0].product.storeDistance) {
+      const parsed = parseFloat(cart[0].product.storeDistance.replace(/[^0-9.]/g, ""));
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    return 4.2;
+  }, [cart]);
+
+  const [deliveryDistance, setDeliveryDistance] = useState<number>(4.2);
+
+  React.useEffect(() => {
+    if (initialDistance) {
+      setDeliveryDistance(initialDistance);
+    }
+  }, [initialDistance]);
 
   // Sync with user session if updated
   React.useEffect(() => {
@@ -115,6 +136,18 @@ export function CheckoutModal() {
       setSelectedAddressId(def.id);
     }
   }, [user]);
+
+  // Distance calculation:
+  // Base delivery up to 3 km is FREE (₹0).
+  // Distance > 3 km incurs ₹15 per km for the additional distance beyond 3 km.
+  const extraDistance = Math.max(0, Number((deliveryDistance - 3).toFixed(1)));
+  const deliveryFee =
+    deliveryOption === "delivery" && deliveryDistance > 3
+      ? Math.round(extraDistance * 15)
+      : 0;
+
+  // Final Total = Subtotal + GST (5%) + Platform Fee + Delivery Fee (if home delivery & distance > 3km)
+  const finalTotal = subtotal + gstAmount + platformFee + deliveryFee;
 
   if (!isCheckoutOpen || cart.length === 0) return null;
 
@@ -132,6 +165,14 @@ export function CheckoutModal() {
 
   const validate = () => {
     let isValid = true;
+
+    // Minimum bill check (₹599)
+    if (subtotal < minBillAmount) {
+      setBillError(`Minimum bill amount is ₹${minBillAmount}. Add ₹${minBillAmount - subtotal} more to place this order.`);
+      isValid = false;
+    } else {
+      setBillError("");
+    }
 
     // Name validation
     if (!customerName.trim()) {
@@ -179,11 +220,11 @@ export function CheckoutModal() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            amount: totalAmount,
+            amount: finalTotal,
             customerName: customerName.trim(),
             customerPhone: customerPhone.trim(),
             customerEmail: user?.email,
-            notes: `LocalLoop Hubli-Dharwad: ${deliveryOption === "delivery" ? "Home Delivery" : "Store Pick-up"}`,
+            notes: `LocalLoop Hubli-Dharwad: ${deliveryOption === "delivery" ? `Home Delivery (${deliveryDistance} km)` : "Store Pick-up"}`,
           }),
         });
 
@@ -241,6 +282,9 @@ export function CheckoutModal() {
           paymentStatus: "paid",
           deliveryOption,
           deliveryAddress: selectedAddr,
+          deliveryFee,
+          deliveryDistance: deliveryOption === "delivery" ? deliveryDistance : 0,
+          gst: gstAmount,
           cashfreeOrderId: cfOrderId,
           cashfreePaymentId: cfPaymentId,
         });
@@ -266,6 +310,9 @@ export function CheckoutModal() {
         paymentStatus: paymentMethod === "upi" ? "paid" : "pending",
         deliveryOption,
         deliveryAddress: selectedAddr,
+        deliveryFee,
+        deliveryDistance: deliveryOption === "delivery" ? deliveryDistance : 0,
+        gst: gstAmount,
       });
 
       setIsSubmitting(false);
@@ -387,10 +434,23 @@ export function CheckoutModal() {
               </div>
 
               {/* Price Breakdown */}
-              <div className="pt-2 border-t border-cream-200 space-y-1 text-xs">
+              <div className="pt-2 border-t border-cream-200 space-y-1.5 text-xs">
                 <div className="flex justify-between text-forest-700">
                   <span>Cart Subtotal</span>
-                  <span className="font-medium">₹{subtotal}</span>
+                  <span data-testid="checkout-subtotal" className="font-medium">
+                    ₹{subtotal}
+                  </span>
+                </div>
+                <div className="flex justify-between text-forest-700">
+                  <span className="flex items-center gap-1">
+                    <span>GST (5%)</span>
+                    <span className="text-[10px] bg-cream-200 text-forest-700 px-1.5 py-0.2 rounded font-semibold">
+                      Tax
+                    </span>
+                  </span>
+                  <span data-testid="checkout-gst-amount" className="font-medium text-forest-900">
+                    ₹{gstAmount}
+                  </span>
                 </div>
                 <div className="flex justify-between text-forest-700">
                   <span className="flex items-center gap-1">
@@ -401,17 +461,87 @@ export function CheckoutModal() {
                   </span>
                   <span className="font-medium">₹{platformFee}</span>
                 </div>
-                <div className="flex justify-between font-bold text-forest-950 pt-1.5 border-t border-cream-300 text-sm">
+
+                {deliveryOption === "delivery" && (
+                  <div className="flex justify-between text-forest-700">
+                    <span className="flex items-center gap-1">
+                      <span>Delivery Fee</span>
+                      <span className="text-[10px] bg-terracotta-100 text-terracotta-800 px-1.5 py-0.2 rounded font-semibold">
+                        {deliveryDistance > 3
+                          ? `${extraDistance} km extra @ ₹15/km`
+                          : "Within 3 km (FREE)"}
+                      </span>
+                    </span>
+                    <span
+                      data-testid="checkout-delivery-fee"
+                      className="font-medium text-forest-900"
+                    >
+                      {deliveryFee > 0 ? `₹${deliveryFee}` : "FREE"}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between font-bold text-forest-950 pt-2 border-t border-cream-300 text-sm">
                   <span>Total Due</span>
-                  <span className="font-serif text-terracotta-700 text-base font-bold">
-                    ₹{totalAmount}
+                  <span
+                    data-testid="checkout-final-total"
+                    className="font-serif text-terracotta-700 text-base font-bold"
+                  >
+                    ₹{finalTotal}
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Minimum Bill Banner & Progress (₹599) */}
+            <div data-testid="checkout-min-bill-section">
+              {!isMinBillMet ? (
+                <div
+                  data-testid="checkout-min-bill-warning"
+                  className="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl space-y-2 text-amber-950"
+                >
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <div className="flex items-center gap-1.5 text-amber-900">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Minimum Bill Value: ₹{minBillAmount}</span>
+                    </div>
+                    <span className="text-terracotta-700 font-extrabold">
+                      Add ₹{minBillAmount - subtotal} more
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800">
+                    A minimum order subtotal of ₹599 is required to checkout from Hubballi-Dharwad marketplace stores.
+                  </p>
+                  <div className="w-full bg-amber-200/70 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-terracotta-500 h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round((subtotal / minBillAmount) * 100)
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  data-testid="checkout-min-bill-met"
+                  className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-900"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="font-bold">Minimum Bill Requirement Met</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    Subtotal: ₹{subtotal} (≥ ₹599)
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Delivery Option Selection: 1. Home Delivery, 2. Pick-up */}
-            <div data-testid="delivery-option-selector" className="space-y-2">
+            <div data-testid="delivery-option-selector" className="space-y-2.5">
               <label className="text-xs font-bold text-forest-900 uppercase tracking-wider block">
                 Delivery Option
               </label>
@@ -450,6 +580,80 @@ export function CheckoutModal() {
                   <p className="text-[10px] opacity-90">Fast counter pick-up in 15-20 mins</p>
                 </button>
               </div>
+
+              {/* Distance Calculation for Home Delivery (Distance > 3km incurs ₹15/km for extra distance) */}
+              {deliveryOption === "delivery" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  data-testid="delivery-distance-calculator"
+                  className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-forest-950">
+                      <Truck className="w-4 h-4 text-terracotta-600" />
+                      <span>Delivery Distance & Rate Calculation</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white border border-amber-300 rounded-xl px-2 py-1 shadow-2xs">
+                      <button
+                        type="button"
+                        data-testid="distance-decrease-btn"
+                        onClick={() =>
+                          setDeliveryDistance((d) =>
+                            Math.max(1, Number((d - 0.5).toFixed(1)))
+                          )
+                        }
+                        className="w-5 h-5 flex items-center justify-center font-bold text-forest-800 hover:bg-cream-100 rounded cursor-pointer"
+                        title="Decrease distance"
+                      >
+                        -
+                      </button>
+                      <span
+                        data-testid="delivery-distance-val"
+                        className="font-mono text-xs font-extrabold text-forest-950 px-1"
+                      >
+                        {deliveryDistance.toFixed(1)} km
+                      </span>
+                      <button
+                        type="button"
+                        data-testid="distance-increase-btn"
+                        onClick={() =>
+                          setDeliveryDistance((d) =>
+                            Math.min(25, Number((d + 0.5).toFixed(1)))
+                          )
+                        }
+                        className="w-5 h-5 flex items-center justify-center font-bold text-forest-800 hover:bg-cream-100 rounded cursor-pointer"
+                        title="Increase distance"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-forest-700 bg-white/80 p-2.5 rounded-xl border border-amber-100 space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-forest-600">Base allowance (up to 3.0 km):</span>
+                      <span className="font-semibold text-emerald-700">FREE</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-forest-600">
+                        Distance beyond 3 km (@ ₹15/km):
+                      </span>
+                      <span className="font-semibold text-forest-900">
+                        {deliveryDistance > 3
+                          ? `${extraDistance} km extra × ₹15 = ₹${deliveryFee}`
+                          : "0 km (₹0)"}
+                      </span>
+                    </div>
+                    <div className="pt-1 border-t border-amber-100 flex justify-between items-center font-bold text-forest-900">
+                      <span>Delivery Charge:</span>
+                      <span className="font-serif text-terracotta-700">
+                        {deliveryFee > 0 ? `₹${deliveryFee}` : "FREE"}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
 
             {/* Pickup Time Selector (Always present for test compliance and available for counter pickup) */}
@@ -726,31 +930,46 @@ export function CheckoutModal() {
 
             {/* Submit Action */}
             <div className="pt-2 space-y-2">
+              {billError && (
+                <div
+                  data-testid="checkout-bill-error"
+                  className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{billError}</span>
+                </div>
+              )}
+
               <button
                 type="submit"
                 data-testid="confirm-order-button"
-                disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all bg-forest-700 hover:bg-forest-800 text-cream-100 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
+                disabled={isSubmitting || !isMinBillMet}
+                className="w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all bg-forest-700 hover:bg-forest-800 text-cream-100 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>{paymentStatusMessage || "Confirming with Store Counter..."}</span>
                   </div>
+                ) : !isMinBillMet ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-amber-300" />
+                    <span>Add ₹{minBillAmount - subtotal} More to Order (Min. ₹599)</span>
+                  </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 text-terracotta-400" />
                     <span>
                       {deliveryOption === "delivery"
-                        ? `Confirm Home Delivery & Pay (₹${totalAmount})`
-                        : `Confirm Pickup & Generate Token (₹${totalAmount})`}
+                        ? `Confirm Home Delivery & Pay (₹${finalTotal})`
+                        : `Confirm Pickup & Generate Token (₹${finalTotal})`}
                     </span>
                   </>
                 )}
               </button>
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-forest-500 font-medium">
                 <ShieldCheck className="w-3.5 h-3.5 text-forest-600" />
-                <span>Cashfree PG Verified • 24/7 Sift Fraud Shield Active</span>
+                <span>Cashfree PG Verified • Hubli-Dharwad Hyperlocal Delivery</span>
               </div>
             </div>
           </form>

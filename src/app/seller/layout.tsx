@@ -145,9 +145,13 @@ function SellerPortalProtectedShell({
     >
       {/* Mobile Header Bar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-cream-50 border-b border-cream-300 sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-terracotta-500 text-white flex items-center justify-center font-serif font-bold text-sm shadow-xs">
-            S
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-white border border-cream-300 flex items-center justify-center shadow-xs overflow-hidden p-0.5">
+            <img
+              src="/logo.png"
+              alt="LocalLoop Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <span className="font-serif font-bold text-sm text-forest-950 block leading-tight">
@@ -181,8 +185,12 @@ function SellerPortalProtectedShell({
               data-testid="seller-portal-header"
               className="flex items-center gap-2.5 group"
             >
-              <div className="w-9 h-9 rounded-xl bg-terracotta-500 text-cream-50 flex items-center justify-center font-serif font-extrabold text-base shadow-warm">
-                <Store className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-white border border-cream-300 flex items-center justify-center shadow-warm overflow-hidden p-0.5 group-hover:scale-105 transition-transform">
+                <img
+                  src="/logo.png"
+                  alt="LocalLoop Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <span className="font-serif font-extrabold text-base text-forest-950 tracking-tight block leading-tight">

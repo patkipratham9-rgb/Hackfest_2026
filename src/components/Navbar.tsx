@@ -60,16 +60,19 @@ export function Navbar() {
           aria-label="LocalLoop Home"
           className="flex items-center gap-2 group flex-shrink-0 cursor-pointer"
         >
-          <div className="w-9 h-9 rounded-xl bg-forest-800 flex items-center justify-center text-cream-100 font-bold text-lg shadow-xs group-hover:scale-105 transition-transform">
-            <span className="font-serif">L</span>
-            <span className="w-2 h-2 rounded-full bg-terracotta-500 -ml-0.5 mt-1.5" />
+          <div className="w-10 h-10 rounded-xl bg-forest-800 flex items-center justify-center text-cream-100 font-bold text-lg shadow-xs group-hover:scale-105 transition-transform overflow-hidden border border-cream-300">
+            <img
+              src="/logo.png"
+              alt="LocalLoop Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-serif text-xl font-bold tracking-tight text-forest-950 leading-none">
               LocalLoop<span className="text-terracotta-500">.</span>
             </span>
-            <span className="text-[10px] font-semibold text-forest-600 tracking-wider uppercase mt-0.5">
-              Hubballi City
+            <span className="text-[9px] font-bold text-terracotta-700 tracking-wider uppercase mt-0.5">
+              Hubballi-Dharwad
             </span>
           </div>
         </Link>

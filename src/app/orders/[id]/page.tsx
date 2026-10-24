@@ -22,6 +22,9 @@ import {
   Check,
   Search,
   ExternalLink,
+  Truck,
+  Star,
+  Navigation,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -208,6 +211,24 @@ function OrderTrackingContent({
 
   const currentStepIndex = Math.max(0, ORDER_FLOW.indexOf(order.status));
   const statusInfo = STATUS_HEADLINES[order.status] || STATUS_HEADLINES.placed;
+
+  const isDeliveryOrder = order.deliveryOption === "delivery";
+  const deliveryPartner = order.deliveryPartner || {
+    id: "dp-default",
+    name: "Ramesh Kulkarni",
+    phone: "+91 98450 88219",
+    vehicle: "Hero Electric Optima",
+    vehicleNumber: "KA-25-EM-4821",
+    rating: 4.9,
+    totalDeliveries: 540,
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    assignedAt: order.createdAt || new Date().toISOString(),
+    estimatedArrivalMins: 25,
+    estimatedArrivalTime: order.estimatedArrival || new Date(Date.now() + 25 * 60 * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    liveStatus: "out_for_delivery" as const,
+  };
+
+  const deliveryETA = order.estimatedArrival || deliveryPartner.estimatedArrivalTime || "25 - 35 mins";
 
   // Checkpoint CP-OB02: Realtime Tracking Subscription for Customer View
   useEffect(() => {
@@ -520,6 +541,104 @@ function OrderTrackingContent({
         </div>
       </motion.div>
 
+      {/* Delivery Partner Details & Estimated Arrival Time (ETA) Card */}
+      <motion.div
+        data-testid="delivery-partner-eta-card"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-5 sm:p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm space-y-4"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-cream-200">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center shadow-xs">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-terracotta-600 block">
+                {isDeliveryOrder ? "Doorstep Delivery Fleet" : "Express Counter Fulfillment"}
+              </span>
+              <h3 className="font-serif font-extrabold text-base sm:text-lg text-forest-950">
+                {isDeliveryOrder ? "Assigned Delivery Boy & Live ETA" : "Store Counter In-Charge"}
+              </h3>
+            </div>
+          </div>
+
+          {/* ETA Badge */}
+          <div className="bg-emerald-50 border border-emerald-300 rounded-2xl px-4 py-2 text-left sm:text-right flex items-center sm:flex-col justify-between sm:justify-center gap-0.5">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+              Estimated Arrival Time
+            </span>
+            <span data-testid="delivery-eta-time" className="font-serif font-black text-emerald-950 text-base sm:text-lg">
+              {deliveryETA}
+            </span>
+          </div>
+        </div>
+
+        {/* Delivery Boy Profile & Vehicle Details */}
+        <div className="p-4 rounded-2xl bg-cream-100 border border-cream-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative w-13 h-13 rounded-2xl overflow-hidden bg-forest-800 text-cream-100 flex items-center justify-center font-bold text-lg border-2 border-cream-300 shrink-0 shadow-xs">
+              <img
+                src={deliveryPartner.avatarUrl}
+                alt={deliveryPartner.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h4 data-testid="delivery-boy-name" className="font-bold text-sm text-forest-950">
+                  {deliveryPartner.name}
+                </h4>
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-terracotta-100 text-terracotta-800">
+                  <ShieldCheck className="w-3 h-3 text-terracotta-600" />
+                  Verified Partner
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-forest-600">
+                <span className="flex items-center gap-1 font-semibold text-amber-700">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  {deliveryPartner.rating} ({deliveryPartner.totalDeliveries}+ deliveries)
+                </span>
+              </div>
+              <p className="text-[11px] text-forest-500 flex items-center gap-1 pt-0.5">
+                <Navigation className="w-3 h-3 text-terracotta-600" />
+                <span>{deliveryPartner.vehicle} • <strong className="font-mono text-forest-800">{deliveryPartner.vehicleNumber}</strong></span>
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Call Action */}
+          <div className="w-full sm:w-auto flex sm:flex-col gap-2">
+            <motion.a
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.95 }}
+              data-testid="call-delivery-boy-button"
+              href={`tel:${deliveryPartner.phone}`}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-forest-900 text-cream-100 text-xs font-bold hover:bg-forest-950 shadow-warm transition-all cursor-pointer"
+            >
+              <Phone className="w-3.5 h-3.5 text-terracotta-400" />
+              <span>Call Delivery Boy</span>
+            </motion.a>
+          </div>
+        </div>
+
+        {/* Live Delivery Note / Destination Preview */}
+        <div className="p-3 bg-cream-100/60 rounded-xl border border-cream-200/80 flex items-center justify-between text-xs text-forest-700">
+          <div className="flex items-center gap-2 truncate">
+            <MapPin className="w-4 h-4 text-terracotta-600 shrink-0" />
+            <span className="truncate">
+              {isDeliveryOrder && order.deliveryAddress
+                ? `Destination: ${(order.deliveryAddress as any).street || (order.deliveryAddress as any).locality || "Customer Delivery Address"}, Hubballi`
+                : `Pickup: ${order.storeLane}, ${order.storeArea} (Counter Slot: ${order.pickupTime})`}
+            </span>
+          </div>
+          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-md shrink-0">
+            {order.status === "completed" ? "Delivered" : "En Route"}
+          </span>
+        </div>
+      </motion.div>
+
       {/* Pickup Store Details Card */}
       <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-3">
         <h3 className="font-serif font-bold text-base text-forest-950 flex items-center gap-2">
@@ -608,9 +727,40 @@ function OrderTrackingContent({
             <span data-testid="order-subtotal">₹{order.subtotal}</span>
           </div>
           <div className="flex justify-between text-forest-600">
-            <span>Local platform fair fee</span>
+            <span className="flex items-center gap-1">
+              <span>GST (5%)</span>
+              <span className="text-[10px] bg-cream-200 text-forest-700 px-1.5 py-0.2 rounded font-semibold">
+                Tax
+              </span>
+            </span>
+            <span data-testid="order-gst">₹{order.gst ?? Math.round(order.subtotal * 0.05)}</span>
+          </div>
+          <div className="flex justify-between text-forest-600">
+            <span className="flex items-center gap-1">
+              <span>Local platform fair fee</span>
+              <span className="text-[10px] bg-forest-100 text-forest-800 px-1.5 py-0.2 rounded font-semibold">
+                Fair Share
+              </span>
+            </span>
             <span data-testid="order-platform-fee">₹{order.platformFee}</span>
           </div>
+          {order.deliveryOption === "delivery" && (
+            <div className="flex justify-between text-forest-600">
+              <span className="flex items-center gap-1">
+                <span>Delivery Charge</span>
+                {order.deliveryDistance ? (
+                  <span className="text-[10px] bg-terracotta-100 text-terracotta-800 px-1.5 py-0.2 rounded font-semibold">
+                    {order.deliveryDistance > 3
+                      ? `${(order.deliveryDistance - 3).toFixed(1)} km extra @ ₹15/km`
+                      : "Within 3 km (FREE)"}
+                  </span>
+                ) : null}
+              </span>
+              <span data-testid="order-delivery-fee">
+                {(order.deliveryFee ?? 0) > 0 ? `₹${order.deliveryFee}` : "FREE"}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between font-bold text-sm text-forest-950 pt-2 border-t border-cream-300">
             <span>Total Amount</span>
             <span

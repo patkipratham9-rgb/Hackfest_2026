@@ -159,6 +159,20 @@ test("Delivery: Order interface and CartContext support deliveryOption", () => {
   const cartContent = fs.readFileSync(path.join(rootDir, "src/context/CartContext.tsx"), "utf8");
   assert.ok(typesContent.includes("deliveryOption?: DeliveryOption;"));
   assert.ok(cartContent.includes('deliveryOption: data.deliveryOption || "pickup"'));
+  assert.ok(typesContent.includes("deliveryPartner?: DeliveryPartner;"));
+  assert.ok(typesContent.includes("estimatedArrival?: string;"));
+});
+
+test("Post-Payment: Delivery boy details and estimated arrival time supported on order tracking and payment result", () => {
+  const trackingPage = fs.readFileSync(path.join(rootDir, "src/app/orders/[id]/page.tsx"), "utf8");
+  const paymentResultPage = fs.readFileSync(path.join(rootDir, "src/app/payment-result/page.tsx"), "utf8");
+  assert.ok(trackingPage.includes('data-testid="delivery-partner-eta-card"'));
+  assert.ok(trackingPage.includes('data-testid="delivery-eta-time"'));
+  assert.ok(trackingPage.includes('data-testid="delivery-boy-name"'));
+  assert.ok(trackingPage.includes('data-testid="call-delivery-boy-button"'));
+  assert.ok(paymentResultPage.includes('data-testid="post-payment-delivery-eta"'));
+  assert.ok(paymentResultPage.includes('data-testid="payment-result-eta"'));
+  assert.ok(paymentResultPage.includes('data-testid="payment-result-delivery-name"'));
 });
 
 // --- 4. CASHFREE PAYMENT GATEWAY ---
