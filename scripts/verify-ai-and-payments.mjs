@@ -190,6 +190,16 @@ test("Cashfree: Webhook HMAC-SHA256 signature verification rejects tampering", (
   assert.strictEqual(isFakeValid, false);
 });
 
+test("Cashfree: Official JS SDK v3 mounted in Root Layout for hosted checkout", () => {
+  const layout = fs.readFileSync(path.join(rootDir, "src/app/layout.tsx"), "utf8");
+  assert.ok(layout.includes("sdk.cashfree.com/js/v3/cashfree.js"));
+});
+
+test("Cashfree: Status check API and payment result page implemented", () => {
+  assert.strictEqual(fs.existsSync(path.join(rootDir, "src/app/api/orders/[id]/status/route.ts")), true);
+  assert.strictEqual(fs.existsSync(path.join(rootDir, "src/app/payment-result/page.tsx")), true);
+});
+
 // --- 5. MIC: SPEECH-TO-TEXT & TEXT-TO-SPEECH ---
 console.log("\n--- 5. MIC & TEXT-TO-SPEECH IN SEARCH BAR ---");
 

@@ -188,7 +188,29 @@ export function CheckoutModal() {
         });
 
         const cfData = await cfRes.json();
-        const cfOrderId = cfData.order_id || `cf_ord_${Date.now()}`;
+        const cfOrderId = cfData.order_id || cfData.orderId || `cf_ord_${Date.now()}`;
+
+        // Launch Cashfree Hosted Checkout if Cashfree SDK is loaded and a live session is active
+        if (
+          typeof window !== "undefined" &&
+          (window as any).Cashfree &&
+          cfData.payment_session_id &&
+          !cfData.simulated
+        ) {
+          try {
+            setPaymentStatusMessage("Opening Cashfree Hosted Payment Gateway...");
+            const cashfree = (window as any).Cashfree({
+              mode: process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox",
+            });
+            await cashfree.checkout({
+              paymentSessionId: cfData.payment_session_id,
+              redirectTarget: "_self",
+            });
+            return;
+          } catch (sdkErr) {
+            console.warn("Cashfree SDK launch notice:", sdkErr);
+          }
+        }
 
         setPaymentStatusMessage("Verifying Cashfree payment settlement...");
         let isPaid = true;

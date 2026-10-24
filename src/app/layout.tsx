@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
@@ -61,6 +62,10 @@ export default function RootLayout({
             <AppLayoutWrapper>{children}</AppLayoutWrapper>
           </CartProvider>
         </AuthProvider>
+        <Script
+          src="https://sdk.cashfree.com/js/v3/cashfree.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
