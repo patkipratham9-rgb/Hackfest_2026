@@ -2,13 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
-import { Navbar } from "@/components/Navbar";
-import { BottomNav } from "@/components/BottomNav";
-import { CartDrawer } from "@/components/CartDrawer";
-import { CheckoutModal } from "@/components/CheckoutModal";
-import { ProfilePanel } from "@/components/ProfilePanel";
-import { LocalLoopAssistantBot } from "@/components/LocalLoopAssistantBot";
-import { Footer } from "@/components/Footer";
+import { AppLayoutWrapper } from "@/components/AppLayoutWrapper";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -64,16 +58,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-cream-100 text-forest-950 font-sans antialiased selection:bg-terracotta-200 selection:text-terracotta-900 overflow-x-hidden w-full max-w-full">
         <AuthProvider>
           <CartProvider>
-            <Navbar />
-            <CartDrawer />
-            <CheckoutModal />
-            <ProfilePanel />
-            <LocalLoopAssistantBot />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5 pb-24 sm:pb-12 w-full overflow-x-hidden">
-              {children}
-            </main>
-            <Footer />
-            <BottomNav />
+            <AppLayoutWrapper>{children}</AppLayoutWrapper>
           </CartProvider>
         </AuthProvider>
       </body>

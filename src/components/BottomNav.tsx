@@ -43,6 +43,10 @@ export function BottomNav() {
     },
   ];
 
+  if (pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login")) {
+    return null;
+  }
+
   return (
     <nav
       data-testid="bottom-tab-navigation"

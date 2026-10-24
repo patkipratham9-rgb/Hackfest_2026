@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   MapPin,
   ShoppingBag,
@@ -37,6 +38,11 @@ export function Navbar() {
   } = useCart();
   const { user, isAuthenticated, activeAppMode, switchRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login")) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-cream-100/95 backdrop-blur-md border-b border-cream-300 transition-all w-full max-w-full">

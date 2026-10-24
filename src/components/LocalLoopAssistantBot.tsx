@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   Bot,
   X,
@@ -24,6 +25,7 @@ interface ChatMessage {
 }
 
 export function LocalLoopAssistantBot() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -42,6 +44,10 @@ export function LocalLoopAssistantBot() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  if (pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login")) {
+    return null;
+  }
 
   useEffect(() => {
     if (isOpen) {

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Store,
   ShieldCheck,
@@ -13,8 +14,13 @@ import {
 } from "lucide-react";
 
 export function Footer() {
+  const pathname = usePathname();
   const [activeModal, setActiveModal] = useState<"terms" | "privacy" | "merchant" | null>(null);
   const currentYear = 2026;
+
+  if (pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login")) {
+    return null;
+  }
 
   return (
     <footer className="mt-16 bg-cream-200/90 border-t border-cream-300 text-forest-950 transition-colors">

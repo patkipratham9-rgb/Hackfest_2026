@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { UserProfile, UserRole } from "@/types";
+import crypto from "crypto";
 
 /**
  * Link User (Shopper) Account with Supabase Database
@@ -63,7 +64,7 @@ export async function loginOrRegisterUserDbAction(input: {
     }
 
     // 2. Register New User in Supabase Database
-    const newId = `user_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const newId = crypto.randomUUID();
     const { data: inserted, error: insertErr } = await supabase
       .from("profiles")
       .upsert({
@@ -155,7 +156,7 @@ export async function loginOrRegisterMerchantDbAction(input: {
       .limit(1);
 
     const existing = existingProfiles?.[0];
-    const userId = existing?.id || `merchant_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const userId = existing?.id || crypto.randomUUID();
 
     // 2. Look for or create store in `stores` table
     const { data: existingStores } = await supabase
