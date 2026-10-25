@@ -37,7 +37,7 @@ export async function dispatchSmsOtp(
     process.env.FAST2SMS_API_KEY || process.env.FAST2SMS_KEY;
   if (fast2SmsKey) {
     try {
-      const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
+      let response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
         method: "POST",
         headers: {
           authorization: fast2SmsKey,
@@ -50,8 +50,35 @@ export async function dispatchSmsOtp(
         }),
       });
 
-      const data = await response.json().catch(() => ({}));
+      let data = await response.json().catch(() => ({}));
       if (response.ok && (data.return === true || data.status_code === 200)) {
+        console.log(`[LocalLoop SMS] Fast2SMS OTP dispatched to +91 ${digits}: request_id=${data.request_id}`);
+        return {
+          success: true,
+          provider: "fast2sms",
+          messageId: data.request_id || `f2s_${Date.now()}`,
+          maskedPhone: masked,
+        };
+      }
+
+      // Fallback: Quick SMS route
+      response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
+        method: "POST",
+        headers: {
+          authorization: fast2SmsKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          route: "q",
+          message: smsMessage,
+          language: "english",
+          flash: 0,
+          numbers: digits,
+        }),
+      });
+      data = await response.json().catch(() => ({}));
+      if (response.ok && (data.return === true || data.status_code === 200)) {
+        console.log(`[LocalLoop SMS] Fast2SMS Quick dispatched to +91 ${digits}: request_id=${data.request_id}`);
         return {
           success: true,
           provider: "fast2sms",

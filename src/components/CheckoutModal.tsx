@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { UserAddress } from "@/types";
 import { Map4MePicker } from "@/components/Map4MePicker";
 import { CashfreePaymentGatewayModal } from "@/components/CashfreePaymentGatewayModal";
 import {
@@ -102,6 +103,7 @@ export function CheckoutModal() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>(defaultAddr?.id || "");
   const [deliveryOption, setDeliveryOption] = useState<"delivery" | "pickup">("delivery");
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
+  const [customDeliveryAddress, setCustomDeliveryAddress] = useState<UserAddress | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string>("quick-20");
   const [nameError, setNameError] = useState<string>("");
   const [phoneError, setPhoneError] = useState<string>("");
@@ -213,7 +215,10 @@ export function CheckoutModal() {
     }
 
     setIsSubmitting(true);
-    const selectedAddr = user?.addresses?.find((a) => a.id === selectedAddressId) || defaultAddr;
+    const selectedAddr =
+      customDeliveryAddress ||
+      user?.addresses?.find((a) => a.id === selectedAddressId) ||
+      defaultAddr;
 
     // Cashfree PG Payment Gateway Flow
     if (paymentMethod === "upi") {
@@ -310,7 +315,10 @@ export function CheckoutModal() {
       console.warn("Cashfree verify call notice:", err);
     }
 
-    const selectedAddr = user?.addresses?.find((a) => a.id === selectedAddressId) || defaultAddr;
+    const selectedAddr =
+      customDeliveryAddress ||
+      user?.addresses?.find((a) => a.id === selectedAddressId) ||
+      defaultAddr;
 
     const order = createOrder({
       customerName: customerName.trim(),
@@ -782,13 +790,40 @@ export function CheckoutModal() {
                 </button>
               </div>
 
-              {user && user.addresses && user.addresses.length > 0 ? (
+              {customDeliveryAddress ? (
+                <div className="bg-amber-50/90 p-2.5 rounded-xl border border-amber-300 flex items-center justify-between text-xs">
+                  <div className="min-w-0 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-forest-950 px-1.5 py-0.5 rounded-md bg-amber-200 text-[10px] uppercase tracking-wide">
+                        {customDeliveryAddress.label} (Map4Me Pinned)
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-800">
+                        {deliveryDistance.toFixed(1)} km away
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-forest-800 font-medium truncate mt-1">
+                      {customDeliveryAddress.street}
+                      {customDeliveryAddress.landmark ? `, Near ${customDeliveryAddress.landmark}` : ""}, {customDeliveryAddress.locality} - {customDeliveryAddress.pincode}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMapPickerOpen(true)}
+                    className="shrink-0 text-[11px] font-bold text-terracotta-700 hover:underline px-2 py-1"
+                  >
+                    Change Pin
+                  </button>
+                </div>
+              ) : user && user.addresses && user.addresses.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {user.addresses.map((a) => (
                     <button
                       key={a.id}
                       type="button"
-                      onClick={() => setSelectedAddressId(a.id)}
+                      onClick={() => {
+                        setSelectedAddressId(a.id);
+                        setCustomDeliveryAddress(null);
+                      }}
                       className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
                         selectedAddressId === a.id
                           ? "bg-terracotta-600 text-cream-50 border-terracotta-600 shadow-xs"
@@ -999,9 +1034,25 @@ export function CheckoutModal() {
             <Map4MePicker
               title="Map4Me: Pinpoint Delivery Location"
               onSaveAddress={(saved) => {
-                const res = addAddress(saved);
-                if (res.address) {
-                  setSelectedAddressId(res.address.id);
+                const customAddr: UserAddress = {
+                  id: `map4me_${Date.now()}`,
+                  label: saved.label,
+                  street: saved.street,
+                  landmark: saved.landmark,
+                  locality: saved.locality,
+                  city: saved.city,
+                  pincode: saved.pincode,
+                  isDefault: saved.isDefault,
+                };
+                setCustomDeliveryAddress(customAddr);
+                if (typeof saved.distanceKm === "number" && saved.distanceKm > 0) {
+                  setDeliveryDistance(Number(saved.distanceKm.toFixed(1)));
+                }
+                if (user) {
+                  const res = addAddress(saved);
+                  if (res.address) {
+                    setSelectedAddressId(res.address.id);
+                  }
                 }
                 setIsMapPickerOpen(false);
               }}

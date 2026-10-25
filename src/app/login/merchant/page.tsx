@@ -90,7 +90,6 @@ export default function MerchantLoginPage() {
       if (res.ok && data.success) {
         setOtpSent(true);
         setStatusMessage(data.message || `OTP sent to +91 ${clean}`);
-        if (data.testOtp) setLoginPin(data.testOtp);
         setCooldown(data.cooldownSeconds || 30);
       } else {
         setErrorMessage(data.message || "Failed to send OTP.");

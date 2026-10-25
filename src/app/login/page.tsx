@@ -555,21 +555,8 @@ export default function LoginPage() {
                       </span>
                     </p>
 
-                    <div className="pt-2 border-t border-forest-800/80 flex items-center justify-between">
-                      <span className="text-[11px] text-cream-300">
-                        Code:{" "}
-                        <strong className="font-mono text-emerald-400 tracking-wider">
-                          {dispatchedOtp || "123456"}
-                        </strong>
-                      </span>
-                      <button
-                        type="button"
-                        data-testid="fast-fill-otp-btn"
-                        onClick={handleFillDemoOtp}
-                        className="text-[11px] bg-terracotta-600 hover:bg-terracotta-700 text-white font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-all"
-                      >
-                        1-Tap Paste
-                      </button>
+                    <div className="pt-2 border-t border-forest-800/80 flex items-center justify-between text-[11px] text-cream-300">
+                      <span>Please check your SMS messages and enter the 6-digit code below.</span>
                     </div>
                   </div>
 

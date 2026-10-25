@@ -36,13 +36,14 @@ export async function POST(req: NextRequest) {
       result.testOtp || "123456"
     );
 
+    const isTest = process.env.NODE_ENV === "test";
     return NextResponse.json({
       success: true,
       message: `OTP sent via SMS to ${smsResult.maskedPhone}`,
-      testOtp: result.testOtp || "123456",
       cooldownSeconds: result.cooldownSeconds || 30,
       provider: smsResult.provider,
       expiresInSeconds: 300,
+      ...(isTest ? { testOtp: result.testOtp || "123456" } : {}),
     });
   } catch (error: any) {
     return NextResponse.json(

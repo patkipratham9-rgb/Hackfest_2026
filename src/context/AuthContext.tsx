@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return {
           success: Boolean(data.success),
           message: data.message || `OTP sent to ${phone}`,
-          testOtp: data.testOtp || "123456",
+          testOtp: data.testOtp,
           cooldownSeconds:
             typeof data.cooldownSeconds === "number" ? data.cooldownSeconds : 30,
         };
