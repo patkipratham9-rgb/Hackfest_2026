@@ -207,8 +207,12 @@ export function OrderCancelCooldown({
       {/* Confirmation Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div
+          <motion.div
+            key="cancel-order-modal-wrapper"
             data-testid="cancel-order-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs"
           >
             <motion.div
@@ -280,7 +284,7 @@ export function OrderCancelCooldown({
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

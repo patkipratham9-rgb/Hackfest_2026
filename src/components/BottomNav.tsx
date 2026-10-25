@@ -60,13 +60,13 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-40 bg-cream-50/95 backdrop-blur-lg border-t border-cream-300 pb-safe shadow-floating"
     >
       <div className="max-w-md mx-auto flex items-center justify-around h-16 px-2">
-        {navTabs.map((tab) => {
+        {navTabs.map((tab, idx) => {
           const Icon = tab.icon;
           const isActive = tab.isActive;
 
           return (
             <Link
-              key={tab.id}
+              key={tab.id || `bottom-nav-${idx}`}
               href={tab.href}
               data-testid={`tab-button-${tab.id}`}
               aria-current={isActive ? "page" : undefined}

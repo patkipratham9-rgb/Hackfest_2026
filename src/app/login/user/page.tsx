@@ -361,9 +361,10 @@ export default function UserLoginPage() {
           )}
 
           {/* Status & Error Messages */}
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {statusMessage && (
               <motion.div
+                key="user-status-msg"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -376,6 +377,7 @@ export default function UserLoginPage() {
 
             {errorMessage && (
               <motion.div
+                key="user-error-msg"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}

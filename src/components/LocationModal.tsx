@@ -30,8 +30,6 @@ export function LocationModal() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  if (!isLocationModalOpen) return null;
-
   const handleShareGps = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -76,26 +74,32 @@ export function LocationModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
+      {isLocationModalOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setIsLocationModalOpen(false)}
-          className="fixed inset-0 bg-forest-950/60 backdrop-blur-sm"
-        />
-
-        {/* Modal Window */}
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          transition={{ duration: 0.2 }}
-          className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-warm-xl overflow-hidden z-10"
+          key="location-modal-container"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
         >
+          {/* Backdrop */}
+          <motion.div
+            key="location-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsLocationModalOpen(false)}
+            className="fixed inset-0 bg-forest-950/60 backdrop-blur-sm"
+          />
+
+          {/* Modal Window */}
+          <motion.div
+            key="location-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-warm-xl overflow-hidden z-10"
+          >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200 bg-cream-100">
             <div className="flex items-center gap-2.5">
@@ -225,7 +229,8 @@ export function LocationModal() {
             )}
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
-  );
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 }

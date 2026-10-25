@@ -262,11 +262,11 @@ function SellerPortalProtectedShell({
             <span className="text-[10px] font-bold uppercase tracking-wider text-forest-400 px-3 block mb-1.5">
               Store Operations
             </span>
-            {navLinks.map((link) => {
+            {navLinks.map((link, idx) => {
               const Icon = link.icon;
               return (
                 <Link
-                  key={link.id}
+                  key={link.id || `seller-nav-${idx}`}
                   href={link.href}
                   data-testid={`seller-nav-${link.id}`}
                   onClick={() => setIsMobileMenuOpen(false)}

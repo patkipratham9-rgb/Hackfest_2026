@@ -85,16 +85,11 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <title>Merchant Dashboard &amp; Market Intelligence • LocalLoop Partner</title>
-      <meta
-        name="description"
-        content="Easy-to-read merchant market dashboard with self-learning machine learning sales suggestions, inventory health, and live pickup orders."
-      />
-
       {/* Applied Feedback Banner */}
       <AnimatePresence>
         {appliedAlert && (
           <motion.div
+            key="seller-applied-alert"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

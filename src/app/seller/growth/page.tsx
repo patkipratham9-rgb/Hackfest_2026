@@ -529,6 +529,7 @@ export default function SellerGrowthPage() {
         <AnimatePresence>
           {testResult && (
             <motion.div
+              key="ai-connection-result"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -1039,9 +1040,9 @@ export default function SellerGrowthPage() {
               data-testid="traffic-sources-breakdown"
               className="p-4 rounded-2xl bg-white border border-cream-200 space-y-3"
             >
-              {trafficMetrics.sources.map((src) => (
+              {trafficMetrics.sources.map((src, idx) => (
                 <div
-                  key={src.channel}
+                  key={src.channel || `traffic-src-${idx}`}
                   data-testid={`traffic-source-item-${src.channel.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
                   className="space-y-1"
                 >
@@ -1083,9 +1084,9 @@ export default function SellerGrowthPage() {
               data-testid="traffic-neighborhoods-breakdown"
               className="p-4 rounded-2xl bg-white border border-cream-200 space-y-3"
             >
-              {trafficMetrics.neighborhoods.map((n) => (
+              {trafficMetrics.neighborhoods.map((n, idx) => (
                 <div
-                  key={n.area}
+                  key={n.area || `traffic-nh-${idx}`}
                   data-testid={`traffic-neighborhood-item-${n.area.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
                   className="space-y-1"
                 >
@@ -1132,12 +1133,12 @@ export default function SellerGrowthPage() {
             className="p-4 rounded-2xl bg-white border border-cream-200"
           >
             <div className="grid grid-cols-8 gap-2 items-end h-32 pt-4">
-              {trafficMetrics.hourlyDistribution.map((point) => {
+              {trafficMetrics.hourlyDistribution.map((point, idx) => {
                 const maxVisitors = Math.max(...trafficMetrics.hourlyDistribution.map((p) => p.visitors), 1);
                 const heightPercent = Math.round((point.visitors / maxVisitors) * 100);
 
                 return (
-                  <div key={point.hour} className="flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div key={point.hour ?? `hour-${idx}`} className="flex flex-col items-center gap-1.5 h-full justify-end">
                     <span className="text-[10px] font-mono font-bold text-forest-700">
                       {point.visitors}
                     </span>
@@ -1170,9 +1171,9 @@ export default function SellerGrowthPage() {
             data-testid="traffic-trend-chart"
             className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5"
           >
-            {trafficMetrics.dailyTrend.map((day) => (
+            {trafficMetrics.dailyTrend.map((day, idx) => (
               <div
-                key={day.date}
+                key={day.date || `daily-trend-${idx}`}
                 className="p-3 rounded-2xl bg-white border border-cream-200 text-center space-y-1 shadow-2xs"
               >
                 <span className="text-[10px] font-bold uppercase text-forest-600 block">

@@ -262,12 +262,6 @@ export default function HomePage() {
       transition={{ duration: 0.3 }}
       className="space-y-8"
     >
-      <title>LocalLoop • Hubballi's Hyperlocal Marketplace</title>
-      <meta
-        name="description"
-        content="Discover and order authentic goods from neighborhood shops in Hubballi with express counter pickup."
-      />
-
       {/* Dynamic Moving Advertisements Hero Section */}
       <MovingAdsBanner
         userLocation={userLocation}
@@ -412,6 +406,7 @@ export default function HomePage() {
       <AnimatePresence>
         {selectedStoreId && activeStoreObj && (
           <motion.div
+            key="store-filter-notice"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}

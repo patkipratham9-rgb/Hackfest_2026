@@ -43,7 +43,7 @@ export function CategoryTabs({
         aria-label="Filter stores by category"
         className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
       >
-        {CATEGORIES.map(({ label, emoji }) => {
+        {CATEGORIES.map(({ label, emoji }, idx) => {
           const isSelected = activeCategory === label;
           const slug = label.toLowerCase().replace(/\s+/g, "-");
           const storeCount =
@@ -53,7 +53,7 @@ export function CategoryTabs({
 
           return (
             <motion.button
-              key={label}
+              key={label || `category-tab-${idx}`}
               role="tab"
               aria-selected={isSelected}
               data-testid={`category-tab-${slug}`}

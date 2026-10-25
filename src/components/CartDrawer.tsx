@@ -192,7 +192,7 @@ export function CartDrawer() {
                                 <Minus className="w-3 h-3" />
                               </motion.button>
                               <motion.span
-                                key={quantity}
+                                key={`cart-item-qty-${product.id}-${quantity}`}
                                 initial={{ scale: 1.35 }}
                                 animate={{ scale: 1 }}
                                 data-testid={`cart-item-quantity-${product.id}`}

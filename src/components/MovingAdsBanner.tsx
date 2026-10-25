@@ -313,7 +313,7 @@ export function MovingAdsBanner({
               <div className="flex items-center gap-2">
                 {slides.map((slide, idx) => (
                   <button
-                    key={slide.id}
+                    key={slide.id || `slide-dot-${idx}`}
                     type="button"
                     onClick={() => handleDotClick(idx)}
                     aria-label={`Go to slide ${idx + 1}`}
@@ -380,7 +380,7 @@ export function MovingAdsBanner({
             className="flex items-center gap-8 text-xs font-semibold text-cream-200"
           >
             {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, index) => (
-              <span key={index} className="inline-flex items-center gap-2">
+              <span key={`ticker-item-${index}`} className="inline-flex items-center gap-2">
                 <span>{item}</span>
                 <span className="text-terracotta-400">•</span>
               </span>

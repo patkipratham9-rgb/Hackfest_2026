@@ -712,6 +712,7 @@ export default function SellerOrdersPage() {
       <AnimatePresence>
         {realtimeToast && (
           <motion.div
+            key="realtime-order-toast"
             initial={{ opacity: 0, y: -20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.96 }}
@@ -749,6 +750,7 @@ export default function SellerOrdersPage() {
       <AnimatePresence>
         {successToast && (
           <motion.div
+            key="seller-success-toast"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -1042,8 +1044,12 @@ export default function SellerOrdersPage() {
       {/* Counter Code PIN Verification Modal */}
       <AnimatePresence>
         {verifyingOrder && (
-          <div
+          <motion.div
+            key="counter-verify-modal-wrapper"
             data-testid="counter-verify-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs"
           >
             <motion.div
@@ -1144,15 +1150,19 @@ export default function SellerOrdersPage() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* Checkpoint CP-OB03: Pack Order Checklist Modal */}
       <AnimatePresence>
         {packingOrder && (
-          <div
+          <motion.div
+            key="pack-order-modal-wrapper"
             data-testid="pack-order-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs"
           >
             <motion.div
@@ -1262,15 +1272,19 @@ export default function SellerOrdersPage() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* Checkpoint CP-OB03: Ready Staging & Shelf Slot Modal */}
       <AnimatePresence>
         {stagingOrder && (
-          <div
+          <motion.div
+            key="ready-order-modal-wrapper"
             data-testid="ready-order-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/60 backdrop-blur-xs"
           >
             <motion.div
@@ -1360,7 +1374,7 @@ export default function SellerOrdersPage() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

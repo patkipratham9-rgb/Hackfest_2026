@@ -394,7 +394,7 @@ export function Footer() {
                   <div className="p-2.5 bg-cream-100 rounded-xl space-y-1.5 border border-cream-200">
                     <p className="font-bold text-forest-950">Data Collected &amp; Purpose</p>
                     {DATA_COLLECTION_TABLE.map((row, i) => (
-                      <p key={i} className="text-[11px]">
+                      <p key={`data-row-${i}`} className="text-[11px]">
                         <strong>{row.category}:</strong> {row.description}
                       </p>
                     ))}
@@ -424,7 +424,7 @@ export function Footer() {
                   <div className="p-2.5 bg-cream-100 rounded-xl space-y-1 border border-cream-200">
                     <p className="font-bold text-forest-950">Estimated Timelines</p>
                     {DELIVERY_TIMELINES_TABLE.map((t, i) => (
-                      <div key={i} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
+                      <div key={`delivery-timeline-${i}`} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
                         <span className="font-semibold">{t.mode} ({t.area}):</span>
                         <span className="font-mono text-terracotta-700 font-bold">{t.window}</span>
                       </div>
@@ -454,7 +454,7 @@ export function Footer() {
                   <div className="p-2.5 bg-cream-100 rounded-xl space-y-1 border border-cream-200">
                     <p className="font-bold text-forest-950">Category Return Windows</p>
                     {RETURN_WINDOWS_TABLE.map((r, i) => (
-                      <div key={i} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
+                      <div key={`return-window-${i}`} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
                         <span>{r.category}:</span>
                         <span className="font-semibold text-terracotta-700">{r.window}</span>
                       </div>
@@ -463,7 +463,7 @@ export function Footer() {
                   <div className="p-2.5 bg-cream-100 rounded-xl space-y-1 border border-cream-200">
                     <p className="font-bold text-forest-950">Refund Processing Speeds</p>
                     {REFUND_SETTLEMENT_TABLE.map((s, i) => (
-                      <div key={i} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
+                      <div key={`refund-settlement-${i}`} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
                         <span>{s.paymentMode}:</span>
                         <span className="font-mono text-emerald-800 font-bold">{s.processingTime}</span>
                       </div>
@@ -562,7 +562,7 @@ export function Footer() {
                         <div className="flex items-center gap-2">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <button
-                              key={star}
+                              key={`feedback-star-${star}`}
                               type="button"
                               onClick={() => setFeedbackRating(star)}
                               className={`w-9 h-9 rounded-xl font-bold text-xs transition-colors cursor-pointer ${

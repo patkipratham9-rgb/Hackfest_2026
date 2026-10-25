@@ -430,9 +430,10 @@ export default function MerchantLoginPage() {
           )}
 
           {/* Status & Error Messages */}
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {statusMessage && (
               <motion.div
+                key="merchant-status-msg"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -445,6 +446,7 @@ export default function MerchantLoginPage() {
 
             {errorMessage && (
               <motion.div
+                key="merchant-error-msg"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}

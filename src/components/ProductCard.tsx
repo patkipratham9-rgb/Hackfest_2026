@@ -173,7 +173,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
             </motion.button>
             <motion.span
-              key={qtyInCart}
+              key={`qty-count-${product.id}-${qtyInCart}`}
               initial={{ scale: 1.3 }}
               animate={{ scale: 1 }}
               data-testid={`qty-count-${product.id}`}

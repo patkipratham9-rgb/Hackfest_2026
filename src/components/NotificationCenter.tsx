@@ -92,14 +92,16 @@ export function NotificationCenter() {
 
       <AnimatePresence>
         {isOpen && (
-          <>
+          <div key="notification-center-dropdown" className="relative">
             {/* Backdrop for click outside */}
             <div
+              key="notification-backdrop"
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             />
 
             <motion.div
+              key="notification-panel"
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -201,7 +203,7 @@ export function NotificationCenter() {
                 </div>
               )}
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </div>

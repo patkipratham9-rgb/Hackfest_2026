@@ -435,6 +435,7 @@ export default function SellerProductsPage() {
       <AnimatePresence>
         {successAlert && (
           <motion.div
+            key="product-save-success-alert"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -834,9 +835,16 @@ export default function SellerProductsPage() {
       {/* Product Listing & Editing Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            key="product-editor-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
             {/* Backdrop */}
             <motion.div
+              key="product-editor-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1346,15 +1354,22 @@ export default function SellerProductsPage() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* Delete Confirmation Modal (CP-PI02) */}
       <AnimatePresence>
         {productToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            key="product-delete-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
             <motion.div
+              key="product-delete-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1401,15 +1416,22 @@ export default function SellerProductsPage() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* Checkpoint CP-AI04: AI Listing Preview & Seller Approval Modal */}
       <AnimatePresence>
         {isApprovalModalOpen && editedPreviewDraft && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            key="ai-approval-modal-wrapper"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
             <motion.div
+              key="ai-approval-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1593,7 +1615,7 @@ export default function SellerProductsPage() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

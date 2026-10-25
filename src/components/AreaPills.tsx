@@ -40,7 +40,7 @@ export function AreaPills() {
         aria-label="Filter stores by neighborhood"
         className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
       >
-        {AREAS.map((area) => {
+        {AREAS.map((area, idx) => {
           const isSelected = activeArea === area;
           const slug = area.toLowerCase().replace(/\s+/g, "-");
           const storeCount =
@@ -50,7 +50,7 @@ export function AreaPills() {
 
           return (
             <motion.button
-              key={area}
+              key={area || `area-${idx}`}
               role="tab"
               aria-selected={isSelected}
               data-testid={`area-pill-${slug}`}

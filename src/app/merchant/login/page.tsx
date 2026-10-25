@@ -344,9 +344,10 @@ export default function MerchantLoginPage() {
       </div>
 
       {/* Error / Success Alerts */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {(errorMsg || signupError) && (
           <motion.div
+            key="merchant-auth-error"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -359,6 +360,7 @@ export default function MerchantLoginPage() {
 
         {successMsg && (
           <motion.div
+            key="merchant-auth-success"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}

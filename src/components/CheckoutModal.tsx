@@ -155,8 +155,6 @@ export function CheckoutModal() {
   // Final Total = Subtotal + GST (5%) + Platform Fee + Delivery Fee (if home delivery & distance > 3km)
   const finalTotal = subtotal + gstAmount + platformFee + deliveryFee;
 
-  if (!isCheckoutOpen || cart.length === 0) return null;
-
   const selectedSlot = PICKUP_SLOTS.find((s) => s.id === selectedSlotId);
   const isValidSlotSelected = Boolean(selectedSlot && selectedSlot.isAvailable);
 
@@ -350,27 +348,34 @@ export function CheckoutModal() {
 
   return (
     <AnimatePresence>
-      <div
-        data-testid="checkout-modal"
-        className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4"
-      >
-        {/* Backdrop */}
+      {isCheckoutOpen && cart.length > 0 && (
         <motion.div
+          key="checkout-modal-wrapper"
+          data-testid="checkout-modal"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => setIsCheckoutOpen(false)}
-          className="fixed inset-0 bg-forest-950/60 backdrop-blur-xs cursor-pointer"
-        />
-
-        {/* Modal Dialog */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ duration: 0.2 }}
-          className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden z-10 my-4 sm:my-8"
+          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4"
         >
+          {/* Backdrop */}
+          <motion.div
+            key="checkout-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsCheckoutOpen(false)}
+            className="fixed inset-0 bg-forest-950/60 backdrop-blur-xs cursor-pointer"
+          />
+
+          {/* Modal Dialog */}
+          <motion.div
+            key="checkout-modal-dialog"
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden z-10 my-4 sm:my-8"
+          >
           {/* Header */}
           <div className="p-4 sm:p-5 bg-cream-100 border-b border-cream-300 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
@@ -1029,11 +1034,18 @@ export function CheckoutModal() {
             </div>
           </form>
         </motion.div>
-      </div>
+      </motion.div>
+      )}
 
       {/* Map4Me Pinpoint Delivery Modal */}
       {isMapPickerOpen && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-forest-950/70 backdrop-blur-xs overflow-y-auto">
+        <motion.div
+          key="map4me-picker-modal-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-forest-950/70 backdrop-blur-xs overflow-y-auto"
+        >
           <div className="w-full max-w-xl my-8">
             <Map4MePicker
               title="Map4Me: Pinpoint Delivery Location"
@@ -1063,7 +1075,7 @@ export function CheckoutModal() {
               onCancel={() => setIsMapPickerOpen(false)}
             />
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Cashfree Payment Gateway Interactive Checkout Modal */}
