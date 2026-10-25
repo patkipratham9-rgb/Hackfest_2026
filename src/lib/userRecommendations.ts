@@ -14,12 +14,16 @@ const RECENT_SEARCHES_KEY = "localloop_recent_searches_v1";
  * Record a user search query
  */
 export function recordUserSearchQuery(query: string) {
-  if (typeof window === "undefined" || !query.trim()) return;
+  if (typeof window === "undefined" || !query || !query.trim()) return;
   try {
     const clean = query.trim().toLowerCase();
+    if (!clean) return;
     const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
     const searches: string[] = raw ? JSON.parse(raw) : [];
-    const filtered = [clean, ...searches.filter((s) => s !== clean)].slice(0, 10);
+    const validSearches = Array.isArray(searches)
+      ? searches.filter((s) => typeof s === "string" && s.trim().length > 0 && s.trim().toLowerCase() !== clean)
+      : [];
+    const filtered = [clean, ...validSearches].slice(0, 10);
     localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(filtered));
   } catch {}
 }
@@ -33,7 +37,12 @@ export function getSavedRecentSearches(): string[] {
     const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        const cleanList = parsed
+          .filter((s) => typeof s === "string" && s.trim().length > 0)
+          .map((s) => s.trim().toLowerCase());
+        return Array.from(new Set(cleanList));
+      }
     }
   } catch {}
   return [];

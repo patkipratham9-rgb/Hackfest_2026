@@ -205,9 +205,9 @@ export function ProfilePanel() {
                       </Link>
                     </div>
                     <div className="space-y-1.5">
-                      {user.addresses.slice(0, 3).map((a) => (
+                      {user.addresses.slice(0, 3).map((a, idx) => (
                         <div
-                          key={a.id}
+                          key={a.id || `profile-addr-${idx}`}
                           className="p-2.5 rounded-xl bg-white border border-cream-300 text-xs flex items-center justify-between"
                         >
                           <div className="flex items-center gap-2 truncate">

@@ -1,0 +1,26 @@
+{
+  "users": [
+    {
+      "id": "fb9d95c9-88d6-49a5-a214-c6067a8604a6",
+      "name": "Pratham Patki",
+      "number": "9876543210",
+      "email": "pratham.patki@hubballi.in",
+      "role": "customer",
+      "addresses": [
+        {
+          "id": "addr_test_1",
+          "label": "Home",
+          "street": "Plot 42, 3rd Main, Vidyanagar",
+          "locality": "Vidyanagar",
+          "city": "Hubballi-Dharwad",
+          "pincode": "580021",
+          "isDefault": true
+        }
+      ],
+      "emailPermissionsGranted": true,
+      "createdAt": "2026-10-25T08:05:42.930Z",
+      "updatedAt": "2026-10-25T08:06:49.515Z"
+    }
+  ],
+  "updatedAt": "2026-10-25T08:06:49.515Z"
+}

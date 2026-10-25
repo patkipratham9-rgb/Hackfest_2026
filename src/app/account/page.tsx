@@ -381,9 +381,9 @@ export default function AccountPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {user.addresses.map((addr) => (
+            {user.addresses.map((addr, idx) => (
               <div
-                key={addr.id}
+                key={addr.id || `account-addr-${idx}`}
                 className={`p-4 rounded-2xl bg-cream-50 border transition-all space-y-2.5 relative ${
                   addr.isDefault
                     ? "border-terracotta-500 ring-2 ring-terracotta-200 shadow-sm"

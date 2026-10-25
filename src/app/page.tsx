@@ -10,6 +10,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { StoreCard } from "@/components/StoreCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Store, Product } from "@/types";
+import { MovingAdsBanner, AdSlide, DEFAULT_ADS } from "@/components/MovingAdsBanner";
 import {
   computePersonalizedRecommendations,
   recordUserSearchQuery,
@@ -267,48 +268,33 @@ export default function HomePage() {
         content="Discover and order authentic goods from neighborhood shops in Hubballi with express counter pickup."
       />
 
-      {/* Hero Banner Section */}
-      <motion.section
-        data-testid="home-hero-banner"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-3xl bg-forest-800 text-cream-100 p-6 sm:p-10 shadow-warm-lg"
-      >
-        <div className="relative z-10 max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-forest-700/80 border border-forest-600/50 text-xs font-medium text-cream-200">
-            <Sparkles className="w-3.5 h-3.5 text-terracotta-400" />
-            <span>Hyperlocal Marketplace • Direct Store Pickup</span>
-          </div>
+      {/* Dynamic Moving Advertisements Hero Section */}
+      <MovingAdsBanner
+        userLocation={userLocation}
+        onOpenLocationModal={() => setIsLocationModalOpen(true)}
+        slides={[
+          {
+            id: "ad-hubballi-hyperlocal",
+            badge: "Official City Marketplace • Hubli-Dharwad",
+            badgeIcon: "sparkles",
+            taglineSmall: "Hyperlocal Marketplace • Direct Store Pickup",
+            title: "Your city’s hyperlocal digital marketplace.",
+            titleHighlight:
+              "Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.",
+            description:
+              "Support independent local vendors in Hubli-Dharwad. Choose Home Delivery or express Counter Pick-up with zero markups.",
+            offerPill: "⚡ FLAT 20% OFF FIRST 3 ORDERS • CODE: LOCAL20",
+            bgGradient: "from-forest-900 via-forest-800 to-forest-950",
+            accentColor: "text-terracotta-400",
+            primaryCtaText: "Change Location",
+            primaryCtaAction: "location",
+            secondaryCtaText: "Explore Catalog",
+            secondaryCtaHref: "/categories",
+          },
+          ...DEFAULT_ADS.slice(1),
+        ]}
+      />
 
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-cream-50 leading-[1.15]">
-            Your city’s hyperlocal digital marketplace.
-            <span className="block text-terracotta-400 italic font-serif">Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.</span>
-          </h1>
-
-          <p className="text-sm sm:text-base text-cream-200/90 max-w-xl leading-relaxed">
-            Support independent local vendors in Hubli-Dharwad. Choose <strong>Home Delivery</strong> or express <strong>Counter Pick-up</strong> with zero markups.
-          </p>
-
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setIsLocationModalOpen(true)}
-              data-testid="hero-set-location-btn"
-              className="px-5 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm flex items-center gap-2 transition-transform active:scale-95"
-            >
-              <MapPin className="w-4 h-4" />
-              <span>{userLocation ? "Change Location" : "Add / Share Location"}</span>
-            </button>
-            <Link
-              href="/categories"
-              className="px-5 py-2.5 rounded-full bg-cream-100/10 hover:bg-cream-100/20 text-cream-100 font-bold text-xs border border-cream-200/30 flex items-center gap-2 transition-colors"
-            >
-              <ShoppingBag className="w-4 h-4 text-terracotta-400" />
-              <span>Explore Catalog</span>
-            </Link>
-          </div>
-        </div>
-      </motion.section>
 
       {/* Prominent Location Prompt Section: Asks user to add / share location */}
       <section data-testid="location-prompt-card" className="space-y-3">
@@ -498,9 +484,9 @@ export default function HomePage() {
               data-testid="stores-grid"
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
             >
-              {filteredStores.map((store) => (
+              {filteredStores.map((store, idx) => (
                 <StoreCard
-                  key={store.id}
+                  key={store.id || `store-${idx}`}
                   store={store}
                   isSelected={selectedStoreId === store.id}
                   onSelect={() => {
@@ -536,9 +522,9 @@ export default function HomePage() {
             {recentSearches.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] uppercase font-bold text-cream-300">Searched:</span>
-                {recentSearches.slice(0, 3).map((term) => (
+                {recentSearches.slice(0, 3).map((term, idx) => (
                   <button
-                    key={term}
+                    key={`search-${term || idx}-${idx}`}
                     type="button"
                     onClick={() => setSearchQuery(term)}
                     className="text-[10px] bg-forest-800 hover:bg-forest-700 text-terracotta-300 px-2 py-0.5 rounded-full border border-forest-700 transition-colors cursor-pointer"
@@ -551,8 +537,8 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-1">
-            {recommendations.slice(0, 4).map((product) => (
-              <ProductCard key={`rec-${product.id}`} product={product} />
+            {recommendations.slice(0, 4).map((product, idx) => (
+              <ProductCard key={product.id ? `rec-${product.id}` : `rec-${idx}`} product={product} />
             ))}
           </div>
         </section>
@@ -609,8 +595,8 @@ export default function HomePage() {
             className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
           >
             <AnimatePresence mode="popLayout">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {filteredProducts.map((product, idx) => (
+                <ProductCard key={product.id || `prod-${idx}`} product={product} />
               ))}
             </AnimatePresence>
           </motion.div>

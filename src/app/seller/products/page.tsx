@@ -599,13 +599,13 @@ export default function SellerProductsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProducts.map((product) => {
+          {filteredProducts.map((product, idx) => {
             const isLowStock = product.stock > 0 && product.stock <= 10;
             const isOutOfStock = product.stock === 0;
 
             return (
               <motion.div
-                key={product.id}
+                key={product.id || `seller-prod-${idx}`}
                 layout
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}

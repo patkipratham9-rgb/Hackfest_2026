@@ -173,9 +173,9 @@ function OrderTrackingContent({
                 Active orders found in your session:
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {orders.slice(0, 3).map((o) => (
+                {orders.slice(0, 3).map((o, idx) => (
                   <Link
-                    key={o.id}
+                    key={o.id || `order-link-${idx}`}
                     href={`/orders/${o.id}`}
                     className="inline-flex items-center gap-1 font-mono text-[11px] font-bold px-2 py-1 rounded-lg bg-cream-50 hover:bg-terracotta-50 hover:text-terracotta-700 border border-cream-300 transition-colors"
                   >
@@ -727,9 +727,9 @@ function OrderTrackingContent({
         </h3>
 
         <div data-testid="order-items-list" className="divide-y divide-cream-200">
-          {order.items.map(({ product, quantity }) => (
+          {order.items.map(({ product, quantity }, idx) => (
             <div
-              key={product.id}
+              key={product.id || `order-item-${idx}`}
               data-testid={`order-item-${product.id}`}
               className="py-2.5 flex justify-between items-center text-xs"
             >

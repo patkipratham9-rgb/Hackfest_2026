@@ -126,9 +126,9 @@ export function CartDrawer() {
                       </p>
                     </motion.div>
                   ) : (
-                    cart.map(({ product, quantity }) => (
+                    cart.map(({ product, quantity }, idx) => (
                       <motion.div
-                        key={product.id}
+                        key={product.id || `cart-item-${idx}`}
                         layout
                         data-testid="cart-item"
                         data-product-id={product.id}

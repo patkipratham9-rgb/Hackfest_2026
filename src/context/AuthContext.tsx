@@ -15,6 +15,10 @@ import {
   saveUserProfileToDbAction,
   deleteUserAccountFromDbAction,
 } from "@/actions/marketplaceActions";
+import {
+  loginOrRegisterUserDbAction,
+  loginOrRegisterMerchantDbAction,
+} from "@/actions/authActions";
 
 export type AppMode = "shopper" | "merchant";
 
@@ -190,13 +194,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
+    const cleanPhone = phoneValidation.cleanNumber;
+    const clientUuid =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `user-${Date.now()}`;
+
     const newUser: UserProfile = {
-      id: `user_${Date.now()}`,
+      id: clientUuid,
       name: cleanName,
-      number: phoneValidation.cleanNumber,
+      number: cleanPhone,
       email: cleanEmail || undefined,
       role,
-      storeId: role === "seller" ? `store_${Date.now()}` : undefined,
+      storeId: role === "seller" ? `store_${cleanPhone}` : undefined,
       storeName: role === "seller" ? (data.storeName || `${cleanName}'s Store`) : undefined,
       addresses: initialAddresses,
       emailPermissionsGranted: true,
@@ -210,18 +220,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (role === "seller") {
       setActiveAppMode("merchant");
+      loginOrRegisterMerchantDbAction({
+        ownerName: cleanName,
+        shopName: data.storeName || `${cleanName}'s Store`,
+        phone: cleanPhone,
+        email: cleanEmail || undefined,
+      })
+        .then((res) => {
+          if (res.success && res.user) {
+            setUser(res.user);
+            persistSession(res.user, true);
+          }
+        })
+        .catch(console.warn);
     } else {
       setActiveAppMode("shopper");
+      loginOrRegisterUserDbAction({
+        fullName: cleanName,
+        phone: cleanPhone,
+        email: cleanEmail || undefined,
+        addresses: initialAddresses,
+      })
+        .then((res) => {
+          if (res.success && res.user) {
+            setUser(res.user);
+            persistSession(res.user, true);
+          }
+        })
+        .catch(console.warn);
     }
-
-    // Record new account in database
-    saveUserProfileToDbAction({
-      id: newUser.id,
-      fullName: newUser.name,
-      phone: newUser.number,
-      email: newUser.email,
-      addresses: newUser.addresses,
-    }).catch(console.warn);
 
     return {
       success: true,
@@ -467,6 +494,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(updatedUser);
     persistSession(updatedUser, true);
+    saveUserProfileToDbAction({
+      id: updatedUser.id,
+      fullName: updatedUser.name,
+      phone: updatedUser.number,
+      email: updatedUser.email,
+      addresses: updatedUser.addresses,
+    }).catch(console.warn);
     return { success: true, address: validation.sanitizedAddress };
   };
 
@@ -497,6 +531,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(updatedUser);
     persistSession(updatedUser, true);
+    saveUserProfileToDbAction({
+      id: updatedUser.id,
+      fullName: updatedUser.name,
+      phone: updatedUser.number,
+      email: updatedUser.email,
+      addresses: updatedUser.addresses,
+    }).catch(console.warn);
     return { success: true };
   };
 
@@ -516,6 +557,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(updatedUser);
     persistSession(updatedUser, true);
+    saveUserProfileToDbAction({
+      id: updatedUser.id,
+      fullName: updatedUser.name,
+      phone: updatedUser.number,
+      email: updatedUser.email,
+      addresses: updatedUser.addresses,
+    }).catch(console.warn);
   };
 
   const setDefaultAddress = (id: string) => {
@@ -533,6 +581,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(updatedUser);
     persistSession(updatedUser, true);
+    saveUserProfileToDbAction({
+      id: updatedUser.id,
+      fullName: updatedUser.name,
+      phone: updatedUser.number,
+      email: updatedUser.email,
+      addresses: updatedUser.addresses,
+    }).catch(console.warn);
   };
 
   const switchRole = (role: UserRole) => {

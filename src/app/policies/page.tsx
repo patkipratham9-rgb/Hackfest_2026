@@ -99,8 +99,8 @@ function PoliciesContent() {
 
         {/* Section 5.1 Quick Return & Refund Badge Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-3xl bg-white border border-cream-300 shadow-warm">
-          {CHECKOUT_RETURN_BADGES.map((b) => (
-            <div key={b.id} className="p-3 rounded-2xl bg-cream-50 border border-cream-200 space-y-1">
+          {CHECKOUT_RETURN_BADGES.map((b, idx) => (
+            <div key={b.id || `policy-badge-${idx}`} className="p-3 rounded-2xl bg-cream-50 border border-cream-200 space-y-1">
               <span className="font-bold text-xs text-forest-950 block">{b.title}</span>
               <p className="text-[11px] text-forest-600 leading-snug">{b.desc}</p>
               <span className="text-[9px] font-extrabold uppercase tracking-wider text-terracotta-700 bg-terracotta-50 px-1.5 py-0.5 rounded border border-terracotta-200 inline-block mt-0.5">

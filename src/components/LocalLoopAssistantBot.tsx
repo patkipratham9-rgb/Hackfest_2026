@@ -204,9 +204,9 @@ export function LocalLoopAssistantBot() {
 
             {/* Messages Scroll View */}
             <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-cream-50">
-              {messages.map((m) => (
+              {messages.map((m, idx) => (
                 <div
-                  key={m.id}
+                  key={m.id || `bot-msg-${idx}`}
                   className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}
                 >
                   <div

@@ -414,9 +414,9 @@ export function Map4MePicker({
             {/* Instant Search Autocomplete Dropdown */}
             {isSearchFocused && filteredLandmarks.length > 0 && searchQuery && (
               <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-cream-300 rounded-xl shadow-xl max-h-56 overflow-y-auto z-30 divide-y divide-cream-100">
-                {filteredLandmarks.map((lm) => (
+                {filteredLandmarks.map((lm, idx) => (
                   <button
-                    key={lm.id}
+                    key={lm.id || `lm-search-${idx}`}
                     type="button"
                     onClick={() => handleSelectLandmark(lm)}
                     className="w-full p-2.5 text-left hover:bg-cream-100/80 transition-colors flex items-center justify-between cursor-pointer"
@@ -438,9 +438,9 @@ export function Map4MePicker({
 
           {/* Quick Hubballi Area Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
-            {["All Hubballi", "Vidyanagar", "CBT", "Station Road", "Unkal Lake", "Gokul Road"].map((area) => (
+            {["All Hubballi", "Vidyanagar", "CBT", "Station Road", "Unkal Lake", "Gokul Road"].map((area, idx) => (
               <button
-                key={area}
+                key={area || `area-${idx}`}
                 type="button"
                 onClick={() => {
                   setSelectedAreaFilter(area);
@@ -558,14 +558,14 @@ export function Map4MePicker({
             </svg>
 
             {/* Landmark Fast-Snap Nodes */}
-            {HUBBALLI_LANDMARKS.map((lm) => {
+            {HUBBALLI_LANDMARKS.map((lm, idx) => {
               const top = Math.max(8, Math.min(88, ((15.405 - lm.lat) / 0.09) * 100));
               const left = Math.max(8, Math.min(92, ((lm.lng - 75.075) / 0.09) * 100));
               const isCurrent = Math.abs(lm.lat - lat) < 0.003 && Math.abs(lm.lng - lng) < 0.003;
 
               return (
                 <button
-                  key={lm.id}
+                  key={lm.id || `lm-node-${idx}`}
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -678,11 +678,11 @@ export function Map4MePicker({
               Address Category [Home, Office, Others] *
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {(["Home", "Office", "Others"] as AddressType[]).map((lbl) => {
+              {(["Home", "Office", "Others"] as AddressType[]).map((lbl, idx) => {
                 const isSelected = label === lbl;
                 return (
                   <button
-                    key={lbl}
+                    key={lbl || `addr-label-${idx}`}
                     type="button"
                     data-testid={`map4me-label-${lbl.toLowerCase()}`}
                     onClick={() => setLabel(lbl)}

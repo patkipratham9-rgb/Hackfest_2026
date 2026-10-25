@@ -119,13 +119,13 @@ export function OrdersView() {
         </motion.div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => {
+          {orders.map((order, idx) => {
             const isJustReordered = reorderedId === order.id;
             const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
 
             return (
               <motion.div
-                key={order.id}
+                key={order.id || `orders-view-${idx}`}
                 layout
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}

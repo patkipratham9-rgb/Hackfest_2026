@@ -416,9 +416,9 @@ export function CheckoutModal() {
 
               {/* Items List */}
               <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
-                {cart.map((item) => (
+                {cart.map((item, idx) => (
                   <div
-                    key={item.product.id}
+                    key={item.product.id || `checkout-item-${idx}`}
                     className="flex items-center justify-between gap-3 text-xs bg-cream-50 p-2.5 rounded-xl border border-cream-200"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -703,12 +703,12 @@ export function CheckoutModal() {
 
               {/* Slots Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PICKUP_SLOTS.map((slot) => {
+                {PICKUP_SLOTS.map((slot, idx) => {
                   const isSelected = selectedSlotId === slot.id && slot.isAvailable;
                   return (
                     <button
                       type="button"
-                      key={slot.id}
+                      key={slot.id || `pickup-slot-${idx}`}
                       data-testid={`pickup-slot-${slot.id}`}
                       data-available={slot.isAvailable ? "true" : "false"}
                       data-selected={isSelected ? "true" : "false"}
@@ -820,9 +820,9 @@ export function CheckoutModal() {
                 </div>
               ) : user && user.addresses && user.addresses.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {user.addresses.map((a) => (
+                  {user.addresses.map((a, idx) => (
                     <button
-                      key={a.id}
+                      key={a.id || `user-addr-${idx}`}
                       type="button"
                       onClick={() => {
                         setSelectedAddressId(a.id);

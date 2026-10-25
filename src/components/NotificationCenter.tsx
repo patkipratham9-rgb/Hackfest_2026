@@ -152,9 +152,9 @@ export function NotificationCenter() {
                     </p>
                   </div>
                 ) : (
-                  notifications.map((notif) => (
+                  notifications.map((notif, idx) => (
                     <div
-                      key={notif.id}
+                      key={notif.id || `notif-${idx}`}
                       onClick={() => markNotificationAsRead(notif.id)}
                       className={`p-3 rounded-2xl transition-all cursor-pointer flex items-start gap-2.5 ${
                         notif.read ? "bg-cream-50 opacity-70" : "bg-white shadow-xs font-semibold"

@@ -245,9 +245,9 @@ export default function SellerDashboardPage() {
 
         {/* ML Suggestions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-          {mlSuggestions.slice(0, 4).map((sug) => (
+          {mlSuggestions.slice(0, 4).map((sug, idx) => (
             <div
-              key={sug.id}
+              key={sug.id || `ml-sug-${idx}`}
               className={`p-4 rounded-2xl border transition-all space-y-2.5 ${
                 sug.applied
                   ? "bg-forest-800/50 border-forest-700 opacity-60"
@@ -383,9 +383,9 @@ export default function SellerDashboardPage() {
           </div>
         ) : (
           <div className="divide-y divide-cream-200">
-            {storeOrders.slice(0, 5).map((order) => (
+            {storeOrders.slice(0, 5).map((order, idx) => (
               <div
-                key={order.id}
+                key={order.id || `seller-dash-order-${idx}`}
                 className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
                 <div>

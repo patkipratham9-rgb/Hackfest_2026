@@ -717,9 +717,9 @@ export default function SellerGrowthPage() {
               No recommendations found for the selected category.
             </div>
           ) : (
-            filteredRecommendations.map((rec) => (
+            filteredRecommendations.map((rec, idx) => (
               <motion.div
-                key={rec.id}
+                key={rec.id || `rec-${idx}`}
                 layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1385,9 +1385,9 @@ export default function SellerGrowthPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-cream-100">
-                {analyticsSummary.topProducts.map((p) => (
+                {analyticsSummary.topProducts.map((p, idx) => (
                   <tr
-                    key={p.productId}
+                    key={p.productId || `top-product-${idx}`}
                     data-testid={`top-product-row-${p.productId}`}
                     className="hover:bg-cream-50/60 transition-colors"
                   >
@@ -1443,9 +1443,9 @@ export default function SellerGrowthPage() {
                 Awaiting shopper events. Click &lsquo;Simulate Shopper Cart Add&rsquo; to trigger live telemetry.
               </div>
             ) : (
-              analyticsSummary.recentEvents.map((evt) => (
+              analyticsSummary.recentEvents.map((evt, idx) => (
                 <div
-                  key={evt.id}
+                  key={evt.id || `recent-event-${idx}`}
                   data-testid={`event-item-${evt.id}`}
                   className="p-3 rounded-2xl bg-white border border-cream-200 flex items-center justify-between text-xs"
                 >

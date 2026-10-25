@@ -3,6 +3,12 @@
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { Store, Product, Order, OrderStatus } from "@/types";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
+import {
+  ensureValidUserUuid,
+  upsertStoredUser,
+  deleteStoredUser,
+  findUserByIdOrPhone,
+} from "@/lib/userDb";
 
 export interface PlaceOrderInput {
   orderId: string;
@@ -1292,7 +1298,7 @@ export async function applyBusinessRecommendationAction(
 }
 
 /**
- * Save / Update User Profile in Supabase Database
+ * Save / Update User Profile in Database (Persistent server DB + Supabase sync)
  */
 export async function saveUserProfileToDbAction(profile: {
   id: string;
@@ -1302,33 +1308,43 @@ export async function saveUserProfileToDbAction(profile: {
   addresses?: any[];
 }): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    if (!profile.id || !isValidUuid(profile.id)) {
-      // Local fallback for client/OTP generated user sessions (non-UUID)
-      return { success: true, data: profile };
+    const validId = ensureValidUserUuid(profile.id, profile.phone);
+    const cleanPhone = (profile.phone || "").replace(/\D/g, "").slice(-10);
+
+    // 1. Immediately store in server persistent database
+    const storedUser = upsertStoredUser({
+      id: validId,
+      name: profile.fullName || "Hubballi Shopper",
+      number: cleanPhone,
+      email: profile.email || undefined,
+      addresses: profile.addresses || [],
+    });
+
+    // 2. Synchronize to Supabase PostgreSQL database
+    try {
+      const supabase = createServerSupabaseClient();
+      const { data, error } = await supabase
+        .from("profiles")
+        .upsert({
+          id: validId,
+          full_name: profile.fullName,
+          phone: cleanPhone,
+          email: profile.email || null,
+          addresses: profile.addresses || [],
+          updated_at: new Date().toISOString(),
+        })
+        .select();
+
+      if (error) {
+        console.warn("Supabase profile sync notice (RLS/Auth):", error.message);
+      }
+      return { success: true, data: data?.[0] || storedUser };
+    } catch (dbErr: any) {
+      console.warn("Supabase profile sync exception:", dbErr?.message);
+      return { success: true, data: storedUser };
     }
-
-    const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("profiles")
-      .upsert({
-        id: profile.id,
-        full_name: profile.fullName,
-        phone: profile.phone,
-        email: profile.email || null,
-        addresses: profile.addresses || [],
-        updated_at: new Date().toISOString(),
-      })
-      .select();
-
-    if (error) {
-      console.warn("DB notice saving profile:", error.message);
-      // Return success gracefully with local fallback
-      return { success: true, data: profile };
-    }
-
-    return { success: true, data: data?.[0] || profile };
   } catch (err: any) {
-    console.warn("Exception in saveUserProfileToDbAction:", err?.message);
+    console.error("Exception in saveUserProfileToDbAction:", err?.message);
     return { success: true, data: profile };
   }
 }
@@ -1340,14 +1356,18 @@ export async function deleteUserAccountFromDbAction(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!userId || !isValidUuid(userId)) {
-      return { success: true };
+    if (userId) {
+      deleteStoredUser(userId);
     }
 
-    const supabase = createServerSupabaseClient();
-    const { error } = await supabase.from("profiles").delete().eq("id", userId);
-    if (error) {
-      console.warn("DB notice deleting profile:", error.message);
+    if (isValidUuid(userId)) {
+      try {
+        const supabase = createServerSupabaseClient();
+        const { error } = await supabase.from("profiles").delete().eq("id", userId);
+        if (error) {
+          console.warn("DB notice deleting profile from Supabase:", error.message);
+        }
+      } catch {}
     }
     return { success: true };
   } catch (err: any) {

@@ -7,6 +7,7 @@ import {
 } from "@/lib/authSecurity";
 import { UserRole, UserProfile } from "@/types";
 import { saveUserProfileToDbAction } from "@/actions/marketplaceActions";
+import { phoneToUuid, findUserByPhone, upsertStoredUser } from "@/lib/userDb";
 
 export const dynamic = "force-dynamic";
 
@@ -40,39 +41,60 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // OTP is valid. Generate verified session
+    // OTP is valid. Generate or retrieve verified user from database
     const phoneValidation = validatePhoneNumber(phone);
-    const userId = `user_${Date.now()}`;
+    const cleanPhone = phoneValidation.cleanNumber;
     const cleanRole: UserRole = role === "seller" ? "seller" : "customer";
+
+    // 1. Look for existing user in database
+    const existing = findUserByPhone(cleanPhone);
+    const userId = existing?.id || phoneToUuid(cleanPhone);
+
     const userName =
       sanitizeInput(name) ||
+      existing?.name ||
       (cleanRole === "seller" ? "Hubballi Merchant" : "Hubballi Shopper");
 
-    const verifiedUser: UserProfile = {
+    const userEmail = email ? sanitizeInput(email).toLowerCase() : existing?.email;
+    const addresses = existing?.addresses || [];
+
+    // 2. Persist in database
+    const stored = upsertStoredUser({
       id: userId,
       name: userName,
-      number: phoneValidation.cleanNumber,
-      email: email ? sanitizeInput(email).toLowerCase() : undefined,
+      number: cleanPhone,
+      email: userEmail,
       role: cleanRole,
-      storeId: cleanRole === "seller" ? `store_${Date.now()}` : undefined,
-      storeName: cleanRole === "seller" ? `${userName}'s Store` : undefined,
-      addresses: [],
+      storeId: cleanRole === "seller" ? existing?.storeId || `store_${cleanPhone}` : undefined,
+      storeName: cleanRole === "seller" ? existing?.storeName || `${userName}'s Store` : undefined,
+      addresses,
+    });
+
+    const verifiedUser: UserProfile = {
+      id: stored.id,
+      name: stored.name,
+      number: stored.number,
+      email: stored.email,
+      role: stored.role,
+      storeId: stored.storeId,
+      storeName: stored.storeName,
+      addresses: stored.addresses,
       emailPermissionsGranted: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: stored.createdAt,
+      updatedAt: stored.updatedAt,
     };
 
     const sessionToken = generateSessionToken(userId, cleanRole);
 
-    // Synchronize to database
+    // Synchronize to Supabase database
     try {
-      saveUserProfileToDbAction({
+      await saveUserProfileToDbAction({
         id: verifiedUser.id,
         fullName: verifiedUser.name,
         phone: verifiedUser.number,
         email: verifiedUser.email,
         addresses: verifiedUser.addresses,
-      }).catch(() => {});
+      });
     } catch {}
 
     return NextResponse.json({

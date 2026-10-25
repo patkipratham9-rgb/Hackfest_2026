@@ -55,7 +55,7 @@ export function CheckoutReturnBadge({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-0.5">
           {CHECKOUT_RETURN_BADGES.map((badge, idx) => (
             <div
-              key={badge.id}
+              key={badge.id || `badge-compact-${idx}`}
               className="p-2 rounded-xl bg-white/90 border border-cream-200/80 space-y-0.5 shadow-2xs"
             >
               <div className="flex items-center gap-1.5">
@@ -96,7 +96,7 @@ export function CheckoutReturnBadge({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {CHECKOUT_RETURN_BADGES.map((badge, idx) => (
           <div
-            key={badge.id}
+            key={badge.id || `badge-detailed-${idx}`}
             className="p-3 rounded-2xl bg-cream-100 border border-cream-200 space-y-1"
           >
             <div className="flex items-center gap-1.5">

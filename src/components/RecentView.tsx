@@ -93,8 +93,8 @@ export function RecentView() {
           {/* Responsive Grid: 1 col on mobile, 2 col sm, 3-4 col on desktop */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <AnimatePresence>
-              {recentlyViewed.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {recentlyViewed.map((product, idx) => (
+                <ProductCard key={product.id || `recent-${idx}`} product={product} />
               ))}
             </AnimatePresence>
           </div>

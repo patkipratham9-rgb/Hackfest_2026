@@ -302,13 +302,13 @@ export default function SellerOrdersPage() {
   };
 
   // Render individual Order Card
-  const renderOrderCard = (order: Order) => {
+  const renderOrderCard = (order: Order, idx?: number) => {
     const isCompleted = order.status === "completed";
     const statusMeta = getStatusBadge(order.status);
 
     return (
       <motion.div
-        key={order.id}
+        key={order.id || `seller-order-${idx}`}
         layout
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -935,7 +935,7 @@ export default function SellerOrdersPage() {
                   No new orders to pack.
                 </div>
               ) : (
-                placedOrders.map((order) => renderOrderCard(order))
+                placedOrders.map((order, idx) => renderOrderCard(order, idx))
               )}
             </div>
           </div>
@@ -961,7 +961,7 @@ export default function SellerOrdersPage() {
                   No orders currently in staging.
                 </div>
               ) : (
-                packedOrders.map((order) => renderOrderCard(order))
+                packedOrders.map((order, idx) => renderOrderCard(order, idx))
               )}
             </div>
           </div>
@@ -987,7 +987,7 @@ export default function SellerOrdersPage() {
                   No orders awaiting customer pickup.
                 </div>
               ) : (
-                readyOrders.map((order) => renderOrderCard(order))
+                readyOrders.map((order, idx) => renderOrderCard(order, idx))
               )}
             </div>
           </div>
@@ -1013,7 +1013,7 @@ export default function SellerOrdersPage() {
                   No completed orders yet.
                 </div>
               ) : (
-                completedOrders.slice(0, 10).map((order) => renderOrderCard(order))
+                completedOrders.slice(0, 10).map((order, idx) => renderOrderCard(order, idx))
               )}
             </div>
           </div>
@@ -1033,7 +1033,7 @@ export default function SellerOrdersPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredOrders.map((order) => renderOrderCard(order))}
+              {filteredOrders.map((order, idx) => renderOrderCard(order, idx))}
             </div>
           )}
         </div>
@@ -1191,11 +1191,11 @@ export default function SellerOrdersPage() {
                 </p>
 
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {packingOrder.items.map((item) => {
+                  {packingOrder.items.map((item, idx) => {
                     const isChecked = !!packedItemsCheck[item.product.id];
                     return (
                       <div
-                        key={item.product.id}
+                        key={item.product.id || `pack-item-${idx}`}
                         onClick={() =>
                           setPackedItemsCheck({
                             ...packedItemsCheck,
