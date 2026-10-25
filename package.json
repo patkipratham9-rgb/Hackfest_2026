@@ -12,7 +12,8 @@
     "test:seller": "node scripts/verify-seller-portal.mjs",
     "test:auth": "node scripts/verify-auth-and-apps.mjs",
     "test:ai": "node scripts/verify-ai-and-payments.mjs",
-    "test:all": "npm test && npm run test:backend && npm run test:seller && npm run test:auth && npm run test:ai",
+    "test:policies": "node scripts/verify-legal-policies.mjs",
+    "test:all": "npm test && npm run test:backend && npm run test:seller && npm run test:auth && npm run test:ai && npm run test:policies",
     "bot:daemon": "node scripts/localloop-bot-daemon.mjs"
   },
   "dependencies": {

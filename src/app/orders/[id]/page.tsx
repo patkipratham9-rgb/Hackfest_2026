@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { OrderStatus } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import { OrderCancelCooldown } from "@/components/OrderCancelCooldown";
+import { CheckoutReturnBadge } from "@/components/CheckoutReturnBadge";
 import {
   CheckCircle2,
   Package,
@@ -251,11 +252,8 @@ function OrderTrackingContent({
     return () => clearInterval(interval);
   }, [order?.createdAt]);
 
-  const countdownMins = Math.floor(countdownSeconds / 60);
-  const countdownSecs = countdownSeconds % 60;
-  const formattedCountdown = `${String(countdownMins).padStart(2, "0")}:${String(
-    countdownSecs
-  ).padStart(2, "0")}`;
+  const countdownMins = Math.max(1, Math.ceil(countdownSeconds / 60));
+  const formattedMinutesLeft = `${countdownMins} ${countdownMins === 1 ? "min" : "mins"}`;
 
   const targetArrivalTime = order.estimatedArrival || new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -604,14 +602,14 @@ function OrderTrackingContent({
           {/* ETA Badge */}
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl px-4 py-2 text-left sm:text-right flex items-center sm:flex-col justify-between sm:justify-center gap-0.5">
             <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-              Live Delivery Countdown
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              Estimated Arrival Time
             </span>
             <div className="flex items-baseline gap-1 sm:justify-end">
-              <span data-testid="delivery-eta-time" className="font-mono font-black text-emerald-950 text-base sm:text-lg">
-                {formattedCountdown}
+              <span data-testid="delivery-eta-time" className="font-serif font-black text-emerald-950 text-base sm:text-lg">
+                {formattedMinutesLeft}
               </span>
-              <span className="text-[10px] font-bold text-emerald-700">mins left</span>
+              <span className="text-[10px] font-bold text-emerald-700">left</span>
             </div>
             <span className="text-[10px] text-emerald-600 font-medium">
               Expected by {targetArrivalTime}
@@ -834,6 +832,9 @@ function OrderTrackingContent({
           </span>
         </div>
       </div>
+
+      {/* Section 5.1 Quick Return & Refund Trust Badge */}
+      <CheckoutReturnBadge variant="detailed" />
     </motion.div>
   );
 }

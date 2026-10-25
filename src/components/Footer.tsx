@@ -14,12 +14,25 @@ import {
   MessageSquare,
   Check,
   X,
+  Truck,
+  RotateCcw,
+  HelpCircle,
+  ExternalLink,
 } from "lucide-react";
+import {
+  GRIEVANCE_OFFICER,
+  CUSTOMER_SUPPORT,
+  DATA_COLLECTION_TABLE,
+  DELIVERY_TIMELINES_TABLE,
+  RETURN_WINDOWS_TABLE,
+  REFUND_SETTLEMENT_TABLE,
+  HELP_CENTER_FAQS,
+} from "@/lib/legalPolicies";
 
 export function Footer() {
   const pathname = usePathname();
   const [activeModal, setActiveModal] = useState<
-    "terms" | "privacy" | "merchant" | "help" | "feedback" | null
+    "terms" | "privacy" | "shipping" | "returns" | "merchant" | "help" | "feedback" | null
   >(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackRating, setFeedbackRating] = useState<number>(5);
@@ -185,12 +198,21 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-xs text-forest-700 font-medium">
               <li>
+                <Link
+                  href="/help"
+                  className="font-bold text-terracotta-700 hover:text-terracotta-800 transition-colors flex items-center gap-1"
+                >
+                  <HelpCircle className="w-3 h-3 text-terracotta-600" />
+                  <span>Customer Help Center FAQs</span>
+                </Link>
+              </li>
+              <li>
                 <button
                   type="button"
                   onClick={() => setActiveModal("help")}
-                  className="font-bold text-terracotta-700 hover:text-terracotta-800 transition-colors text-left cursor-pointer"
+                  className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
                 >
-                  Need Help? Contact Support
+                  Contact Support Desk
                 </button>
               </li>
               <li>
@@ -220,10 +242,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/login/merchant"
-                  className="hover:text-terracotta-600 transition-colors block text-forest-600 pt-1"
+                  href="/policies?tab=terms"
+                  className="hover:text-terracotta-600 transition-colors block text-forest-600 text-[11px] pt-1"
                 >
-                  Merchant Partner Login
+                  Grievance Officer: Pratham Patki
                 </Link>
               </li>
             </ul>
@@ -242,7 +264,7 @@ export function Footer() {
                   onClick={() => setActiveModal("terms")}
                   className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
                 >
-                  Terms of Service
+                  1. Terms and Conditions
                 </button>
               </li>
               <li>
@@ -251,17 +273,35 @@ export function Footer() {
                   onClick={() => setActiveModal("privacy")}
                   className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
                 >
-                  Privacy &amp; Consumer Safety
+                  2. Privacy Policy
                 </button>
               </li>
               <li>
                 <button
                   type="button"
-                  onClick={() => setActiveModal("merchant")}
+                  onClick={() => setActiveModal("shipping")}
                   className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
                 >
-                  Fair Share Merchant Code
+                  3. Shipping &amp; Delivery Policy
                 </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal("returns")}
+                  className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
+                >
+                  4. Cancellation &amp; Refund Policy
+                </button>
+              </li>
+              <li>
+                <Link
+                  href="/policies"
+                  className="font-bold text-terracotta-700 hover:text-terracotta-800 transition-colors inline-flex items-center gap-1 pt-0.5"
+                >
+                  <span>View All Policies Full Page</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </Link>
               </li>
             </ul>
 
@@ -295,8 +335,10 @@ export function Footer() {
           <div className="w-full max-w-lg bg-cream-50 rounded-3xl p-6 border border-cream-300 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-cream-200">
               <h3 className="font-serif font-bold text-lg text-forest-950 flex items-center gap-2">
-                {activeModal === "terms" && "Terms of Service"}
-                {activeModal === "privacy" && "Privacy & Consumer Safety"}
+                {activeModal === "terms" && "Terms and Conditions"}
+                {activeModal === "privacy" && "Privacy Policy"}
+                {activeModal === "shipping" && "Shipping and Delivery Policy"}
+                {activeModal === "returns" && "Cancellation, Return & Refund Policy"}
                 {activeModal === "merchant" && "Fair Share Merchant Code"}
                 {activeModal === "help" && "Hubballi-Dharwad Help & Support"}
                 {activeModal === "feedback" && "Share Your Feedback"}
@@ -315,25 +357,126 @@ export function Footer() {
 
             <div className="text-xs text-forest-800 space-y-3 leading-relaxed">
               {activeModal === "terms" && (
-                <>
+                <div className="space-y-3">
                   <p>
-                    LocalLoop provides a hyper-local digital storefront platform allowing verified corner shop merchants in Hubballi-Dharwad to list authentic merchandise for customer counter pickup and local delivery.
+                    <strong>1. Terms and Conditions:</strong> Governs access to Localloop website, mobile applications, and services. Operates e-commerce connecting buyers with local sellers across Hubballi-Dharwad.
                   </p>
                   <p>
-                    All orders are reserved atomically. Customers receive a 4-digit verification PIN to confirm pickup at the shop counter.
+                    <strong>1.1 General &amp; Age:</strong> Must be at least 18 years old or legal majority. Minors may use only under guardian supervision.
                   </p>
-                </>
+                  <p>
+                    <strong>1.3 Pricing &amp; Tax:</strong> All prices in INR inclusive of applicable taxes. In pricing error, Localloop reserves the right to cancel.
+                  </p>
+                  <p>
+                    <strong>1.10 Governing Law:</strong> Governed by laws of India. Legal proceedings exclusively in competent courts at <strong>Hubballi, Karnataka, India</strong>.
+                  </p>
+                  <div className="p-3 rounded-xl bg-cream-100 border border-cream-200">
+                    <p className="font-bold text-forest-950">1.12 Grievance Officer</p>
+                    <p>{GRIEVANCE_OFFICER.name} ({GRIEVANCE_OFFICER.designation})</p>
+                    <p>{GRIEVANCE_OFFICER.address}</p>
+                    <p>Email: {GRIEVANCE_OFFICER.email} • Tel: {GRIEVANCE_OFFICER.phone}</p>
+                  </div>
+                  <Link
+                    href="/policies?tab=terms"
+                    onClick={() => setActiveModal(null)}
+                    className="inline-flex items-center gap-1 font-bold text-terracotta-700 hover:underline pt-1"
+                  >
+                    <span>Read Full 12 Clauses on Dedicated Policies Page &rarr;</span>
+                  </Link>
+                </div>
               )}
 
               {activeModal === "privacy" && (
-                <>
+                <div className="space-y-3">
                   <p>
-                    Your privacy is protected. Customer phone numbers and saved addresses (Primary, Home, Office, Others) are encrypted and used solely for counter pickup verification and order status notifications.
+                    <strong>2. Privacy Policy:</strong> Explains how we collect, use, disclose, and safeguard your information.
                   </p>
+                  <div className="p-2.5 bg-cream-100 rounded-xl space-y-1.5 border border-cream-200">
+                    <p className="font-bold text-forest-950">Data Collected &amp; Purpose</p>
+                    {DATA_COLLECTION_TABLE.map((row, i) => (
+                      <p key={i} className="text-[11px]">
+                        <strong>{row.category}:</strong> {row.description}
+                      </p>
+                    ))}
+                  </div>
                   <p>
-                    We never sell or distribute consumer telemetry or contact details to third-party ad networks.
+                    <strong>Security:</strong> All sensitive payment credentials handled directly by PCI-DSS compliant gateways. Data stored on secure cloud servers. Permanent deletion supported upon request.
                   </p>
-                </>
+                  <div className="p-3 rounded-xl bg-cream-100 border border-cream-200">
+                    <p className="font-bold text-forest-950">2.10 Privacy Grievance Officer</p>
+                    <p>{GRIEVANCE_OFFICER.name} • {GRIEVANCE_OFFICER.email}</p>
+                  </div>
+                  <Link
+                    href="/policies?tab=privacy"
+                    onClick={() => setActiveModal(null)}
+                    className="inline-flex items-center gap-1 font-bold text-terracotta-700 hover:underline pt-1"
+                  >
+                    <span>Read Full Privacy Policy &amp; Data Rights &rarr;</span>
+                  </Link>
+                </div>
+              )}
+
+              {activeModal === "shipping" && (
+                <div className="space-y-3">
+                  <p>
+                    <strong>3. Shipping &amp; Delivery Policy:</strong> High-efficiency shipping with hyper-local delivery across Hubballi-Dharwad.
+                  </p>
+                  <div className="p-2.5 bg-cream-100 rounded-xl space-y-1 border border-cream-200">
+                    <p className="font-bold text-forest-950">Estimated Timelines</p>
+                    {DELIVERY_TIMELINES_TABLE.map((t, i) => (
+                      <div key={i} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
+                        <span className="font-semibold">{t.mode} ({t.area}):</span>
+                        <span className="font-mono text-terracotta-700 font-bold">{t.window}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p>
+                    <strong>Rates:</strong> Base delivery up to 3 km is FREE (₹0). Distance &gt; 3 km is ₹15 per additional km. Up to 3 delivery attempts made before return.
+                  </p>
+                  <Link
+                    href="/policies?tab=shipping"
+                    onClick={() => setActiveModal(null)}
+                    className="inline-flex items-center gap-1 font-bold text-terracotta-700 hover:underline pt-1"
+                  >
+                    <span>Read Full Shipping Policy &amp; Timelines &rarr;</span>
+                  </Link>
+                </div>
+              )}
+
+              {activeModal === "returns" && (
+                <div className="space-y-3">
+                  <p>
+                    <strong>4. Cancellation, Return, and Refund Policy:</strong> Outlines processes, criteria, and timelines for cancellations, returns, and refunds.
+                  </p>
+                  <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-950 font-medium">
+                    ⏱️ <strong>1-Minute Grace Window:</strong> Instant 100% full refund available for 60 seconds immediately post-payment.
+                  </div>
+                  <div className="p-2.5 bg-cream-100 rounded-xl space-y-1 border border-cream-200">
+                    <p className="font-bold text-forest-950">Category Return Windows</p>
+                    {RETURN_WINDOWS_TABLE.map((r, i) => (
+                      <div key={i} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
+                        <span>{r.category}:</span>
+                        <span className="font-semibold text-terracotta-700">{r.window}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-2.5 bg-cream-100 rounded-xl space-y-1 border border-cream-200">
+                    <p className="font-bold text-forest-950">Refund Processing Speeds</p>
+                    {REFUND_SETTLEMENT_TABLE.map((s, i) => (
+                      <div key={i} className="flex justify-between text-[11px] py-0.5 border-b border-cream-200 last:border-0">
+                        <span>{s.paymentMode}:</span>
+                        <span className="font-mono text-emerald-800 font-bold">{s.processingTime}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Link
+                    href="/policies?tab=returns"
+                    onClick={() => setActiveModal(null)}
+                    className="inline-flex items-center gap-1 font-bold text-terracotta-700 hover:underline pt-1"
+                  >
+                    <span>Read Full Return &amp; Refund Guidelines &rarr;</span>
+                  </Link>
+                </div>
               )}
 
               {activeModal === "merchant" && (
@@ -384,6 +527,13 @@ export function Footer() {
                         We cover Vidyanagar, Shirur Park, Station Road, CBT, Durgadbail, Gokul Road, Keshwapur, Deshpande Nagar, and Dharwad.
                       </p>
                     </div>
+                    <Link
+                      href="/help"
+                      onClick={() => setActiveModal(null)}
+                      className="inline-flex items-center gap-1 font-bold text-terracotta-700 hover:underline pt-2 text-xs"
+                    >
+                      <span>Open Customer Help Center &amp; View All Categorized FAQs &rarr;</span>
+                    </Link>
                   </div>
                 </div>
               )}

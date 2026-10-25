@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { UserAddress } from "@/types";
 import { Map4MePicker } from "@/components/Map4MePicker";
 import { CashfreePaymentGatewayModal } from "@/components/CashfreePaymentGatewayModal";
+import { CheckoutReturnBadge } from "@/components/CheckoutReturnBadge";
 import {
   X,
   Clock,
@@ -516,6 +517,9 @@ export function CheckoutModal() {
                 </div>
               </div>
             </div>
+
+            {/* Section 5.1 Checkout Page Quick Return & Refund Badge */}
+            <CheckoutReturnBadge variant="compact" />
 
             {/* Minimum Bill Banner & Progress (₹599) */}
             <div data-testid="checkout-min-bill-section">

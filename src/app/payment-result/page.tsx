@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle2, Clock, ArrowRight, RefreshCw, ShieldCheck, ShoppingBag, Store, Truck, Phone, Star } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { OrderCancelCooldown } from "@/components/OrderCancelCooldown";
+import { CheckoutReturnBadge } from "@/components/CheckoutReturnBadge";
 
 function money(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -84,11 +85,8 @@ function PaymentResultContent() {
     return () => clearInterval(interval);
   }, [currentOrder?.createdAt]);
 
-  const countdownMins = Math.floor(countdownSeconds / 60);
-  const countdownSecs = countdownSeconds % 60;
-  const formattedCountdown = `${String(countdownMins).padStart(2, "0")}:${String(
-    countdownSecs
-  ).padStart(2, "0")}`;
+  const countdownMins = Math.max(1, Math.ceil(countdownSeconds / 60));
+  const formattedMinutesLeft = `${countdownMins} ${countdownMins === 1 ? "min" : "mins"}`;
 
   const targetArrivalTime = currentOrder?.estimatedArrival || new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -200,12 +198,12 @@ function PaymentResultContent() {
                 <div className="flex items-baseline justify-end gap-1">
                   <span
                     data-testid="payment-result-eta"
-                    className="font-mono font-black text-emerald-950 text-base sm:text-lg tracking-tight"
+                    className="font-serif font-black text-emerald-950 text-base sm:text-lg tracking-tight"
                   >
-                    {formattedCountdown}
+                    {formattedMinutesLeft}
                   </span>
                   <span className="text-[10px] font-bold text-emerald-700">
-                    mins left
+                    left
                   </span>
                 </div>
                 <span className="text-[9px] text-emerald-600 font-semibold block">
@@ -263,6 +261,9 @@ function PaymentResultContent() {
             }}
           />
         )}
+
+        {/* Section 5.1 Quick Return & Refund Trust Badge */}
+        <CheckoutReturnBadge variant="compact" />
 
         {/* Action Buttons */}
         <div className="space-y-2.5 pt-2">

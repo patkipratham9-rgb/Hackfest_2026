@@ -229,6 +229,17 @@ export function Navbar() {
                 <User className="w-4 h-4 text-terracotta-600" />
                 <span>Address Book</span>
               </Link>
+              <Link
+                href="/help"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="col-span-2 p-2.5 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center justify-between border border-cream-200 text-xs"
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  <span>Legal Policies &amp; Help Center</span>
+                </div>
+                <span className="text-[10px] text-terracotta-700 font-bold">FAQs &rarr;</span>
+              </Link>
               {!isAuthenticated && (
                 <Link
                   href="/login"
