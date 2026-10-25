@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -69,8 +69,24 @@ export default function MerchantLoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [otpExpiry, setOtpExpiry] = useState(300);
   const [dispatchedOtp, setDispatchedOtp] = useState("");
   const [firebaseConfirmation, setFirebaseConfirmation] = useState<any>(null);
+
+  // Active OTP Expiry Countdown Timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (otpSent && otpExpiry > 0) {
+      timer = setInterval(() => {
+        setOtpExpiry((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [otpSent, otpExpiry]);
+
+  const formattedOtpExpiry = `${Math.floor(otpExpiry / 60)}:${String(
+    otpExpiry % 60
+  ).padStart(2, "0")}`;
 
   // Login Email States
   const [email, setEmail] = useState("");
@@ -155,6 +171,7 @@ export default function MerchantLoginPage() {
     }
 
     setOtpSent(true);
+    setOtpExpiry(300);
     setSuccessMsg(res.message);
     if (res.testOtp) {
       setDispatchedOtp(res.testOtp);
@@ -554,8 +571,8 @@ export default function MerchantLoginPage() {
                           Merchant SMS Dispatched
                         </span>
                       </div>
-                      <span className="text-[10px] text-terracotta-300 font-semibold">
-                        Expires in 5m
+                      <span className="text-[10px] text-terracotta-300 font-semibold font-mono">
+                        Expires in {formattedOtpExpiry}
                       </span>
                     </div>
 

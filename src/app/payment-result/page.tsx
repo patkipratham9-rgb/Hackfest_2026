@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Clock, ArrowRight, RefreshCw, ShieldCheck, ShoppingBag, Store, Truck, Phone, Star } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { OrderCancelCooldown } from "@/components/OrderCancelCooldown";
 
 function money(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -247,6 +248,20 @@ function PaymentResultContent() {
               </a>
             </div>
           </div>
+        )}
+
+        {/* 1-Minute Order Cancellation Cooldown Window after Payment */}
+        {isPaid && orderId && (
+          <OrderCancelCooldown
+            orderId={orderId}
+            createdAt={currentOrder?.createdAt}
+            totalAmount={paymentResult?.amount || currentOrder?.total || 0}
+            paymentMethod={currentOrder?.paymentMethod || "upi"}
+            currentStatus={currentOrder?.status}
+            onOrderCancelled={() => {
+              if (orderId) checkPaymentStatus(orderId);
+            }}
+          />
         )}
 
         {/* Action Buttons */}

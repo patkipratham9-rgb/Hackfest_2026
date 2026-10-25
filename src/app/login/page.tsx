@@ -79,6 +79,23 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  // Active OTP Expiry Countdown Timer
+  const [otpExpiry, setOtpExpiry] = useState(300);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isOtpSent && otpExpiry > 0) {
+      timer = setInterval(() => {
+        setOtpExpiry((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isOtpSent, otpExpiry]);
+
+  const formattedOtpExpiry = `${Math.floor(otpExpiry / 60)}:${String(
+    otpExpiry % 60
+  ).padStart(2, "0")}`;
+
   // Handle Signup
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,6 +150,7 @@ export default function LoginPage() {
 
     setIsOtpSent(true);
     setCooldown(res.cooldownSeconds);
+    setOtpExpiry(300);
     setStatusMessage(res.message);
     setOtp(["", "", "", "", "", ""]);
     if (res.testOtp) {
@@ -543,8 +561,8 @@ export default function LoginPage() {
                           SMS Dispatched
                         </span>
                       </div>
-                      <span className="text-[10px] text-terracotta-300 font-semibold">
-                        Expires in 5m
+                      <span className="text-[10px] text-terracotta-300 font-semibold font-mono">
+                        Expires in {formattedOtpExpiry}
                       </span>
                     </div>
 

@@ -175,6 +175,25 @@ test("Post-Payment: Delivery boy details and estimated arrival time supported on
   assert.ok(paymentResultPage.includes('data-testid="payment-result-delivery-name"'));
 });
 
+test("Post-Payment: 1-minute cancellation cooldown timer and inactive expired state supported", () => {
+  const componentPath = path.join(rootDir, "src/components/OrderCancelCooldown.tsx");
+  assert.ok(fs.existsSync(componentPath));
+  const cooldownCode = fs.readFileSync(componentPath, "utf8");
+  assert.ok(cooldownCode.includes("CANCELLATION_LIMIT_SECONDS = 60"));
+  assert.ok(cooldownCode.includes('data-testid="cancel-order-button"'));
+  assert.ok(cooldownCode.includes('data-testid="cancel-order-button-disabled"'));
+  assert.ok(cooldownCode.includes('data-testid="cancel-order-cooldown-timer"'));
+  assert.ok(cooldownCode.includes('data-testid="cancel-order-modal"'));
+  assert.ok(cooldownCode.includes('data-testid="confirm-cancel-order-button"'));
+  assert.ok(cooldownCode.includes('data-testid="cancellation-expired-notice"'));
+  assert.ok(cooldownCode.includes('data-testid="order-cancelled-banner"'));
+
+  const trackingPage = fs.readFileSync(path.join(rootDir, "src/app/orders/[id]/page.tsx"), "utf8");
+  const paymentResultPage = fs.readFileSync(path.join(rootDir, "src/app/payment-result/page.tsx"), "utf8");
+  assert.ok(trackingPage.includes("OrderCancelCooldown"));
+  assert.ok(paymentResultPage.includes("OrderCancelCooldown"));
+});
+
 // --- 4. CASHFREE PAYMENT GATEWAY ---
 console.log("\n--- 4. CASHFREE PAYMENT GATEWAY INTEGRATION ---");
 

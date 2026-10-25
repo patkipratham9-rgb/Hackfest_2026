@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -46,6 +46,33 @@ export default function UserLoginPage() {
   const [dbVerified, setDbVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [otpExpiry, setOtpExpiry] = useState(300);
+
+  // Active Cooldown Timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  // Active OTP Expiry Countdown Timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (otpSent && otpExpiry > 0) {
+      timer = setInterval(() => {
+        setOtpExpiry((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [otpSent, otpExpiry]);
+
+  const formattedOtpExpiry = `${Math.floor(otpExpiry / 60)}:${String(
+    otpExpiry % 60
+  ).padStart(2, "0")}`;
 
   const handleSendOtp = async () => {
     setErrorMessage("");
@@ -66,6 +93,7 @@ export default function UserLoginPage() {
         setOtpSent(true);
         setStatusMessage(data.message || `OTP sent to +91 ${clean}`);
         setCooldown(data.cooldownSeconds || 30);
+        setOtpExpiry(300);
       } else {
         setErrorMessage(data.message || "Failed to send OTP.");
       }
@@ -413,9 +441,10 @@ export default function UserLoginPage() {
                       <button
                         type="button"
                         onClick={handleSendOtp}
-                        className="px-3.5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-950 text-white text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+                        disabled={loginPhone.replace(/\D/g, "").length < 10 || cooldown > 0}
+                        className="px-3.5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-950 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
                       >
-                        {otpSent ? "Resend" : "Send OTP"}
+                        {cooldown > 0 ? `${cooldown}s` : otpSent ? "Resend" : "Send OTP"}
                       </button>
                     </div>
                   </div>
@@ -426,7 +455,7 @@ export default function UserLoginPage() {
                         Enter OTP Code
                       </label>
                       <span className="text-[10px] text-terracotta-600 font-mono font-semibold">
-                        Expires in 5m
+                        Expires in {formattedOtpExpiry}
                       </span>
                     </div>
                     <input

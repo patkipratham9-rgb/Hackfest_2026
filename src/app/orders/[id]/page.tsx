@@ -1,12 +1,13 @@
 "use client";
 
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { OrderStatus } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
+import { OrderCancelCooldown } from "@/components/OrderCancelCooldown";
 import {
   CheckCircle2,
   Package,
@@ -229,6 +230,34 @@ function OrderTrackingContent({
   };
 
   const deliveryETA = order.estimatedArrival || deliveryPartner.estimatedArrivalTime || "25 - 35 mins";
+
+  // Live Delivery Countdown Timer (Defaults to 25 mins / 1500 secs)
+  const [countdownSeconds, setCountdownSeconds] = useState(1500);
+
+  useEffect(() => {
+    let initialSeconds = 1500;
+    if (order?.createdAt) {
+      const elapsed = Math.floor(
+        (Date.now() - new Date(order.createdAt).getTime()) / 1000
+      );
+      initialSeconds = Math.max(30, 1500 - elapsed);
+    }
+    setCountdownSeconds(initialSeconds);
+
+    const interval = setInterval(() => {
+      setCountdownSeconds((prev: number) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [order?.createdAt]);
+
+  const countdownMins = Math.floor(countdownSeconds / 60);
+  const countdownSecs = countdownSeconds % 60;
+  const formattedCountdown = `${String(countdownMins).padStart(2, "0")}:${String(
+    countdownSecs
+  ).padStart(2, "0")}`;
+
+  const targetArrivalTime = order.estimatedArrival || new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   // Checkpoint CP-OB02: Realtime Tracking Subscription for Customer View
   useEffect(() => {
@@ -541,6 +570,15 @@ function OrderTrackingContent({
         </div>
       </motion.div>
 
+      {/* 1-Minute Order Cancellation Cooldown Window after Payment */}
+      <OrderCancelCooldown
+        orderId={order.id}
+        createdAt={order.createdAt}
+        totalAmount={order.total}
+        paymentMethod={order.paymentMethod}
+        currentStatus={order.status}
+      />
+
       {/* Delivery Partner Details & Estimated Arrival Time (ETA) Card */}
       <motion.div
         data-testid="delivery-partner-eta-card"
@@ -567,10 +605,16 @@ function OrderTrackingContent({
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl px-4 py-2 text-left sm:text-right flex items-center sm:flex-col justify-between sm:justify-center gap-0.5">
             <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-              Estimated Arrival Time
+              Live Delivery Countdown
             </span>
-            <span data-testid="delivery-eta-time" className="font-serif font-black text-emerald-950 text-base sm:text-lg">
-              {deliveryETA}
+            <div className="flex items-baseline gap-1 sm:justify-end">
+              <span data-testid="delivery-eta-time" className="font-mono font-black text-emerald-950 text-base sm:text-lg">
+                {formattedCountdown}
+              </span>
+              <span className="text-[10px] font-bold text-emerald-700">mins left</span>
+            </div>
+            <span className="text-[10px] text-emerald-600 font-medium">
+              Expected by {targetArrivalTime}
             </span>
           </div>
         </div>
