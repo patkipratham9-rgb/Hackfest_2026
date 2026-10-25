@@ -52,8 +52,8 @@ export default function MerchantLoginPage() {
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
 
   // Sign In Form States
-  const [loginPhone, setLoginPhone] = useState("+91 98765 43210");
-  const [loginPin, setLoginPin] = useState("123456");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginPin, setLoginPin] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
@@ -646,20 +646,6 @@ export default function MerchantLoginPage() {
               </button>
             </form>
           )}
-
-          {/* Switch to Shopper Callout */}
-          <div className="pt-3 border-t border-cream-200 text-center">
-            <p className="text-xs text-forest-600">
-              Looking to shop from local stores?{" "}
-              <Link
-                href="/login/user"
-                className="font-bold text-terracotta-700 hover:text-terracotta-800 underline inline-flex items-center gap-1"
-              >
-                <User className="w-3 h-3" />
-                <span>Shopper Login &rarr;</span>
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>

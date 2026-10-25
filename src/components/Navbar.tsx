@@ -36,7 +36,7 @@ export function Navbar() {
     setIsProfileOpen,
     isLoaded,
   } = useCart();
-  const { user, isAuthenticated, activeAppMode, switchRole } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -98,32 +98,6 @@ export function Navbar() {
             <Sparkles className="w-3 h-3 text-terracotta-500 animate-pulse" />
             <span>Hyperlocal AI Routing</span>
           </div>
-
-          {/* App Mode Switcher Pill */}
-          <Link
-            href={activeAppMode === "shopper" ? "/seller" : "/"}
-            onClick={() => {
-              if (activeAppMode === "shopper") {
-                switchRole("seller");
-              } else {
-                switchRole("customer");
-              }
-            }}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 border border-cream-300 text-xs font-bold transition-all shadow-xs"
-            title={activeAppMode === "shopper" ? "Open Merchant Application" : "Open Shopper Application"}
-          >
-            {activeAppMode === "shopper" ? (
-              <>
-                <Store className="w-3.5 h-3.5 text-terracotta-600" />
-                <span className="text-[11px]">Merchant App</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-3.5 h-3.5 text-forest-700" />
-                <span className="text-[11px]">Shopper App</span>
-              </>
-            )}
-          </Link>
 
           {/* Search Button */}
           <motion.button
@@ -205,36 +179,6 @@ export function Navbar() {
             transition={{ duration: 0.2 }}
             className="sm:hidden bg-cream-50 border-b border-cream-300 px-4 py-4 space-y-4 shadow-floating overflow-hidden"
           >
-            {/* Quick App Mode Switcher Banner */}
-            <div className="p-3 rounded-2xl bg-cream-200/80 border border-cream-300 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-forest-950">
-                {activeAppMode === "merchant" ? (
-                  <Store className="w-4 h-4 text-terracotta-600" />
-                ) : (
-                  <ShoppingBag className="w-4 h-4 text-forest-700" />
-                )}
-                <span>
-                  {activeAppMode === "merchant"
-                    ? "Merchant Mode Active"
-                    : "Shopper Mode Active"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (activeAppMode === "shopper") {
-                    switchRole("seller");
-                  } else {
-                    switchRole("customer");
-                  }
-                  setIsMobileMenuOpen(false);
-                }}
-                className="px-3 py-1 rounded-xl bg-forest-900 text-cream-50 text-[11px] font-bold"
-              >
-                Switch
-              </button>
-            </div>
-
             {/* Mobile Nav Links */}
             <nav className="grid grid-cols-2 gap-2 text-xs font-bold text-forest-900">
               <button
@@ -284,22 +228,6 @@ export function Navbar() {
               >
                 <User className="w-4 h-4 text-terracotta-600" />
                 <span>Address Book</span>
-              </Link>
-              <Link
-                href="/seller"
-                onClick={() => {
-                  switchRole("seller");
-                  setIsMobileMenuOpen(false);
-                }}
-                className="col-span-2 p-3 rounded-xl bg-terracotta-50 hover:bg-terracotta-100 border border-terracotta-200 text-terracotta-800 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-terracotta-600" />
-                  <span>Merchant Partner Portal (/seller)</span>
-                </div>
-                <span className="text-[10px] bg-terracotta-600 text-white px-2 py-0.5 rounded-full">
-                  Partner
-                </span>
               </Link>
               {!isAuthenticated && (
                 <Link

@@ -165,6 +165,6 @@ export async function sendFirebasePhoneOtp(
         throw new Error("auth/invalid-verification-code");
       },
     },
-    message: `OTP sent to ${formattedPhone}. (Test code: 123456)`,
+    message: `OTP sent via SMS to ${formattedPhone}. Please enter the 6-digit code received on your phone.`,
   };
 }

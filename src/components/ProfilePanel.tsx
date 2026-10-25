@@ -30,7 +30,7 @@ import { AddressType } from "@/types";
 export function ProfilePanel() {
   const router = useRouter();
   const { isProfileOpen, setIsProfileOpen, activeArea, orders } = useCart();
-  const { user, isAuthenticated, logout, activeAppMode, switchRole, setActiveAppMode } = useAuth();
+  const { user, isAuthenticated, logout, activeAppMode, setActiveAppMode } = useAuth();
 
   const primaryAddress = user?.addresses.find((a) => a.isDefault) || user?.addresses[0];
 
@@ -95,46 +95,18 @@ export function ProfilePanel() {
 
               {/* Body Content */}
               <div className="p-5 space-y-5 flex-1">
-                {/* App Switcher Banner */}
-                <div className="p-3.5 rounded-2xl bg-cream-200/80 border border-cream-300 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-forest-950">
-                    {activeAppMode === "merchant" ? (
-                      <Store className="w-4 h-4 text-terracotta-600" />
-                    ) : (
-                      <ShoppingBag className="w-4 h-4 text-forest-700" />
-                    )}
-                    <span>
-                      {activeAppMode === "merchant"
-                        ? "Merchant Partner Mode"
-                        : "Shopper Consumer Mode"}
-                    </span>
-                  </div>
-
-                  {activeAppMode === "shopper" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        switchRole("seller");
-                        setIsProfileOpen(false);
-                        router.push("/seller");
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 text-[11px] font-bold"
-                    >
-                      Go to Merchant App
-                    </button>
+                {/* App Mode Indicator (Switch button removed for strict app separation) */}
+                <div className="p-3.5 rounded-2xl bg-cream-200/80 border border-cream-300 flex items-center gap-2 text-xs font-bold text-forest-950">
+                  {activeAppMode === "merchant" ? (
+                    <Store className="w-4 h-4 text-terracotta-600" />
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        switchRole("customer");
-                        setIsProfileOpen(false);
-                        router.push("/");
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-forest-800 hover:bg-forest-900 text-cream-50 text-[11px] font-bold"
-                    >
-                      Go to Shopper App
-                    </button>
+                    <ShoppingBag className="w-4 h-4 text-forest-700" />
                   )}
+                  <span>
+                    {activeAppMode === "merchant"
+                      ? "Merchant Partner Mode"
+                      : "Shopper Consumer Mode"}
+                  </span>
                 </div>
 
                 {/* User Information Card */}

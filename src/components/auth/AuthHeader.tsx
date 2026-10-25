@@ -33,41 +33,33 @@ export function AuthHeader() {
           </div>
         </Link>
 
-        {/* Portal Switcher Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-cream-200/80 rounded-2xl border border-cream-300 text-xs font-bold">
-          <Link
-            href="/login/user"
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-              isUser || (!isMerchant && !isUser)
-                ? "bg-white text-forest-950 shadow-xs"
-                : "text-forest-600 hover:text-forest-900"
-            }`}
-          >
-            <User className="w-3.5 h-3.5 text-terracotta-600" />
-            <span>Shopper Login</span>
-          </Link>
-
-          <Link
-            href="/login/merchant"
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-              isMerchant
-                ? "bg-forest-900 text-cream-50 shadow-xs"
-                : "text-forest-600 hover:text-forest-900"
-            }`}
-          >
-            <Store className="w-3.5 h-3.5 text-terracotta-400" />
-            <span>Merchant Login</span>
-          </Link>
+        {/* Portal Indicator Badge (Switch tabs removed for strict app separation) */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cream-200/80 rounded-2xl border border-cream-300 text-xs font-bold text-forest-900">
+          {isMerchant ? (
+            <>
+              <Store className="w-3.5 h-3.5 text-terracotta-600" />
+              <span>Merchant Partner Portal</span>
+            </>
+          ) : (
+            <>
+              <User className="w-3.5 h-3.5 text-terracotta-600" />
+              <span>Shopper Application</span>
+            </>
+          )}
         </div>
 
-        {/* Return to Store */}
-        <Link
-          href="/"
-          className="text-xs font-semibold text-forest-700 hover:text-terracotta-700 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Browse Marketplace</span>
-        </Link>
+        {/* Return to Store (Shopper Only) */}
+        {!isMerchant ? (
+          <Link
+            href="/"
+            className="text-xs font-semibold text-forest-700 hover:text-terracotta-700 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Browse Marketplace</span>
+          </Link>
+        ) : (
+          <div className="w-16" />
+        )}
       </div>
     </header>
   );

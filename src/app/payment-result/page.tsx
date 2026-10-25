@@ -63,6 +63,34 @@ function PaymentResultContent() {
     }
   }, [orderId]);
 
+  // Live Delivery Countdown Timer (Defaults to 25 mins / 1500 secs)
+  const [countdownSeconds, setCountdownSeconds] = useState(1500);
+
+  useEffect(() => {
+    let initialSeconds = 1500;
+    if (currentOrder?.createdAt) {
+      const elapsed = Math.floor(
+        (Date.now() - new Date(currentOrder.createdAt).getTime()) / 1000
+      );
+      initialSeconds = Math.max(30, 1500 - elapsed);
+    }
+    setCountdownSeconds(initialSeconds);
+
+    const interval = setInterval(() => {
+      setCountdownSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentOrder?.createdAt]);
+
+  const countdownMins = Math.floor(countdownSeconds / 60);
+  const countdownSecs = countdownSeconds % 60;
+  const formattedCountdown = `${String(countdownMins).padStart(2, "0")}:${String(
+    countdownSecs
+  ).padStart(2, "0")}`;
+
+  const targetArrivalTime = currentOrder?.estimatedArrival || new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
   if (!orderId) {
     return (
       <main className="min-h-[70vh] flex items-center justify-center p-4">
@@ -168,8 +196,19 @@ function PaymentResultContent() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
                   Estimated Arrival
                 </span>
-                <span data-testid="payment-result-eta" className="font-serif font-black text-emerald-950 text-sm">
-                  {currentOrder?.estimatedArrival || new Date(Date.now() + 25 * 60 * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                <div className="flex items-baseline justify-end gap-1">
+                  <span
+                    data-testid="payment-result-eta"
+                    className="font-mono font-black text-emerald-950 text-base sm:text-lg tracking-tight"
+                  >
+                    {formattedCountdown}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700">
+                    mins left
+                  </span>
+                </div>
+                <span className="text-[9px] text-emerald-600 font-semibold block">
+                  By {targetArrivalTime}
                 </span>
               </div>
             </div>

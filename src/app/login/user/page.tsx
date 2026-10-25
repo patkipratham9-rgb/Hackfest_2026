@@ -29,8 +29,8 @@ export default function UserLoginPage() {
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
 
   // Sign In Form States
-  const [loginPhone, setLoginPhone] = useState("+91 98451 22334");
-  const [loginOtp, setLoginOtp] = useState("123456");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginOtp, setLoginOtp] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
@@ -551,20 +551,6 @@ export default function UserLoginPage() {
               </button>
             </form>
           )}
-
-          {/* Switch to Merchant Callout */}
-          <div className="pt-3 border-t border-cream-200 text-center">
-            <p className="text-xs text-forest-600">
-              Are you a store owner?{" "}
-              <Link
-                href="/login/merchant"
-                className="font-bold text-terracotta-700 hover:text-terracotta-800 underline inline-flex items-center gap-1"
-              >
-                <Store className="w-3 h-3" />
-                <span>Merchant Login &rarr;</span>
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>

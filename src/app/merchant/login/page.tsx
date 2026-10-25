@@ -664,24 +664,7 @@ export default function MerchantLoginPage() {
         </div>
       )}
 
-      {/* Shopper Redirection Card */}
-      <div className="p-4 rounded-2xl bg-cream-100 border border-cream-200 flex items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-forest-900 text-cream-50 flex items-center justify-center shrink-0">
-            <ShoppingBag className="w-5 h-5 text-terracotta-400" />
-          </div>
-          <div>
-            <span className="font-bold text-xs text-forest-950 block">Looking to shop goods?</span>
-            <span className="text-[11px] text-forest-600 block">Browse corner stores & pickup fresh goods</span>
-          </div>
-        </div>
-        <Link
-          href="/login"
-          className="px-3.5 py-2 rounded-xl bg-white hover:bg-cream-50 border border-cream-300 text-forest-900 text-xs font-bold shrink-0 transition-colors shadow-2xs"
-        >
-          Shopper Login &rarr;
-        </Link>
-      </div>
+      {/* Shopper switch button removed per strict app separation */}
     </div>
   );
 }

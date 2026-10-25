@@ -287,7 +287,7 @@ function SellerPortalProtectedShell({
           </nav>
         </div>
 
-        {/* Sidebar Footer: Mode Switcher & Marketplace Link */}
+        {/* Sidebar Footer: Role Status */}
         <div className="p-4 border-t border-cream-300 bg-cream-100/70 space-y-2.5">
           {/* Role Status Tag */}
           <div className="flex items-center justify-between text-xs">
@@ -299,48 +299,6 @@ function SellerPortalProtectedShell({
               {userRole.toUpperCase()}
             </span>
           </div>
-
-          {/* Evaluator Quick Role Switcher */}
-          <div className="pt-2 border-t border-cream-200">
-            <span className="text-[9px] font-bold text-forest-500 uppercase tracking-wider block mb-1">
-              Role Permission Test Switch:
-            </span>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                data-testid="switch-role-seller"
-                onClick={() => setUserRole("seller")}
-                className={`py-1 rounded-lg text-[10px] font-bold transition-all ${
-                  userRole === "seller"
-                    ? "bg-forest-800 text-cream-100"
-                    : "bg-cream-200 hover:bg-cream-300 text-forest-700"
-                }`}
-              >
-                Seller (Allowed)
-              </button>
-              <button
-                type="button"
-                data-testid="switch-role-customer"
-                onClick={() => setUserRole("customer")}
-                className={`py-1 rounded-lg text-[10px] font-bold transition-all ${
-                  userRole === "customer"
-                    ? "bg-rose-700 text-white"
-                    : "bg-cream-200 hover:bg-cream-300 text-forest-700"
-                }`}
-              >
-                Customer (Blocked)
-              </button>
-            </div>
-          </div>
-
-          <Link
-            href="/"
-            data-testid="back-to-store-link"
-            className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 text-xs font-semibold transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Customer Marketplace</span>
-          </Link>
         </div>
       </aside>
 
@@ -361,13 +319,6 @@ function SellerPortalProtectedShell({
               <ShieldCheck className="w-3.5 h-3.5 text-forest-700" />
               <span>Seller: {seller.fullName}</span>
             </div>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1 text-xs font-bold text-terracotta-600 hover:text-terracotta-700 transition-colors"
-            >
-              <span>View Storefront</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
           </div>
         </header>
 

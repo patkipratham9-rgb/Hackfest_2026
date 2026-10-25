@@ -186,14 +186,14 @@ export function AuthFooter() {
                 <div className="p-3 bg-cream-100 rounded-xl space-y-1">
                   <h5 className="font-bold text-forest-950">How does phone OTP work?</h5>
                   <p className="text-forest-600">
-                    Enter any valid 10-digit Indian mobile number. For quick hackathon testing, the universal test PIN is <span className="font-mono font-bold text-terracotta-700">123456</span>.
+                    Enter any valid 10-digit Indian mobile number to receive a secure 6-digit verification code directly via SMS to your mobile phone.
                   </p>
                 </div>
 
                 <div className="p-3 bg-cream-100 rounded-xl space-y-1">
                   <h5 className="font-bold text-forest-950">How do I register as a Merchant?</h5>
                   <p className="text-forest-600">
-                    Switch to the &quot;Merchant Login&quot; tab. Enter your store name, category, and neighborhood (e.g. Vidyanagar or Gokul Road). A store profile is automatically linked in our Supabase database.
+                    Open the dedicated Merchant Partner application (/merchant/login). Enter your store name, category, and neighborhood (e.g. Vidyanagar or Gokul Road). A store profile is automatically linked in our Supabase database.
                   </p>
                 </div>
 

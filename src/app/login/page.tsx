@@ -686,24 +686,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* Merchant Redirection Card */}
-      <div className="p-4 rounded-2xl bg-cream-100 border border-cream-200 flex items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-terracotta-600 text-cream-50 flex items-center justify-center shrink-0">
-            <Store className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold text-xs text-forest-950 block">Are you a Merchant Partner?</span>
-            <span className="text-[11px] text-forest-600 block">Register store, upload products, and manage sales</span>
-          </div>
-        </div>
-        <Link
-          href="/merchant/login"
-          className="px-3.5 py-2 rounded-xl bg-white hover:bg-forest-50 border border-cream-300 text-terracotta-700 hover:text-terracotta-800 text-xs font-bold shrink-0 transition-colors shadow-2xs"
-        >
-          Merchant Login &rarr;
-        </Link>
-      </div>
+      {/* Merchant Partner switch button to /merchant/login removed per strict app separation */}
     </div>
   );
 }

@@ -49,7 +49,6 @@ export default function AccountPage() {
     deleteAddress,
     setDefaultAddress,
     logout,
-    switchRole,
     activeAppMode,
     setActiveAppMode,
   } = useAuth();
@@ -253,32 +252,11 @@ export default function AccountPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {activeAppMode === "shopper" ? (
-            <button
-              type="button"
-              onClick={() => {
-                switchRole("seller");
-                router.push("/seller");
-              }}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
-            >
-              <Store className="w-3.5 h-3.5" />
-              <span>Switch to Merchant App</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                switchRole("customer");
-                router.push("/");
-              }}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-50 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Switch to Shopper App</span>
-            </button>
-          )}
+        {/* Switch to Merchant App and Switch to Shopper App buttons removed per strict app separation */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-forest-700 bg-cream-200 px-3 py-1.5 rounded-full border border-cream-300">
+            {activeAppMode === "merchant" ? "Merchant Environment" : "Shopper Environment"}
+          </span>
         </div>
       </div>
 
