@@ -205,7 +205,7 @@ export function OrdersView() {
                       <h3 className="font-serif font-bold text-base text-forest-950">
                         {order.storeName}
                       </h3>
-                      <p className="text-[11px] text-forest-500">
+                      <p suppressHydrationWarning className="text-[11px] text-forest-500">
                         Order #{order.id} • {order.storeArea} • {new Date(order.createdAt).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",

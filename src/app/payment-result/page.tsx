@@ -85,10 +85,22 @@ function PaymentResultContent() {
     return () => clearInterval(interval);
   }, [currentOrder?.createdAt]);
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const countdownMins = Math.max(1, Math.ceil(countdownSeconds / 60));
   const formattedMinutesLeft = `${countdownMins} ${countdownMins === 1 ? "min" : "mins"}`;
 
-  const targetArrivalTime = currentOrder?.estimatedArrival || new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const targetArrivalTime =
+    currentOrder?.estimatedArrival ||
+    (isMounted
+      ? new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "25 - 35 mins");
 
   if (!orderId) {
     return (
@@ -198,6 +210,7 @@ function PaymentResultContent() {
                 <div className="flex items-baseline justify-end gap-1">
                   <span
                     data-testid="payment-result-eta"
+                    suppressHydrationWarning
                     className="font-serif font-black text-emerald-950 text-base sm:text-lg tracking-tight"
                   >
                     {formattedMinutesLeft}
@@ -206,7 +219,7 @@ function PaymentResultContent() {
                     left
                   </span>
                 </div>
-                <span className="text-[9px] text-emerald-600 font-semibold block">
+                <span suppressHydrationWarning className="text-[9px] text-emerald-600 font-semibold block">
                   By {targetArrivalTime}
                 </span>
               </div>

@@ -292,7 +292,7 @@ export default function HomePage() {
             </div>
             <div className="truncate text-xs">
               <span className="text-forest-600 font-medium">Delivering to: </span>
-              <span className="font-bold text-forest-950">
+              <span suppressHydrationWarning className="font-bold text-forest-950">
                 {userLocation || "Hubballi-Dharwad (All Neighborhoods)"}
               </span>
             </div>
@@ -306,7 +306,7 @@ export default function HomePage() {
               className="text-xs font-bold text-terracotta-700 hover:text-terracotta-900 bg-white border border-cream-300 hover:border-terracotta-400 px-3.5 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <Navigation className="w-3 h-3 text-terracotta-600" />
-              <span>{userLocation ? "Change Location" : "Set Location"}</span>
+              <span suppressHydrationWarning>{userLocation ? "Change Location" : "Set Location"}</span>
             </button>
           </div>
         </div>

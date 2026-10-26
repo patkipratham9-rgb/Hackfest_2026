@@ -325,7 +325,7 @@ export default function SellerOrdersPage() {
               >
                 {order.id}
               </span>
-              <span className="text-[10px] text-forest-500">
+              <span suppressHydrationWarning className="text-[10px] text-forest-500">
                 {order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
               </span>
             </div>

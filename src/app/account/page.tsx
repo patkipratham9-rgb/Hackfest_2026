@@ -497,7 +497,7 @@ export default function AccountPage() {
                       #{order.id}
                     </span>
                   </div>
-                  <p className="text-[11px] text-forest-600">
+                  <p suppressHydrationWarning className="text-[11px] text-forest-600">
                     {order.items.length} item{order.items.length > 1 ? "s" : ""} • ₹{order.total} • {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                   </p>
                 </div>

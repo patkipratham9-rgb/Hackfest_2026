@@ -86,7 +86,7 @@ export function Navbar() {
             aria-label="Set Delivery Location"
           >
             <MapPin className="w-3.5 h-3.5 text-terracotta-500 flex-shrink-0" />
-            <span className="truncate max-w-[130px] sm:max-w-[190px]">
+            <span suppressHydrationWarning className="truncate max-w-[130px] sm:max-w-[190px]">
               {userLocation || "Add / Share Location"}
             </span>
           </button>

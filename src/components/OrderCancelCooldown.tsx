@@ -46,10 +46,16 @@ export function OrderCancelCooldown({
     return Math.max(0, CANCELLATION_LIMIT_SECONDS - elapsed);
   };
 
-  const [secondsLeft, setSecondsLeft] = useState<number>(calculateRemaining);
+  const [isMounted, setIsMounted] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCancelled, setIsCancelled] = useState(currentStatus === "cancelled");
+
+  useEffect(() => {
+    setIsMounted(true);
+    setSecondsLeft(calculateRemaining());
+  }, []);
 
   // Keep in sync with prop updates
   useEffect(() => {
@@ -166,8 +172,8 @@ export function OrderCancelCooldown({
             />
           </div>
           <div className="flex items-center justify-between text-[10px] text-forest-600">
-            <span>You have {secondsLeft}s left to cancel with instant refund</span>
-            <span className="font-semibold text-rose-700">{secondsLeft}s remaining</span>
+            <span suppressHydrationWarning>You have {secondsLeft}s left to cancel with instant refund</span>
+            <span suppressHydrationWarning className="font-semibold text-rose-700">{secondsLeft}s remaining</span>
           </div>
         </div>
       )}
@@ -181,7 +187,7 @@ export function OrderCancelCooldown({
           className="w-full py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-700 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
         >
           <XCircle className="w-4 h-4 text-rose-600" />
-          <span>Cancel Order (00:{formattedSeconds} left)</span>
+          <span suppressHydrationWarning>Cancel Order (00:{formattedSeconds} left)</span>
         </button>
       ) : (
         <div className="space-y-1.5">

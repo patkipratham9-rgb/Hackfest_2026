@@ -226,11 +226,16 @@ function OrderTrackingContent({
     avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
     assignedAt: order.createdAt || new Date().toISOString(),
     estimatedArrivalMins: 25,
-    estimatedArrivalTime: order.estimatedArrival || new Date(Date.now() + 25 * 60 * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    estimatedArrivalTime: order.estimatedArrival || "25 - 35 mins",
     liveStatus: "out_for_delivery" as const,
   };
 
   const deliveryETA = order.estimatedArrival || deliveryPartner.estimatedArrivalTime || "25 - 35 mins";
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Live Delivery Countdown Timer (Defaults to 25 mins / 1500 secs)
   const [countdownSeconds, setCountdownSeconds] = useState(1500);
@@ -255,7 +260,14 @@ function OrderTrackingContent({
   const countdownMins = Math.max(1, Math.ceil(countdownSeconds / 60));
   const formattedMinutesLeft = `${countdownMins} ${countdownMins === 1 ? "min" : "mins"}`;
 
-  const targetArrivalTime = order.estimatedArrival || new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const targetArrivalTime =
+    order.estimatedArrival ||
+    (isMounted
+      ? new Date(Date.now() + countdownSeconds * 1000).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "25 - 35 mins");
 
   // Checkpoint CP-OB02: Realtime Tracking Subscription for Customer View
   useEffect(() => {
@@ -351,7 +363,7 @@ function OrderTrackingContent({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Live Updates Active</span>
               </span>
-              <span className="text-xs text-forest-500">
+              <span suppressHydrationWarning className="text-xs text-forest-500">
                 {new Date(order.createdAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -618,12 +630,12 @@ function OrderTrackingContent({
               Estimated Arrival Time
             </span>
             <div className="flex items-baseline gap-1 sm:justify-end">
-              <span data-testid="delivery-eta-time" className="font-serif font-black text-emerald-950 text-base sm:text-lg">
+              <span data-testid="delivery-eta-time" suppressHydrationWarning className="font-serif font-black text-emerald-950 text-base sm:text-lg">
                 {formattedMinutesLeft}
               </span>
               <span className="text-[10px] font-bold text-emerald-700">left</span>
             </div>
-            <span className="text-[10px] text-emerald-600 font-medium">
+            <span suppressHydrationWarning className="text-[10px] text-emerald-600 font-medium">
               Expected by {targetArrivalTime}
             </span>
           </div>

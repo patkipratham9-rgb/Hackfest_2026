@@ -284,7 +284,7 @@ export function MovingAdsBanner({
                     className="px-5 py-2.5 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
                   >
                     <MapPin className="w-4 h-4" />
-                    <span>{userLocation ? "Change Location" : "Add / Share Location"}</span>
+                    <span suppressHydrationWarning>{userLocation ? "Change Location" : "Add / Share Location"}</span>
                   </button>
                 ) : (
                   <Link
