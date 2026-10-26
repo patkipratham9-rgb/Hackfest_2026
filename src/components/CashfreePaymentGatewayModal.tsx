@@ -181,7 +181,7 @@ export function CashfreePaymentGatewayModal({
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="absolute right-4 top-4 w-8 h-8 rounded-full bg-forest-900/80 hover:bg-forest-800 text-cream-200 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-40"
+            className="absolute right-4 top-4 w-8 h-8 rounded-xl bg-forest-900/80 hover:bg-forest-800 text-cream-200 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-40"
           >
             <X className="w-4 h-4" />
           </button>
@@ -351,9 +351,9 @@ export function CashfreePaymentGatewayModal({
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: "gpay", name: "Google Pay", icon: "🟢" },
-                      { id: "phonepe", name: "PhonePe", icon: "🟣" },
-                      { id: "paytm", name: "Paytm", icon: "🔵" },
+                      { id: "gpay", name: "Google Pay" },
+                      { id: "phonepe", name: "PhonePe" },
+                      { id: "paytm", name: "Paytm" },
                     ].map((app) => (
                       <button
                         key={app.id}
@@ -365,7 +365,7 @@ export function CashfreePaymentGatewayModal({
                             : "bg-cream-50 border-cream-300 hover:border-terracotta-300 text-forest-800"
                         }`}
                       >
-                        <span>{app.icon}</span>
+                        <Smartphone className="w-3.5 h-3.5 text-forest-600" />
                         <span>{app.name}</span>
                       </button>
                     ))}
@@ -418,7 +418,7 @@ export function CashfreePaymentGatewayModal({
                       className="w-full pl-3.5 pr-14 py-2.5 bg-cream-50 border border-cream-300 rounded-xl text-xs font-mono font-bold tracking-widest text-forest-950 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs">
-                      💳
+                      <CreditCard className="w-4 h-4 text-forest-500" />
                     </span>
                   </div>
                 </div>

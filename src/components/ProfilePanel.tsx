@@ -39,7 +39,7 @@ export function ProfilePanel() {
       case "Home":
         return <Home className="w-3 h-3 text-blue-600" />;
       case "Office":
-        return <Briefcase className="w-3 h-3 text-purple-600" />;
+        return <Briefcase className="w-3 h-3 text-forest-700" />;
       case "Primary":
         return <Tag className="w-3 h-3 text-amber-600" />;
       default:

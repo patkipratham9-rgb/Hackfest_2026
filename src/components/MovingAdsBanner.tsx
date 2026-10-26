@@ -54,7 +54,7 @@ export const DEFAULT_ADS: AdSlide[] = [
       "Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.",
     description:
       "Support independent local vendors in Hubli-Dharwad. Choose Home Delivery or express Counter Pick-up with zero markups.",
-    offerPill: "⚡ FLAT 20% OFF FIRST 3 ORDERS • CODE: LOCAL20",
+    offerPill: "FLAT 20% OFF FIRST 3 ORDERS • CODE: LOCAL20",
     bgGradient: "from-forest-900 via-forest-800 to-forest-950",
     accentColor: "text-terracotta-400",
     primaryCtaText: "Change Location",
@@ -72,7 +72,7 @@ export const DEFAULT_ADS: AdSlide[] = [
       "Pure organic cow milk & natural cardamom aroma right to your door.",
     description:
       "Freshly prepared artisanal sweets from historic sweetmakers of Line Bazaar & Subhas Road. 100% genuine GI-certified taste.",
-    offerPill: "🍬 BUY 2 GET 10% OFF • USE CODE: SWEET10",
+    offerPill: "BUY 2 GET 10% OFF • USE CODE: SWEET10",
     bgGradient: "from-amber-950 via-orange-900 to-stone-950",
     accentColor: "text-amber-300",
     primaryCtaText: "Explore Sweets & Bakery",
@@ -90,7 +90,7 @@ export const DEFAULT_ADS: AdSlide[] = [
       "Direct from Dharwad rural farmers with zero middleman commissions.",
     description:
       "Crisp leafy greens, cold-pressed groundnut oils, unpolished lentils, and local spices harvested just hours ago.",
-    offerPill: "🥬 FREE DELIVERY ON ORDERS OVER ₹249",
+    offerPill: "FREE DELIVERY ON ORDERS OVER ₹249",
     bgGradient: "from-emerald-950 via-teal-900 to-forest-950",
     accentColor: "text-emerald-300",
     primaryCtaText: "Explore Fresh Produce",
@@ -108,9 +108,9 @@ export const DEFAULT_ADS: AdSlide[] = [
       "Handmade crafts that celebrate our region's timeless heritage.",
     description:
       "Eco-friendly red clay handi pots, pure khadi kurtas, and festival decorations crafted by neighborhood artisans in Vidyanagar & Unkal.",
-    offerPill: "🏺 DIRECT ARTISAN PRICING • ZERO PLATFORM SURCHARGE",
-    bgGradient: "from-purple-950 via-slate-900 to-forest-950",
-    accentColor: "text-purple-300",
+    offerPill: "DIRECT ARTISAN PRICING • ZERO PLATFORM SURCHARGE",
+    bgGradient: "from-stone-900 via-forest-950 to-stone-950",
+    accentColor: "text-amber-300",
     primaryCtaText: "Explore Handicrafts",
     secondaryCtaText: "View Artisan Goods",
     secondaryCtaHref: "/categories?category=Household",
@@ -126,7 +126,7 @@ export const DEFAULT_ADS: AdSlide[] = [
       "Your order is packed and sealed before you arrive at the lane shop.",
     description:
       "Love shopping in town? Place your order ahead of time and pick it up on your way home with instant OTP confirmation.",
-    offerPill: "🚀 ZERO WAITING • READY IN 15 MINUTES",
+    offerPill: "ZERO WAITING • READY IN 15 MINUTES",
     bgGradient: "from-rose-950 via-terracotta-900 to-stone-950",
     accentColor: "text-rose-300",
     primaryCtaText: "Set Delivery Location",
@@ -137,12 +137,12 @@ export const DEFAULT_ADS: AdSlide[] = [
 ];
 
 export const TICKER_ITEMS = [
-  "🔥 FLASH DEAL: Up to 20% Off on Dharwad Pedha",
-  "🚚 FREE Delivery on orders above ₹249 in Vidyanagar & CBT",
-  "⚡ Fresh Morning Harvest directly from APMC Dharwad",
-  "🏺 Handcrafted Terracotta & Khadi with Zero Markups",
-  "⏱️ Express 15-Minute Counter Pick-up with Secret VIP PIN",
-  "🛡️ 100% Genuine Local Hubballi Artisans Verified",
+  "FLASH DEAL: Up to 20% Off on Dharwad Pedha",
+  "FREE Delivery on orders above ₹249 in Vidyanagar & CBT",
+  "Fresh Morning Harvest directly from APMC Dharwad",
+  "Handcrafted Terracotta & Khadi with Zero Markups",
+  "Express 15-Minute Counter Pick-up with Secret VIP PIN",
+  "100% Genuine Local Hubballi Artisans Verified",
 ];
 
 export function MovingAdsBanner({
@@ -205,7 +205,7 @@ export function MovingAdsBanner({
       case "clock":
         return <Clock className="w-3.5 h-3.5 text-rose-400" />;
       case "award":
-        return <Award className="w-3.5 h-3.5 text-purple-400" />;
+        return <Award className="w-3.5 h-3.5 text-amber-400" />;
       default:
         return <Sparkles className="w-3.5 h-3.5 text-terracotta-400" />;
     }
@@ -281,7 +281,7 @@ export function MovingAdsBanner({
                     type="button"
                     onClick={onOpenLocationModal}
                     data-testid="hero-set-location-btn"
-                    className="px-5 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
                   >
                     <MapPin className="w-4 h-4" />
                     <span>{userLocation ? "Change Location" : "Add / Share Location"}</span>
@@ -289,7 +289,7 @@ export function MovingAdsBanner({
                 ) : (
                   <Link
                     href={currentAd.secondaryCtaHref || "/categories"}
-                    className="px-5 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm flex items-center gap-2 transition-transform active:scale-95"
+                    className="px-5 py-2.5 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-warm flex items-center gap-2 transition-transform active:scale-95"
                   >
                     <ShoppingBag className="w-4 h-4" />
                     <span>{currentAd.primaryCtaText}</span>
@@ -298,7 +298,7 @@ export function MovingAdsBanner({
 
                 <Link
                   href={currentAd.secondaryCtaHref || "/categories"}
-                  className="px-5 py-2.5 rounded-full bg-cream-100/10 hover:bg-cream-100/20 text-cream-100 font-bold text-xs border border-cream-200/30 flex items-center gap-2 transition-colors"
+                  className="px-5 py-2.5 rounded-xl bg-cream-100/10 hover:bg-cream-100/20 text-cream-100 font-bold text-xs border border-cream-200/30 flex items-center gap-2 transition-colors"
                 >
                   <ShoppingBag className="w-4 h-4 text-terracotta-400" />
                   <span>{currentAd.secondaryCtaText}</span>
@@ -317,7 +317,7 @@ export function MovingAdsBanner({
                     type="button"
                     onClick={() => handleDotClick(idx)}
                     aria-label={`Go to slide ${idx + 1}`}
-                    className={`transition-all duration-300 rounded-full cursor-pointer ${
+                    className={`transition-all duration-300 rounded-sm cursor-pointer ${
                       currentIndex === idx
                         ? "w-8 h-2 bg-amber-400 shadow-xs"
                         : "w-2 h-2 bg-white/40 hover:bg-white/70"
@@ -335,7 +335,7 @@ export function MovingAdsBanner({
                   type="button"
                   onClick={handlePrev}
                   aria-label="Previous advertisement"
-                  className="w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 text-cream-100 border border-white/15 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-xs"
+                  className="w-8 h-8 rounded-lg bg-black/30 hover:bg-black/50 text-cream-100 border border-white/15 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-xs"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -343,7 +343,7 @@ export function MovingAdsBanner({
                   type="button"
                   onClick={handleNext}
                   aria-label="Next advertisement"
-                  className="w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 text-cream-100 border border-white/15 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-xs"
+                  className="w-8 h-8 rounded-lg bg-black/30 hover:bg-black/50 text-cream-100 border border-white/15 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-xs"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

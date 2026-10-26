@@ -41,7 +41,7 @@ export default function HelpCenterPage() {
         {/* Back Link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-forest-700 hover:text-terracotta-700 transition-colors bg-white px-3.5 py-1.5 rounded-full border border-cream-300 shadow-2xs"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-forest-700 hover:text-terracotta-700 transition-colors bg-white px-3.5 py-1.5 rounded-xl border border-cream-300 shadow-2xs"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Marketplace</span>
@@ -91,7 +91,7 @@ export default function HelpCenterPage() {
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               selectedCategory === "all"
                 ? "bg-forest-900 text-white shadow-xs"
                 : "bg-white text-forest-700 border border-cream-300 hover:bg-cream-200"
@@ -102,7 +102,7 @@ export default function HelpCenterPage() {
           <button
             type="button"
             onClick={() => setSelectedCategory("ordering")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               selectedCategory === "ordering"
                 ? "bg-forest-900 text-white shadow-xs"
                 : "bg-white text-forest-700 border border-cream-300 hover:bg-cream-200"
@@ -113,7 +113,7 @@ export default function HelpCenterPage() {
           <button
             type="button"
             onClick={() => setSelectedCategory("returns")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               selectedCategory === "returns"
                 ? "bg-forest-900 text-white shadow-xs"
                 : "bg-white text-forest-700 border border-cream-300 hover:bg-cream-200"
@@ -124,7 +124,7 @@ export default function HelpCenterPage() {
           <button
             type="button"
             onClick={() => setSelectedCategory("refunds")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               selectedCategory === "refunds"
                 ? "bg-forest-900 text-white shadow-xs"
                 : "bg-white text-forest-700 border border-cream-300 hover:bg-cream-200"

@@ -197,9 +197,10 @@ export function OrderCancelCooldown({
           </button>
           <p
             data-testid="cancellation-expired-notice"
-            className="text-[10px] text-forest-500 text-center leading-tight"
+            className="text-[10px] text-forest-500 text-center leading-tight flex items-center justify-center gap-1"
           >
-            🔒 The 1-minute grace period has passed. Artisan merchant staff have initiated packing fresh goods.
+            <Lock className="w-3 h-3 text-forest-400 shrink-0 inline" />
+            <span>The 1-minute grace period has passed. Artisan merchant staff have initiated packing fresh goods.</span>
           </p>
         </div>
       )}

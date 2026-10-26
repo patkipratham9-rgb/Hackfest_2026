@@ -124,16 +124,15 @@ export function LocalLoopAssistantBot() {
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
           data-testid="localloop-assistant-bot-button"
-          className="relative flex items-center gap-2.5 px-4 py-3 rounded-full bg-forest-900 text-cream-100 shadow-floating hover:bg-forest-800 border border-forest-700 transition-all cursor-pointer"
+          className="relative flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-forest-900 text-cream-100 shadow-floating hover:bg-forest-800 border border-forest-700 transition-all cursor-pointer"
           aria-label="Open 24/7 LocalLoop Bot"
         >
           <div className="relative">
             <Bot className="w-5 h-5 text-terracotta-400" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500" />
           </div>
           <span className="font-serif font-bold text-xs tracking-wide hidden sm:inline">
-            LocalLoop AI Concierge
+            LocalLoop Storefront Concierge
           </span>
           <span className="text-[10px] bg-forest-800 text-emerald-300 px-1.5 py-0.5 rounded-md font-mono hidden md:inline">
             24/7 Active

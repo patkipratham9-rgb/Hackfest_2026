@@ -15,7 +15,7 @@ export function RecentView() {
       <title>Recent Explored • LocalLoop Hubballi</title>
       <meta
         name="description"
-        content="Pick up right where you left off — items and stores you recently viewed across Hubballi."
+        content="Pick up right where you left off: items and stores you recently viewed across Hubballi."
       />
 
       {/* Header */}
@@ -34,7 +34,7 @@ export function RecentView() {
             Recent Explored
           </h1>
           <p className="text-xs text-forest-600 mt-0.5">
-            Pick up right where you left off — items and stores you recently viewed in Hubballi
+            Pick up right where you left off: items and stores you recently viewed in Hubballi
           </p>
         </div>
 

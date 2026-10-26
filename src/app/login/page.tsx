@@ -416,7 +416,7 @@ export default function LoginPage() {
             </div>
 
             <div className="p-3 bg-cream-100 border border-cream-300 rounded-xl flex items-center gap-2 text-xs text-forest-700">
-              <span className="text-terracotta-500 text-sm">💡</span>
+              <Sparkles className="w-4 h-4 text-terracotta-500 shrink-0" />
               <span>You can add your delivery address later at checkout.</span>
             </div>
 

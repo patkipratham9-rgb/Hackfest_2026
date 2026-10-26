@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { UserProfile, UserRole } from "@/types";
+import type { UserProfile, UserRole } from "@/types";
 
 export interface StoredUserProfile {
   id: string;

@@ -4,14 +4,20 @@ import React from "react";
 import { ProductCategory } from "@/types";
 import { MOCK_STORES } from "@/data/mockData";
 import { motion } from "framer-motion";
-import { Layers } from "lucide-react";
+import { Layers, Sparkles, Wheat, UtensilsCrossed, Apple, Home } from "lucide-react";
 
-export const CATEGORIES: { label: ProductCategory; emoji: string; desc: string }[] = [
-  { label: "All", emoji: "✨", desc: "All stores" },
-  { label: "Grocery", emoji: "🌾", desc: "Spices & pantry" },
-  { label: "Bakery", emoji: "🍞", desc: "Pedha & savories" },
-  { label: "Produce", emoji: "🥬", desc: "Fresh dairy & fruit" },
-  { label: "Household", emoji: "🏡", desc: "Diyas & handlooms" },
+export interface CategoryItem {
+  label: ProductCategory;
+  desc: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+export const CATEGORIES: CategoryItem[] = [
+  { label: "All", icon: Sparkles, desc: "All stores" },
+  { label: "Grocery", icon: Wheat, desc: "Spices & pantry" },
+  { label: "Bakery", icon: UtensilsCrossed, desc: "Pedha & savories" },
+  { label: "Produce", icon: Apple, desc: "Fresh dairy & fruit" },
+  { label: "Household", icon: Home, desc: "Diyas & handlooms" },
 ];
 
 interface CategoryTabsProps {
@@ -43,7 +49,7 @@ export function CategoryTabs({
         aria-label="Filter stores by category"
         className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
       >
-        {CATEGORIES.map(({ label, emoji }, idx) => {
+        {CATEGORIES.map(({ label, icon: Icon }, idx) => {
           const isSelected = activeCategory === label;
           const slug = label.toLowerCase().replace(/\s+/g, "-");
           const storeCount =
@@ -74,7 +80,7 @@ export function CategoryTabs({
                   transition={{ type: "spring", stiffness: 450, damping: 30 }}
                 />
               )}
-              <span className="relative z-10 text-sm">{emoji}</span>
+              <Icon className="relative z-10 w-3.5 h-3.5" />
               <span className="relative z-10">{label}</span>
               <span
                 className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full font-bold ${

@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   Send,
   Database,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitAppFeedbackAction } from "@/actions/authActions";
@@ -107,9 +109,16 @@ export function AuthFooter() {
                 Reach our team via phone or email for rapid counter assistance.
               </p>
             </div>
-            <div className="text-xs text-forest-700 space-y-0.5 pt-1">
-              <p className="font-mono font-semibold">📞 +91 836 223344 <span className="text-[10px] text-forest-500 font-sans">(9 AM - 8 PM)</span></p>
-              <p className="text-terracotta-700">✉️ support@localloop.hubballi</p>
+            <div className="text-xs text-forest-700 space-y-1.5 pt-1">
+              <p className="font-mono font-semibold flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-forest-600 shrink-0" />
+                <span>+91 836 223344</span>
+                <span className="text-[10px] text-forest-500 font-sans">(9 AM - 8 PM)</span>
+              </p>
+              <p className="text-terracotta-700 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-terracotta-600 shrink-0" />
+                <span>support@localloop.hubballi</span>
+              </p>
             </div>
           </div>
 

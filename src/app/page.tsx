@@ -289,7 +289,7 @@ export default function HomePage() {
               "Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.",
             description:
               "Support independent local vendors in Hubli-Dharwad. Choose Home Delivery or express Counter Pick-up with zero markups.",
-            offerPill: "⚡ FLAT 20% OFF FIRST 3 ORDERS • CODE: LOCAL20",
+            offerPill: "FLAT 20% OFF FIRST 3 ORDERS • CODE: LOCAL20",
             bgGradient: "from-forest-900 via-forest-800 to-forest-950",
             accentColor: "text-terracotta-400",
             primaryCtaText: "Change Location",
@@ -312,7 +312,7 @@ export default function HomePage() {
           >
             <div className="flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-2xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center flex-shrink-0 shadow-xs">
-                <MapPin className="w-5 h-5 text-terracotta-600 animate-bounce" />
+                <MapPin className="w-5 h-5 text-terracotta-600" />
               </div>
               <div className="space-y-1">
                 <h3 className="font-serif font-bold text-forest-950 text-base">

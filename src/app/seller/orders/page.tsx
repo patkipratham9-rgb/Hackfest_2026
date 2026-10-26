@@ -68,7 +68,7 @@ export default function SellerOrdersPage() {
         customer: newOrder.customerName,
         amount: newOrder.total,
       });
-      setSuccessToast(`🔔 Realtime Order Received: ${newOrder.id} from ${newOrder.customerName}!`);
+      setSuccessToast(`Realtime Order Received: ${newOrder.id} from ${newOrder.customerName}!`);
     },
     onStatusUpdate: (orderId, newStatus) => {
       updateOrderStatus(orderId, newStatus);
@@ -720,12 +720,12 @@ export default function SellerOrdersPage() {
             className="p-4 rounded-2xl bg-amber-500 text-white shadow-xl flex items-center justify-between gap-3 border border-amber-600"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                <Bell className="w-4 h-4 text-white animate-bounce" />
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Bell className="w-4 h-4 text-white" />
               </div>
               <div className="text-xs">
                 <p className="font-extrabold flex items-center gap-2">
-                  <span>🔔 Realtime Order Received!</span>
+                  <span>Realtime Order Received!</span>
                   <span className="font-mono bg-white/25 px-2 py-0.5 rounded-md text-[11px]">
                     {realtimeToast.id}
                   </span>

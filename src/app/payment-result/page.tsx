@@ -295,8 +295,9 @@ function PaymentResultContent() {
           </Link>
         </div>
 
-        <p className="text-[11px] text-forest-500 pt-2 border-t border-cream-200">
-          🔒 Payments are securely settled via Cashfree PG with 256-bit encryption. Keep your Order ID for reference.
+        <p className="text-[11px] text-forest-500 pt-2 border-t border-cream-200 flex items-center justify-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-forest-600 shrink-0" />
+          <span>Payments are securely settled via Cashfree PG with 256-bit encryption. Keep your Order ID for reference.</span>
         </p>
       </div>
     </main>

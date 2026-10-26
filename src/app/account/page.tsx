@@ -194,7 +194,7 @@ export default function AccountPage() {
       case "Home":
         return <Home className="w-3.5 h-3.5 text-blue-600" />;
       case "Office":
-        return <Briefcase className="w-3.5 h-3.5 text-purple-600" />;
+        return <Briefcase className="w-3.5 h-3.5 text-forest-700" />;
       case "Primary":
         return <StarIcon className="w-3.5 h-3.5 text-amber-600" />;
       default:

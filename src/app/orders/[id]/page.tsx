@@ -82,7 +82,7 @@ const STATUS_HEADLINES: Record<OrderStatus, { headline: string; detail: string }
     detail: "Your package is waiting at the counter • Present code to collect",
   },
   completed: {
-    headline: "Order Completed 🎉",
+    headline: "Order Completed",
     detail: "Items picked up and verified with artisan store",
   },
   cancelled: {
@@ -640,7 +640,7 @@ function OrderTrackingContent({
               <div className="flex items-center gap-3 text-xs text-forest-600">
                 <span className="flex items-center gap-1 font-semibold text-amber-700">
                   <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  {deliveryPartner.rating} ({deliveryPartner.totalDeliveries}+ deliveries)
+                  <span>Verified Hubballi Fleet Partner</span>
                 </span>
               </div>
               <p className="text-[11px] text-forest-500 flex items-center gap-1 pt-0.5">

@@ -18,6 +18,7 @@ import {
   RotateCcw,
   HelpCircle,
   ExternalLink,
+  Star,
 } from "lucide-react";
 import {
   GRIEVANCE_OFFICER,
@@ -224,22 +225,20 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-xs text-forest-700 font-medium">
               <li>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal("terms")}
-                  className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
+                <Link
+                  href="/terms"
+                  className="hover:text-terracotta-600 transition-colors block"
                 >
                   1. Terms and Conditions
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal("privacy")}
-                  className="hover:text-terracotta-600 transition-colors text-left cursor-pointer"
+                <Link
+                  href="/privacy"
+                  className="hover:text-terracotta-600 transition-colors block"
                 >
                   2. Privacy Policy
-                </button>
+                </Link>
               </li>
               <li>
                 <button
@@ -283,11 +282,9 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <p className="flex items-center gap-1.5">
-              <span>Made with</span>
-              <Heart className="w-3.5 h-3.5 text-terracotta-600 fill-terracotta-600" />
-              <span>for Hubballi-Dharwad Local Merchants &amp; Shoppers</span>
+              <span>Built for Hubballi-Dharwad Local Merchants &amp; Shoppers</span>
             </p>
-            <span className="text-[11px] font-mono text-forest-700 bg-cream-300 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="text-[11px] font-mono text-forest-700 bg-cream-300 px-2.5 py-0.5 rounded-md font-bold">
               v1.0.0
             </span>
           </div>
@@ -413,8 +410,9 @@ export function Footer() {
                   <p>
                     <strong>4. Cancellation, Return, and Refund Policy:</strong> Outlines processes, criteria, and timelines for cancellations, returns, and refunds.
                   </p>
-                  <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-950 font-medium">
-                    ⏱️ <strong>1-Minute Grace Window:</strong> Instant 100% full refund available for 60 seconds immediately post-payment.
+                  <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-950 font-medium flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                    <span><strong>1-Minute Grace Window:</strong> Instant 100% full refund available for 60 seconds immediately post-payment.</span>
                   </div>
                   <div className="p-2.5 bg-cream-100 rounded-xl space-y-1 border border-cream-200">
                     <p className="font-bold text-forest-950">Category Return Windows</p>
@@ -530,13 +528,14 @@ export function Footer() {
                               key={`feedback-star-${star}`}
                               type="button"
                               onClick={() => setFeedbackRating(star)}
-                              className={`w-9 h-9 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
+                              className={`w-9 h-9 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1 ${
                                 feedbackRating >= star
                                   ? "bg-terracotta-500 text-white"
                                   : "bg-cream-200 text-forest-700"
                               }`}
                             >
-                              ★ {star}
+                              <Star className={`w-3 h-3 ${feedbackRating >= star ? "fill-white text-white" : "text-forest-600"}`} />
+                              <span>{star}</span>
                             </button>
                           ))}
                         </div>

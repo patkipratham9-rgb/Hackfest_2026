@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://localloop.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://localloop.in"),
   title: {
     default: "LocalLoop • Hubballi's Hyperlocal Digital Marketplace",
     template: "%s • LocalLoop Hubballi",

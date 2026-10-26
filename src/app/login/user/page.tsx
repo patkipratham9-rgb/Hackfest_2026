@@ -416,7 +416,7 @@ export default function UserLoginPage() {
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-forest-500">
-                          🇮🇳 +91
+                          +91
                         </span>
                         <input
                           type="tel"
@@ -550,7 +550,7 @@ export default function UserLoginPage() {
               </div>
 
               <p className="text-[11px] text-forest-600 bg-cream-100 p-2.5 rounded-xl border border-cream-200">
-                💡 You can add your delivery address later at checkout.
+                You can add your delivery address later at checkout.
               </p>
 
               <button

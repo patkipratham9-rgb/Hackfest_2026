@@ -197,7 +197,7 @@ export function PostLoginLocationModal({
                   type="button"
                   onClick={() => handleSelectArea(hood)}
                   data-testid={`quick-area-${hood.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="px-3 py-1.5 rounded-full bg-cream-200 hover:bg-terracotta-100 hover:text-terracotta-800 border border-cream-300 hover:border-terracotta-300 text-xs font-semibold text-forest-800 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-cream-200 hover:bg-terracotta-100 hover:text-terracotta-800 border border-cream-300 hover:border-terracotta-300 text-xs font-semibold text-forest-800 transition-colors cursor-pointer"
                 >
                   {hood}
                 </button>

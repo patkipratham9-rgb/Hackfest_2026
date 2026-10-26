@@ -82,7 +82,7 @@ export function Navbar() {
           <button
             onClick={() => setIsLocationModalOpen(true)}
             data-testid="nav-location-btn"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream-200 border border-cream-300 hover:border-terracotta-400 text-xs font-semibold text-forest-800 transition-colors shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cream-200 border border-cream-300 hover:border-terracotta-400 text-xs font-semibold text-forest-800 transition-colors shadow-xs"
             aria-label="Set Delivery Location"
           >
             <MapPin className="w-3.5 h-3.5 text-terracotta-500 flex-shrink-0" />
@@ -94,9 +94,9 @@ export function Navbar() {
 
         {/* Right Actions: AI Badge, App Switcher, Profile, Cart, Mobile Menu */}
         <div className="flex items-center gap-2">
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-forest-100 text-forest-700 text-[11px] font-semibold border border-forest-200">
-            <Sparkles className="w-3 h-3 text-terracotta-500 animate-pulse" />
-            <span>Hyperlocal AI Routing</span>
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-forest-100 text-forest-700 text-[11px] font-semibold border border-forest-200">
+            <Sparkles className="w-3 h-3 text-terracotta-500" />
+            <span>Hyperlocal Fast Routing</span>
           </div>
 
           {/* Search Button */}
@@ -112,7 +112,7 @@ export function Navbar() {
                 searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
               }
             }}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 transition-colors border border-cream-300 shadow-xs"
+            className="flex items-center justify-center w-10 h-10 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 transition-colors border border-cream-300 shadow-xs"
           >
             <Search className="w-4 h-4 text-forest-700" />
           </motion.button>
@@ -123,7 +123,7 @@ export function Navbar() {
             whileTap={{ scale: 0.9 }}
             data-testid="header-user-details-button"
             onClick={() => setIsProfileOpen(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 transition-colors border border-cream-300 shadow-xs"
+            className="flex items-center justify-center w-10 h-10 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 transition-colors border border-cream-300 shadow-xs"
             aria-label="Open user and application details"
             title="Profile & Application Details"
           >
@@ -139,7 +139,7 @@ export function Navbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsCartOpen(true)}
-            className="relative flex items-center justify-center w-10 h-10 rounded-full bg-forest-800 hover:bg-forest-900 text-cream-100 transition-all shadow-sm"
+            className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 transition-all shadow-sm"
             aria-label="View Shopping Cart"
           >
             <ShoppingBag className="w-4 h-4 text-cream-100" />
@@ -149,7 +149,7 @@ export function Navbar() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 data-testid="navbar-cart-badge"
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-terracotta-600 text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-cream-100 shadow-xs"
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-md bg-terracotta-600 text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-cream-100 shadow-xs"
               >
                 {totalItems}
               </motion.span>
@@ -161,7 +161,7 @@ export function Navbar() {
             type="button"
             data-testid="mobile-menu-toggle"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="flex sm:hidden items-center justify-center w-10 h-10 rounded-full bg-cream-200 hover:bg-cream-300 text-forest-800 border border-cream-300 shadow-xs"
+            className="flex sm:hidden items-center justify-center w-10 h-10 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 border border-cream-300 shadow-xs"
             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

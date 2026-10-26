@@ -72,7 +72,10 @@ export function AreaPills() {
                 />
               )}
               <span className="relative z-10 flex items-center gap-1.5">
-                <span>{area === "All" ? "📍 All Hubballi" : area}</span>
+                <span className="flex items-center gap-1">
+                  {area === "All" && <MapPin className="w-3 h-3" />}
+                  <span>{area === "All" ? "All Hubballi" : area}</span>
+                </span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                     isSelected

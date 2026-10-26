@@ -370,7 +370,7 @@ export async function submitAppFeedbackAction(feedback: {
     await supabase.from("profiles").upsert({
       id: validId,
       full_name: feedback.name || "App Reviewer",
-      notes: `Feedback (${feedback.rating}★): ${feedback.message}`,
+      notes: `Feedback (${feedback.rating}/5 stars): ${feedback.message}`,
       updated_at: new Date().toISOString(),
     });
 

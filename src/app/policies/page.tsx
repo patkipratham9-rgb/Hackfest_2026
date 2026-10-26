@@ -68,7 +68,7 @@ function PoliciesContent() {
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-forest-700 hover:text-terracotta-700 transition-colors bg-white px-3 py-1.5 rounded-full border border-cream-300 shadow-2xs"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-forest-700 hover:text-terracotta-700 transition-colors bg-white px-3 py-1.5 rounded-xl border border-cream-300 shadow-2xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Marketplace</span>
@@ -77,7 +77,7 @@ function PoliciesContent() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-forest-700 hover:text-forest-950 bg-white px-3 py-1.5 rounded-full border border-cream-300 shadow-2xs transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-forest-700 hover:text-forest-950 bg-white px-3 py-1.5 rounded-xl border border-cream-300 shadow-2xs transition-colors cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5 text-terracotta-600" />
             <span>Print Policy Document</span>

@@ -52,7 +52,8 @@ interface AuthContextType {
     phone: string,
     permissions: boolean,
     role?: UserRole
-  ) => Promise<{ success: boolean; message: string }>;
+  ) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
+  setAuthenticatedSession: (user: UserProfile) => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => { success: boolean; error?: string };
   deleteAccount: () => Promise<{ success: boolean }>;
   addAddress: (address: Omit<UserAddress, "id">) => { success: boolean; address?: UserAddress; error?: string };
@@ -214,46 +215,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updatedAt: new Date().toISOString(),
     };
 
-    setUser(newUser);
-    setIsAuthenticated(true);
-    persistSession(newUser, true);
+    let savedUser: UserProfile | null = null;
 
     if (role === "seller") {
       setActiveAppMode("merchant");
-      loginOrRegisterMerchantDbAction({
-        ownerName: cleanName,
-        shopName: data.storeName || `${cleanName}'s Store`,
-        phone: cleanPhone,
-        email: cleanEmail || undefined,
-      })
-        .then((res) => {
-          if (res.success && res.user) {
-            setUser(res.user);
-            persistSession(res.user, true);
-          }
-        })
-        .catch(console.warn);
+      try {
+        const res = await loginOrRegisterMerchantDbAction({
+          ownerName: cleanName,
+          shopName: data.storeName || `${cleanName}'s Store`,
+          phone: cleanPhone,
+          email: cleanEmail || undefined,
+        });
+        if (res.success && res.user) {
+          savedUser = res.user;
+        }
+      } catch (err) {
+        console.warn("Merchant DB registration note:", err);
+      }
     } else {
       setActiveAppMode("shopper");
-      loginOrRegisterUserDbAction({
-        fullName: cleanName,
-        phone: cleanPhone,
-        email: cleanEmail || undefined,
-        addresses: initialAddresses,
-      })
-        .then((res) => {
-          if (res.success && res.user) {
-            setUser(res.user);
-            persistSession(res.user, true);
-          }
-        })
-        .catch(console.warn);
+      try {
+        const res = await loginOrRegisterUserDbAction({
+          fullName: cleanName,
+          phone: cleanPhone,
+          email: cleanEmail || undefined,
+          addresses: initialAddresses,
+        });
+        if (res.success && res.user) {
+          savedUser = res.user;
+        }
+      } catch (err) {
+        console.warn("Shopper DB registration note:", err);
+      }
     }
+
+    const finalUser: UserProfile = savedUser || {
+      id: clientUuid,
+      name: cleanName,
+      number: cleanPhone,
+      email: cleanEmail || undefined,
+      role,
+      storeId: role === "seller" ? `store_${cleanPhone}` : undefined,
+      storeName: role === "seller" ? (data.storeName || `${cleanName}'s Store`) : undefined,
+      addresses: initialAddresses,
+      emailPermissionsGranted: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Ensure database profile sync
+    await saveUserProfileToDbAction({
+      id: finalUser.id,
+      fullName: finalUser.name,
+      phone: finalUser.number,
+      email: finalUser.email,
+      addresses: finalUser.addresses,
+    }).catch(console.warn);
+
+    setUser(finalUser);
+    setIsAuthenticated(true);
+    persistSession(finalUser, true);
 
     return {
       success: true,
       message: role === "seller" ? "Merchant account created successfully!" : "Account created successfully! Welcome to LocalLoop.",
-      user: newUser,
+      user: finalUser,
     };
   };
 
@@ -265,7 +291,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch("/api/auth/otp/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, otp, role }),
+          body: JSON.stringify({ phone, otp, role, name: user?.name, email: user?.email }),
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
@@ -292,21 +318,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const phoneValidation = validatePhoneNumber(phone);
+    const cleanPhone = phoneValidation.cleanNumber;
     const existingAddresses = user?.addresses && user.addresses.length > 0 ? user.addresses : DEFAULT_ADDRESSES;
 
-    const loggedInUser: UserProfile = verifiedUserFromApi || {
-      id: user?.id || `user_${Date.now()}`,
+    let savedUserFromDb: UserProfile | null = verifiedUserFromApi;
+
+    // 2. Guarantee user sign-in details are saved in persistent database
+    try {
+      if (role === "seller") {
+        const dbRes = await loginOrRegisterMerchantDbAction({
+          ownerName: verifiedUserFromApi?.name || user?.name || "Hubballi Merchant",
+          shopName: verifiedUserFromApi?.storeName || user?.storeName || "Neighborhood Store",
+          phone: cleanPhone,
+          email: verifiedUserFromApi?.email || user?.email,
+        });
+        if (dbRes.success && dbRes.user) {
+          savedUserFromDb = dbRes.user;
+        }
+      } else {
+        const dbRes = await loginOrRegisterUserDbAction({
+          fullName: verifiedUserFromApi?.name || user?.name || "Hubballi Shopper",
+          phone: cleanPhone,
+          email: verifiedUserFromApi?.email || user?.email,
+          addresses: verifiedUserFromApi?.addresses && verifiedUserFromApi.addresses.length > 0 ? verifiedUserFromApi.addresses : existingAddresses,
+        });
+        if (dbRes.success && dbRes.user) {
+          savedUserFromDb = dbRes.user;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("DB synchronization note during OTP login:", dbErr);
+    }
+
+    const loggedInUser: UserProfile = savedUserFromDb || {
+      id: user?.id || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `user_${Date.now()}`),
       name: user?.name || (role === "seller" ? "Hubballi Merchant" : "Hubballi Shopper"),
-      number: phoneValidation.cleanNumber,
+      number: cleanPhone,
       email: user?.email,
       role,
-      storeId: role === "seller" ? (user?.storeId || "store-1") : undefined,
+      storeId: role === "seller" ? (user?.storeId || `store_${cleanPhone}`) : undefined,
       storeName: role === "seller" ? (user?.storeName || "Meena's Diyas & Filter Coffee") : undefined,
       addresses: existingAddresses,
       emailPermissionsGranted: Boolean(user?.emailPermissionsGranted),
       createdAt: user?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Synchronize to database
+    await saveUserProfileToDbAction({
+      id: loggedInUser.id,
+      fullName: loggedInUser.name,
+      phone: loggedInUser.number,
+      email: loggedInUser.email,
+      addresses: loggedInUser.addresses,
+    }).catch(console.warn);
 
     setUser(loggedInUser);
     setIsAuthenticated(true);
@@ -318,7 +383,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setActiveAppMode("shopper");
     }
 
-    return { success: true, message: "Welcome back to LocalLoop!" };
+    return { success: true, message: "Welcome back to LocalLoop!", user: loggedInUser };
   };
 
   const loginWithFirebaseToken = async (
@@ -347,6 +412,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const verifiedUser: UserProfile = data.user;
+
+      // Save to database
+      await saveUserProfileToDbAction({
+        id: verifiedUser.id,
+        fullName: verifiedUser.name,
+        phone: verifiedUser.number,
+        email: verifiedUser.email,
+        addresses: verifiedUser.addresses,
+      }).catch(console.warn);
+
       setUser(verifiedUser);
       setIsAuthenticated(true);
       persistSession(verifiedUser, true);
@@ -391,21 +466,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: "Please grant consent for order notifications and digital receipts." };
     }
 
-    const cleanName = sanitizeInput(name) || "LocalLoop User";
+    const cleanName = sanitizeInput(name) || (role === "seller" ? "Hubballi Merchant" : "Hubballi Shopper");
+    const cleanPhone = phoneValidation.cleanNumber;
+    const cleanEmail = emailValidation.sanitized;
 
-    const loggedInUser: UserProfile = {
-      id: user?.id || `user_${Date.now()}`,
+    let savedUserFromDb: UserProfile | null = null;
+
+    try {
+      if (role === "seller") {
+        setActiveAppMode("merchant");
+        const res = await loginOrRegisterMerchantDbAction({
+          ownerName: cleanName,
+          shopName: `${cleanName}'s Store`,
+          phone: cleanPhone,
+          email: cleanEmail,
+        });
+        if (res.success && res.user) {
+          savedUserFromDb = res.user;
+        }
+      } else {
+        setActiveAppMode("shopper");
+        const res = await loginOrRegisterUserDbAction({
+          fullName: cleanName,
+          phone: cleanPhone,
+          email: cleanEmail,
+          addresses: user?.addresses && user.addresses.length > 0 ? user.addresses : DEFAULT_ADDRESSES,
+        });
+        if (res.success && res.user) {
+          savedUserFromDb = res.user;
+        }
+      }
+    } catch (err) {
+      console.warn("DB synchronization note during email sign-in:", err);
+    }
+
+    const loggedInUser: UserProfile = savedUserFromDb || {
+      id: user?.id || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `user_${Date.now()}`),
       name: cleanName,
-      number: phoneValidation.cleanNumber,
-      email: emailValidation.sanitized,
+      number: cleanPhone,
+      email: cleanEmail,
       role,
-      storeId: role === "seller" ? "store-1" : undefined,
-      storeName: role === "seller" ? "Meena's Diyas & Filter Coffee" : undefined,
+      storeId: role === "seller" ? `store_${cleanPhone}` : undefined,
+      storeName: role === "seller" ? `${cleanName}'s Store` : undefined,
       addresses: user?.addresses && user.addresses.length > 0 ? user.addresses : DEFAULT_ADDRESSES,
       emailPermissionsGranted: true,
       createdAt: user?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Save profile to Supabase & local DB directly
+    await saveUserProfileToDbAction({
+      id: loggedInUser.id,
+      fullName: loggedInUser.name,
+      phone: loggedInUser.number,
+      email: loggedInUser.email,
+      addresses: loggedInUser.addresses,
+    }).catch(console.warn);
 
     setUser(loggedInUser);
     setIsAuthenticated(true);
@@ -417,7 +533,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setActiveAppMode("shopper");
     }
 
-    return { success: true, message: "Signed in with email permissions successfully!" };
+    return { success: true, message: "Signed in with email permissions successfully!", user: loggedInUser };
+  };
+
+  const setAuthenticatedSession = async (sessionUser: UserProfile) => {
+    setUser(sessionUser);
+    setIsAuthenticated(true);
+    persistSession(sessionUser, true);
+
+    if (sessionUser.role === "seller") {
+      setActiveAppMode("merchant");
+    } else {
+      setActiveAppMode("shopper");
+    }
+
+    // Save to database
+    await saveUserProfileToDbAction({
+      id: sessionUser.id,
+      fullName: sessionUser.name,
+      phone: sessionUser.number,
+      email: sessionUser.email,
+      addresses: sessionUser.addresses,
+    }).catch(console.warn);
   };
 
   const updateProfile = (updates: Partial<UserProfile>) => {
@@ -626,6 +763,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithPhoneOtp,
         loginWithFirebaseToken,
         loginWithEmailPermission,
+        setAuthenticatedSession,
         updateProfile,
         deleteAccount,
         addAddress,

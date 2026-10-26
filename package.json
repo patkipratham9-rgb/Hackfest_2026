@@ -14,7 +14,8 @@
     "test:ai": "node scripts/verify-ai-and-payments.mjs",
     "test:policies": "node scripts/verify-legal-policies.mjs",
     "test:location": "node scripts/verify-location-permission-flow.mjs",
-    "test:all": "npm test && npm run test:backend && npm run test:seller && npm run test:auth && npm run test:ai && npm run test:policies && npm run test:location",
+    "test:db": "node scripts/verify-user-signin-db.mjs",
+    "test:all": "npm test && npm run test:backend && npm run test:seller && npm run test:auth && npm run test:ai && npm run test:policies && npm run test:location && npm run test:db",
     "bot:daemon": "node scripts/localloop-bot-daemon.mjs",
     "postinstall": "node scripts/patch-next-chunk-loading.mjs"
   },

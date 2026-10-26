@@ -69,7 +69,7 @@ export function addNotification(
 export function notifyNewStore(storeName: string, area: string) {
   return addNotification({
     type: "new_store",
-    title: "🏪 New Store Registered in Hubballi!",
+    title: "New Store Registered in Hubballi!",
     message: `"${storeName}" has joined LocalLoop in ${area}. Explore their fresh neighborhood catalog now!`,
     storeName,
     link: "/",
@@ -82,7 +82,7 @@ export function notifyNewStore(storeName: string, area: string) {
 export function notifyNewProduct(productName: string, storeName: string, price: number) {
   return addNotification({
     type: "new_product",
-    title: "✨ New Arrival in Stock!",
+    title: "New Arrival in Stock!",
     message: `"${productName}" is now available at ${storeName} for ₹${price}. Order for express counter pickup!`,
     productName,
     storeName,

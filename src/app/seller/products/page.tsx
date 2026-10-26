@@ -918,7 +918,7 @@ export default function SellerProductsPage() {
                       onClick={() => setShowAiHelper(!showAiHelper)}
                       className="text-[11px] font-bold text-terracotta-300 hover:text-terracotta-200 underline cursor-pointer"
                     >
-                      {showAiHelper ? "Hide Assistant" : "✨ Autofill with AI"}
+                      {showAiHelper ? "Hide Assistant" : "Autofill Catalog"}
                     </button>
                   </div>
 

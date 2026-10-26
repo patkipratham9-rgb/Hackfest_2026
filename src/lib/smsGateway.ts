@@ -154,7 +154,7 @@ export async function dispatchSmsOtp(
 
   // 4. Default Telemetry / Simulated Carrier Dispatch for local & testing environments
   console.log(
-    `[LocalLoop SMS Gateway] 📱 OUTBOUND SMS DISPATCHED: To: ${maskedPhone(digits)} | Code: ${otpCode} | Content: "${smsMessage}"`
+    `[LocalLoop SMS Gateway] OUTBOUND SMS DISPATCHED: To: ${maskedPhone(digits)} | Code: ${otpCode} | Content: "${smsMessage}"`
   );
 
   return {

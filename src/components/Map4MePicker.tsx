@@ -18,6 +18,7 @@ import {
   Layers,
   Truck,
   RotateCcw,
+  X,
 } from "lucide-react";
 import { AddressType, UserAddress, NeighborhoodArea } from "@/types";
 
@@ -405,9 +406,9 @@ export function Map4MePicker({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-forest-400 hover:text-forest-700 font-bold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-forest-400 hover:text-forest-700"
               >
-                ✕
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
 

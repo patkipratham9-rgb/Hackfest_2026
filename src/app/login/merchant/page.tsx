@@ -44,7 +44,7 @@ const AREAS: NeighborhoodArea[] = [
 
 export default function MerchantLoginPage() {
   const router = useRouter();
-  const { setActiveAppMode } = useAuth();
+  const { setActiveAppMode, setAuthenticatedSession } = useAuth();
   const { setUserRole, updateStoreProfile } = useSeller();
 
   // Mode: "login" (Merchant Sign In) vs "signup" (Register New Store)
@@ -154,16 +154,7 @@ export default function MerchantLoginPage() {
         setDbVerified(true);
         setStatusMessage(res.message);
 
-        // Update local session
-        localStorage.setItem(
-          "localloop_auth_session_v1",
-          JSON.stringify({
-            isAuthenticated: true,
-            user: res.user,
-            token: `merchant_token_${Date.now()}`,
-          })
-        );
-        setActiveAppMode("merchant");
+        await setAuthenticatedSession(res.user);
         setUserRole("seller");
         updateStoreProfile({
           name: res.storeName,
@@ -233,15 +224,7 @@ export default function MerchantLoginPage() {
       if (res.success) {
         setDbVerified(true);
         setStatusMessage(res.message);
-        localStorage.setItem(
-          "localloop_auth_session_v1",
-          JSON.stringify({
-            isAuthenticated: true,
-            user: res.user,
-            token: `merchant_token_${Date.now()}`,
-          })
-        );
-        setActiveAppMode("merchant");
+        await setAuthenticatedSession(res.user);
         setUserRole("seller");
 
         setTimeout(() => {
@@ -289,15 +272,7 @@ export default function MerchantLoginPage() {
       if (res.success) {
         setDbVerified(true);
         setStatusMessage("Store & Merchant account registered in Supabase database!");
-        localStorage.setItem(
-          "localloop_auth_session_v1",
-          JSON.stringify({
-            isAuthenticated: true,
-            user: res.user,
-            token: `merchant_token_${Date.now()}`,
-          })
-        );
-        setActiveAppMode("merchant");
+        await setAuthenticatedSession(res.user);
         setUserRole("seller");
         updateStoreProfile({
           name: shopName.trim(),
@@ -497,7 +472,7 @@ export default function MerchantLoginPage() {
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-forest-500">
-                          🇮🇳 +91
+                          +91
                         </span>
                         <input
                           type="tel"

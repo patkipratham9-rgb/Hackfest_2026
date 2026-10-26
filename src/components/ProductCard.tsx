@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Product } from "@/types";
 import { useCart } from "@/context/CartContext";
-import { Plus, Minus, Check, AlertCircle, Heart } from "lucide-react";
+import { Plus, Minus, Check, AlertCircle, Heart, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductCardProps {
@@ -74,9 +74,10 @@ export function ProductCard({ product }: ProductCardProps) {
             <motion.div
               initial={{ x: -10, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              className="absolute top-2.5 left-2.5 bg-forest-800 text-cream-100 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-xs"
+              className="absolute top-2.5 left-2.5 bg-forest-800 text-cream-100 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs flex items-center gap-1"
             >
-              ★ Popular
+              <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+              <span>Popular</span>
             </motion.div>
           )}
 
