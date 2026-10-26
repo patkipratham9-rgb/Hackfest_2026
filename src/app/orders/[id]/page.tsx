@@ -601,112 +601,114 @@ function OrderTrackingContent({
         currentStatus={order.status}
       />
 
-      {/* Delivery Partner Details & Estimated Arrival Time (ETA) Card */}
-      <motion.div
-        data-testid="delivery-partner-eta-card"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="p-5 sm:p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm space-y-4"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-cream-200">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center shadow-xs">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-terracotta-600 block">
-                {isDeliveryOrder ? "Doorstep Delivery Fleet" : "Express Counter Fulfillment"}
-              </span>
-              <h3 className="font-serif font-extrabold text-base sm:text-lg text-forest-950">
-                {isDeliveryOrder ? "Assigned Delivery Boy & Live ETA" : "Store Counter In-Charge"}
-              </h3>
-            </div>
-          </div>
-
-          {/* ETA Badge */}
-          <div className="bg-emerald-50 border border-emerald-300 rounded-2xl px-4 py-2 text-left sm:text-right flex items-center sm:flex-col justify-between sm:justify-center gap-0.5">
-            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
-              Estimated Arrival Time
-            </span>
-            <div className="flex items-baseline gap-1 sm:justify-end">
-              <span data-testid="delivery-eta-time" suppressHydrationWarning className="font-serif font-black text-emerald-950 text-base sm:text-lg">
-                {formattedMinutesLeft}
-              </span>
-              <span className="text-[10px] font-bold text-emerald-700">left</span>
-            </div>
-            <span suppressHydrationWarning className="text-[10px] text-emerald-600 font-medium">
-              Expected by {targetArrivalTime}
-            </span>
-          </div>
-        </div>
-
-        {/* Delivery Boy Profile & Vehicle Details */}
-        <div className="p-4 rounded-2xl bg-cream-100 border border-cream-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="relative w-13 h-13 rounded-2xl overflow-hidden bg-forest-800 text-cream-100 flex items-center justify-center font-bold text-lg border-2 border-cream-300 shrink-0 shadow-xs">
-              <img
-                src={
-                  (deliveryPartner.avatarUrl && deliveryPartner.avatarUrl.trim()) ||
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
-                }
-                alt={deliveryPartner.name || "Delivery Partner"}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <h4 data-testid="delivery-boy-name" className="font-bold text-sm text-forest-950">
-                  {deliveryPartner.name}
-                </h4>
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-terracotta-100 text-terracotta-800">
-                  <ShieldCheck className="w-3 h-3 text-terracotta-600" />
-                  Verified Partner
-                </span>
+      {/* Delivery Partner Details & Estimated Arrival Time (ETA) Card (Only for Doorstep Delivery) */}
+      {isDeliveryOrder && (
+        <motion.div
+          data-testid="delivery-partner-eta-card"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-5 sm:p-6 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-cream-200">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center shadow-xs">
+                <Truck className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-3 text-xs text-forest-600">
-                <span className="flex items-center gap-1 font-semibold text-amber-700">
-                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  <span>Verified Hubballi Fleet Partner</span>
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-terracotta-600 block">
+                  Doorstep Delivery Fleet
                 </span>
+                <h3 className="font-serif font-extrabold text-base sm:text-lg text-forest-950">
+                  Assigned Delivery Boy & Live ETA
+                </h3>
               </div>
-              <p className="text-[11px] text-forest-500 flex items-center gap-1 pt-0.5">
-                <Navigation className="w-3 h-3 text-terracotta-600" />
-                <span>{deliveryPartner.vehicle} • <strong className="font-mono text-forest-800">{deliveryPartner.vehicleNumber}</strong></span>
-              </p>
+            </div>
+
+            {/* ETA Badge */}
+            <div className="bg-emerald-50 border border-emerald-300 rounded-2xl px-4 py-2 text-left sm:text-right flex items-center sm:flex-col justify-between sm:justify-center gap-0.5">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                Estimated Arrival Time
+              </span>
+              <div className="flex items-baseline gap-1 sm:justify-end">
+                <span data-testid="delivery-eta-time" suppressHydrationWarning className="font-serif font-black text-emerald-950 text-base sm:text-lg">
+                  {formattedMinutesLeft}
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700">left</span>
+              </div>
+              <span suppressHydrationWarning className="text-[10px] text-emerald-600 font-medium">
+                Expected by {targetArrivalTime}
+              </span>
             </div>
           </div>
 
-          {/* Quick Call Action */}
-          <div className="w-full sm:w-auto flex sm:flex-col gap-2">
-            <motion.a
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.95 }}
-              data-testid="call-delivery-boy-button"
-              href={`tel:${deliveryPartner.phone}`}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-forest-900 text-cream-100 text-xs font-bold hover:bg-forest-950 shadow-warm transition-all cursor-pointer"
-            >
-              <Phone className="w-3.5 h-3.5 text-terracotta-400" />
-              <span>Call Delivery Boy</span>
-            </motion.a>
-          </div>
-        </div>
+          {/* Delivery Boy Profile & Vehicle Details */}
+          <div className="p-4 rounded-2xl bg-cream-100 border border-cream-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="relative w-13 h-13 rounded-2xl overflow-hidden bg-forest-800 text-cream-100 flex items-center justify-center font-bold text-lg border-2 border-cream-300 shrink-0 shadow-xs">
+                <img
+                  src={
+                    (deliveryPartner.avatarUrl && deliveryPartner.avatarUrl.trim()) ||
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
+                  }
+                  alt={deliveryPartner.name || "Delivery Partner"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h4 data-testid="delivery-boy-name" className="font-bold text-sm text-forest-950">
+                    {deliveryPartner.name}
+                  </h4>
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-terracotta-100 text-terracotta-800">
+                    <ShieldCheck className="w-3 h-3 text-terracotta-600" />
+                    Verified Partner
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-forest-600">
+                  <span className="flex items-center gap-1 font-semibold text-amber-700">
+                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                    <span>Verified Hubballi Fleet Partner</span>
+                  </span>
+                </div>
+                <p className="text-[11px] text-forest-500 flex items-center gap-1 pt-0.5">
+                  <Navigation className="w-3 h-3 text-terracotta-600" />
+                  <span>{deliveryPartner.vehicle} • <strong className="font-mono text-forest-800">{deliveryPartner.vehicleNumber}</strong></span>
+                </p>
+              </div>
+            </div>
 
-        {/* Live Delivery Note / Destination Preview */}
-        <div className="p-3 bg-cream-100/60 rounded-xl border border-cream-200/80 flex items-center justify-between text-xs text-forest-700">
-          <div className="flex items-center gap-2 truncate">
-            <MapPin className="w-4 h-4 text-terracotta-600 shrink-0" />
-            <span className="truncate">
-              {isDeliveryOrder && order.deliveryAddress
-                ? `Destination: ${(order.deliveryAddress as any).street || (order.deliveryAddress as any).locality || "Customer Delivery Address"}, Hubballi`
-                : `Pickup: ${order.storeLane}, ${order.storeArea} (Counter Slot: ${order.pickupTime})`}
+            {/* Quick Call Action */}
+            <div className="w-full sm:w-auto flex sm:flex-col gap-2">
+              <motion.a
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.95 }}
+                data-testid="call-delivery-boy-button"
+                href={`tel:${deliveryPartner.phone}`}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-forest-900 text-cream-100 text-xs font-bold hover:bg-forest-950 shadow-warm transition-all cursor-pointer"
+              >
+                <Phone className="w-3.5 h-3.5 text-terracotta-400" />
+                <span>Call Delivery Boy</span>
+              </motion.a>
+            </div>
+          </div>
+
+          {/* Live Delivery Note / Destination Preview */}
+          <div className="p-3 bg-cream-100/60 rounded-xl border border-cream-200/80 flex items-center justify-between text-xs text-forest-700">
+            <div className="flex items-center gap-2 truncate">
+              <MapPin className="w-4 h-4 text-terracotta-600 shrink-0" />
+              <span className="truncate">
+                {order.deliveryAddress
+                  ? `Destination: ${(order.deliveryAddress as any).street || (order.deliveryAddress as any).locality || "Customer Delivery Address"}, Hubballi`
+                  : "Customer Delivery Address, Hubballi"}
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-md shrink-0">
+              {order.status === "completed" ? "Delivered" : "En Route"}
             </span>
           </div>
-          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-md shrink-0">
-            {order.status === "completed" ? "Delivered" : "En Route"}
-          </span>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Delivery Destination Address (for Home Delivery) */}
       {isDeliveryOrder && order.deliveryAddress && (
