@@ -20,6 +20,11 @@ export function ProductCard({ product }: ProductCardProps) {
   const isLowStock = product.stock > 0 && product.stock <= 5;
   const isCritical = product.stock === 1;
 
+  const defaultProductImage =
+    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80";
+  const productImageSrc =
+    (product.imageUrl && product.imageUrl.trim()) || defaultProductImage;
+
   return (
     <motion.div
       layout
@@ -37,8 +42,8 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Product Image */}
         <div className="relative h-44 w-full overflow-hidden rounded-2xl bg-cream-200">
           <motion.img
-            src={product.imageUrl}
-            alt={product.name}
+            src={productImageSrc}
+            alt={product.name || "Product item"}
             className="h-full w-full object-cover"
             whileHover={{ scale: 1.08 }}
             transition={{ duration: 0.4 }}

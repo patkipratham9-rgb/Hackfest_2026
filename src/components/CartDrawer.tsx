@@ -143,8 +143,11 @@ export function CartDrawer() {
                         className="flex gap-3 bg-cream-100 p-3 rounded-2xl border border-cream-300 shadow-xs"
                       >
                         <img
-                          src={product.imageUrl}
-                          alt={product.name}
+                          src={
+                            (product.imageUrl && product.imageUrl.trim()) ||
+                            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80"
+                          }
+                          alt={product.name || "Cart item"}
                           loading="lazy"
                           data-testid="cart-item-image"
                           className="w-16 h-16 object-cover rounded-xl bg-cream-200 flex-shrink-0"

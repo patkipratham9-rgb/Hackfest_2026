@@ -37,6 +37,9 @@ interface SellerContextType {
   setStock: (productId: string, newStock: number) => { success: boolean; newStock: number };
 }
 
+const DEFAULT_STORE_BANNER =
+  "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80";
+
 const EMPTY_STORE: Store = {
   id: "store-manual-01",
   name: "",
@@ -49,8 +52,8 @@ const EMPTY_STORE: Store = {
   reviewCount: 0,
   isOpen: true,
   openingHours: "8:00 AM - 9:00 PM",
-  imageUrl: "",
-  bannerUrl: "",
+  imageUrl: DEFAULT_STORE_BANNER,
+  bannerUrl: DEFAULT_STORE_BANNER,
   phone: "+91 98450 12345",
   verified: true,
 };

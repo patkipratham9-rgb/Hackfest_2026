@@ -634,8 +634,11 @@ function OrderTrackingContent({
           <div className="flex items-center gap-3.5">
             <div className="relative w-13 h-13 rounded-2xl overflow-hidden bg-forest-800 text-cream-100 flex items-center justify-center font-bold text-lg border-2 border-cream-300 shrink-0 shadow-xs">
               <img
-                src={deliveryPartner.avatarUrl}
-                alt={deliveryPartner.name}
+                src={
+                  (deliveryPartner.avatarUrl && deliveryPartner.avatarUrl.trim()) ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
+                }
+                alt={deliveryPartner.name || "Delivery Partner"}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -771,7 +774,7 @@ function OrderTrackingContent({
             >
               <div className="flex items-center gap-3">
                 <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-cream-300">
-                  {product.imageUrl ? (
+                  {Boolean(product.imageUrl && product.imageUrl.trim()) ? (
                     <Image
                       src={product.imageUrl}
                       alt={product.name}

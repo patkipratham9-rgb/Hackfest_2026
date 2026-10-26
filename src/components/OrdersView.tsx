@@ -262,8 +262,11 @@ export function OrdersView() {
                         className="flex items-center gap-2.5 p-2 rounded-xl bg-cream-100/70 border border-cream-200"
                       >
                         <img
-                          src={item.product.imageUrl}
-                          alt={item.product.name}
+                          src={
+                            (item.product?.imageUrl && item.product.imageUrl.trim()) ||
+                            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80"
+                          }
+                          alt={item.product?.name || "Order item"}
                           loading="lazy"
                           className="w-10 h-10 rounded-lg object-cover bg-cream-200 flex-shrink-0"
                         />

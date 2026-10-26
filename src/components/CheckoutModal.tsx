@@ -461,7 +461,7 @@ export function CheckoutModal() {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-cream-300">
-                        {item.product.imageUrl ? (
+                        {Boolean(item.product.imageUrl && item.product.imageUrl.trim()) ? (
                           <Image
                             src={item.product.imageUrl}
                             alt={item.product.name}

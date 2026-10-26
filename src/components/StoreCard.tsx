@@ -22,6 +22,13 @@ interface StoreCardProps {
 export function StoreCard({ store, onSelect, isSelected }: StoreCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
 
+  const defaultStoreBanner =
+    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80";
+  const storeImageSrc =
+    (store.bannerUrl && store.bannerUrl.trim()) ||
+    (store.imageUrl && store.imageUrl.trim()) ||
+    defaultStoreBanner;
+
   return (
     <motion.div
       layout
@@ -43,8 +50,8 @@ export function StoreCard({ store, onSelect, isSelected }: StoreCardProps) {
         {/* Banner / Store Image */}
         <div className="relative h-44 w-full bg-cream-200 overflow-hidden">
           <motion.img
-            src={store.bannerUrl || store.imageUrl}
-            alt={store.name}
+            src={storeImageSrc}
+            alt={store.name || "Local store"}
             data-testid="store-image"
             className="h-full w-full object-cover"
             whileHover={{ scale: 1.06 }}

@@ -615,7 +615,7 @@ export default function SellerProductsPage() {
                 <div className="space-y-2.5">
                   {/* Image & Badges */}
                   <div className="relative w-full h-44 rounded-2xl overflow-hidden bg-cream-200 border border-cream-300 group">
-                    {product.imageUrl ? (
+                    {Boolean(product.imageUrl && product.imageUrl.trim()) ? (
                       <Image
                         src={product.imageUrl}
                         alt={product.name}
@@ -1244,7 +1244,7 @@ export default function SellerProductsPage() {
                     )}
                   </div>
 
-                  {formData.imageUrl && (
+                  {Boolean(formData.imageUrl && formData.imageUrl.trim()) && (
                     <div
                       data-testid="product-image-preview"
                       className="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-forest-800/20 bg-cream-200 shadow-xs"

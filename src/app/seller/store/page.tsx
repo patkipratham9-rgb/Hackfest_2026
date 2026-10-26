@@ -457,7 +457,7 @@ export default function StoreProfilePage() {
             data-testid="store-banner-preview"
             className="relative w-full h-44 sm:h-56 rounded-2xl overflow-hidden bg-forest-950 border border-cream-300 shadow-inner group"
           >
-            {bannerUrl ? (
+            {Boolean(bannerUrl && bannerUrl.trim()) ? (
               <Image
                 src={bannerUrl}
                 alt={name}
