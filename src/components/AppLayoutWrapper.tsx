@@ -14,7 +14,7 @@ export function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   React.useEffect(() => {
-    // Intercept and suppress non-Error unhandled rejections (e.g., [object Event] from blocked third-party resources)
+    // Intercept and suppress non-Error unhandled rejections and recover from chunk loading errors
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const reason = event?.reason;
       const isEventReason =
@@ -25,6 +25,25 @@ export function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
       if (isEventReason) {
         event.preventDefault();
         event.stopImmediatePropagation();
+        return;
+      }
+
+      const msg = reason?.message || String(reason || "");
+      if (
+        msg.includes("Loading chunk") ||
+        msg.includes("ChunkLoadError") ||
+        reason?.name === "ChunkLoadError" ||
+        msg.includes("_next/undefined")
+      ) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        // Debounced self-healing reload for stale client cache
+        const lastReload = sessionStorage.getItem("chunk_reload_ts");
+        const now = Date.now();
+        if (!lastReload || now - Number(lastReload) > 8000) {
+          sessionStorage.setItem("chunk_reload_ts", String(now));
+          window.location.reload();
+        }
       }
     };
 
