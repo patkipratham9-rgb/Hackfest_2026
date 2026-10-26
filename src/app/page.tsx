@@ -302,74 +302,36 @@ export default function HomePage() {
       />
 
 
-      {/* Prominent Location Prompt Section: Asks user to add / share location */}
-      <section data-testid="location-prompt-card" className="space-y-3">
-        {!userLocation ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-5 sm:p-6 bg-cream-50 rounded-3xl border-2 border-terracotta-200 shadow-warm flex flex-col sm:flex-row items-center justify-between gap-4"
-          >
-            <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center flex-shrink-0 shadow-xs">
-                <MapPin className="w-5 h-5 text-terracotta-600" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-serif font-bold text-forest-950 text-base">
-                  Where should we deliver?
-                </h3>
-                <p className="text-xs text-forest-600 max-w-lg leading-relaxed">
-                  Share your location or enter your address manually to discover corner shops and fresh local goods nearby.
-                </p>
-              </div>
+      {/* Active Delivery Location Bar */}
+      <section data-testid="location-prompt-card" className="space-y-2">
+        <div
+          data-testid="active-location-card"
+          className="p-3 sm:p-3.5 bg-cream-100/90 rounded-2xl border border-cream-300 flex items-center justify-between gap-3 shadow-xs"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-terracotta-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+              <MapPin className="w-4 h-4" />
             </div>
+            <div className="truncate text-xs">
+              <span className="text-forest-600 font-medium">Delivering to: </span>
+              <span className="font-bold text-forest-950">
+                {userLocation || "Hubballi-Dharwad (All Neighborhoods)"}
+              </span>
+            </div>
+          </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-              <button
-                type="button"
-                data-testid="btn-share-location"
-                onClick={handleShareGps}
-                disabled={isLocating}
-                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-terracotta-600 hover:bg-terracotta-700 disabled:opacity-60 text-white font-bold text-xs shadow-warm flex items-center justify-center gap-2 transition-transform active:scale-95"
-              >
-                <Navigation className={`w-3.5 h-3.5 ${isLocating ? "animate-spin" : ""}`} />
-                <span>{isLocating ? "Detecting GPS..." : "Share Location"}</span>
-              </button>
-              <button
-                type="button"
-                data-testid="btn-manual-location"
-                onClick={() => setIsLocationModalOpen(true)}
-                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-900 font-bold text-xs border border-cream-300 flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <MapPin className="w-3.5 h-3.5 text-forest-700" />
-                <span>Add Manually</span>
-              </button>
-            </div>
-          </motion.div>
-        ) : (
-          <div
-            data-testid="active-location-card"
-            className="p-3.5 sm:p-4 bg-terracotta-50/80 rounded-2xl border border-terracotta-200 flex items-center justify-between gap-3 shadow-xs"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-xl bg-terracotta-500 text-white flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <div className="truncate text-xs">
-                <span className="text-forest-600 font-medium">Delivering to: </span>
-                <span className="font-bold text-forest-950">{userLocation}</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
               data-testid="btn-change-location"
               onClick={() => setIsLocationModalOpen(true)}
-              className="text-xs font-bold text-terracotta-700 hover:text-terracotta-900 bg-white border border-terracotta-300 hover:border-terracotta-400 px-3 py-1.5 rounded-xl transition-colors flex-shrink-0"
+              className="text-xs font-bold text-terracotta-700 hover:text-terracotta-900 bg-white border border-cream-300 hover:border-terracotta-400 px-3.5 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
-              Change
+              <Navigation className="w-3 h-3 text-terracotta-600" />
+              <span>{userLocation ? "Change Location" : "Set Location"}</span>
             </button>
           </div>
-        )}
+        </div>
 
         {locationFeedback && (
           <motion.div

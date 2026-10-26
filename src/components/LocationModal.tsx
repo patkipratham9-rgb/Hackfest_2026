@@ -103,7 +103,7 @@ export function LocationModal() {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200 bg-cream-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-terracotta-100 flex items-center justify-center text-terracotta-700">
+              <div className="w-8 h-8 rounded-xl bg-terracotta-100 flex items-center justify-center text-terracotta-700 shadow-2xs">
                 <MapPin className="w-4 h-4" />
               </div>
               <div>
@@ -117,10 +117,10 @@ export function LocationModal() {
             </div>
             <button
               onClick={() => setIsLocationModalOpen(false)}
-              className="p-1.5 rounded-full text-forest-600 hover:text-forest-900 hover:bg-cream-200 transition-colors"
+              className="w-8 h-8 rounded-xl text-forest-600 hover:text-forest-900 hover:bg-cream-200 transition-colors flex items-center justify-center cursor-pointer"
               aria-label="Close modal"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 

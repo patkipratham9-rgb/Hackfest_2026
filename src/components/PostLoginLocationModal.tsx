@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Building2,
   Sparkles,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -96,29 +97,48 @@ export function PostLoginLocationModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 overflow-y-auto bg-forest-950/70 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => {
+            if (!requireLocation) onSkip();
+          }}
+          className="fixed inset-0 z-50 overflow-y-auto bg-forest-950/70 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
         >
           <motion.div
             key="post-login-location-modal-dialog"
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ duration: 0.25 }}
-          className="relative w-full max-w-lg bg-cream-50 border border-cream-300 rounded-3xl p-6 sm:p-8 shadow-floating space-y-6 text-forest-950 overflow-hidden"
-        >
-          {/* Decorative Background Accent */}
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-36 h-36 bg-terracotta-500/10 rounded-full blur-2xl pointer-events-none" />
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ duration: 0.25 }}
+            className="relative w-full max-w-lg my-auto bg-cream-50 border border-cream-300 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-forest-950 overflow-hidden cursor-default"
+          >
+            {/* Top Close Button (for Pop-up screen dismiss) */}
+            {!requireLocation && (
+              <button
+                type="button"
+                onClick={onSkip}
+                data-testid="post-login-close-button"
+                aria-label="Close location pop-up"
+                className="absolute top-4 right-4 w-8 h-8 rounded-xl bg-cream-200/80 hover:bg-cream-300 text-forest-700 hover:text-forest-950 flex items-center justify-center transition-colors cursor-pointer z-20 shadow-2xs"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
 
-          {/* Header Icon & Badges */}
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-terracotta-100 border border-terracotta-200 text-terracotta-600 flex items-center justify-center mx-auto shadow-xs">
-              <Compass className="w-8 h-8 animate-pulse text-terracotta-600" />
-            </div>
+            {/* Decorative Background Accent */}
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-36 h-36 bg-terracotta-500/10 rounded-3xl blur-2xl pointer-events-none" />
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest-100 text-forest-800 text-[11px] font-bold uppercase tracking-wider">
-              <Sparkles className="w-3 h-3 text-terracotta-600" />
-              <span>Hyperlocal Location Setup</span>
-            </div>
+            {/* Header Icon & Badges */}
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 rounded-2xl bg-terracotta-100 border border-terracotta-200 text-terracotta-600 flex items-center justify-center mx-auto shadow-xs">
+                <Compass className="w-8 h-8 text-terracotta-600" />
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-forest-100 text-forest-800 text-[11px] font-bold uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-terracotta-600" />
+                <span>Hyperlocal Location Setup</span>
+              </div>
 
             <h3 className="font-serif font-extrabold text-2xl text-forest-950 tracking-tight">
               {title}
