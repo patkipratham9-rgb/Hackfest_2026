@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { DEMO_OTP } from "@/lib/authSecurity";
 import { createRecaptchaVerifier, sendFirebasePhoneOtp } from "@/lib/firebaseClient";
 import { PostLoginLocationModal } from "@/components/PostLoginLocationModal";
+import { useCart } from "@/context/CartContext";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,17 +38,30 @@ export default function LoginPage() {
   } = useAuth();
 
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const { setIsCartOpen } = useCart();
+
+  // Return the shopper to where they started. "?next=checkout" is set by the
+  // cart drawer when a logged-out shopper tries to check out.
+  const finishLoginRedirect = () => {
+    const next =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("next")
+        : null;
+    router.push("/");
+    router.refresh();
+    if (next === "checkout") {
+      setTimeout(() => setIsCartOpen(true), 300);
+    }
+  };
 
   const handleLocationComplete = (loc: string) => {
     setShowLocationModal(false);
-    router.push("/");
-    router.refresh();
+    finishLoginRedirect();
   };
 
   const handleSkipLocation = () => {
     setShowLocationModal(false);
-    router.push("/");
-    router.refresh();
+    finishLoginRedirect();
   };
 
   // Mode: "signup" (Create an account) vs "login" (Already have an account? Log in)

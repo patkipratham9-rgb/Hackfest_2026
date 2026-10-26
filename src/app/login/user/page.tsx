@@ -20,22 +20,36 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { loginOrRegisterUserDbAction } from "@/actions/authActions";
 import { PostLoginLocationModal } from "@/components/PostLoginLocationModal";
+import { useCart } from "@/context/CartContext";
 
 export default function UserLoginPage() {
   const router = useRouter();
   const { user, isAuthenticated, setActiveAppMode, setAuthenticatedSession } = useAuth();
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const { setIsCartOpen } = useCart();
+
+  // Return the shopper to where they started. "?next=checkout" is set by the
+  // cart drawer when a logged-out shopper tries to check out.
+  const finishLoginRedirect = () => {
+    const next =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("next")
+        : null;
+    router.push("/");
+    router.refresh();
+    if (next === "checkout") {
+      setTimeout(() => setIsCartOpen(true), 300);
+    }
+  };
 
   const handleLocationComplete = (loc: string) => {
     setShowLocationModal(false);
-    router.push("/");
-    router.refresh();
+    finishLoginRedirect();
   };
 
   const handleSkipLocation = () => {
     setShowLocationModal(false);
-    router.push("/");
-    router.refresh();
+    finishLoginRedirect();
   };
 
   // Mode: "login" (Sign In) vs "signup" (Create User Account)

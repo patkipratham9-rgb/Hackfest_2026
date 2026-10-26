@@ -1,6 +1,8 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/seo";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import {
   FileText,
   ArrowLeft,
@@ -19,16 +21,19 @@ import {
   DELIVERY_TIMELINES_TABLE,
 } from "@/lib/legalPolicies";
 
-export const metadata: Metadata = {
-  title: "Terms and Conditions • LocalLoop Hubballi",
+export const metadata: Metadata = pageMetadata({
+  title: "Terms and Conditions",
   description:
-    "Official Terms and Conditions for LocalLoop hyperlocal marketplace in Hubballi-Dharwad. Formulated under the Information Technology Act 2000.",
-};
+    "The terms that apply when you browse, order from, or sell through LocalLoop, the Hubballi-Dharwad neighbourhood shop marketplace.",
+  path: "/terms",
+});
 
 export default function TermsAndConditionsPage() {
   return (
     <div className="min-h-screen bg-cream-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
+        <Breadcrumbs items={[{ name: "Terms and Conditions" }]} />
+
         {/* Navigation */}
         <div className="flex items-center justify-between">
           <Link

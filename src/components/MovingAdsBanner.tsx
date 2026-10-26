@@ -253,9 +253,9 @@ export function MovingAdsBanner({
 
               {/* Headline & Highlights */}
               <div className="space-y-1">
-                <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-cream-50 leading-[1.2]">
+                <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-cream-50 leading-[1.2]">
                   {currentAd.title}
-                </h1>
+                </h2>
                 <p className={`font-serif text-base sm:text-lg md:text-xl italic font-semibold ${currentAd.accentColor} leading-snug`}>
                   {currentAd.titleHighlight}
                 </p>

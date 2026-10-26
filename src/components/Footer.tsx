@@ -70,7 +70,8 @@ export function Footer() {
               <div className="w-12 h-12 rounded-2xl bg-white border border-cream-300 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform overflow-hidden p-0.5">
                 <img
                   src="/logo.png"
-                  alt="LocalLoop Logo"
+                  alt="LocalLoop Hubballi-Dharwad Hyperlocal Marketplace Logo"
+                  loading="lazy"
                   className="w-full h-full object-contain rounded-xl"
                 />
               </div>
@@ -170,6 +171,14 @@ export function Footer() {
                 >
                   <HelpCircle className="w-3 h-3 text-terracotta-600" />
                   <span>Customer Help Center FAQs</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
+                  className="hover:text-terracotta-600 transition-colors block text-forest-700"
+                >
+                  Contact Desk &amp; Inquiry Form
                 </Link>
               </li>
               <li>

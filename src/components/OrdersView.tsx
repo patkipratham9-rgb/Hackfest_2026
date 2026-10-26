@@ -193,6 +193,7 @@ export function OrdersView() {
                         <img
                           src={item.product.imageUrl}
                           alt={item.product.name}
+                          loading="lazy"
                           className="w-10 h-10 rounded-lg object-cover bg-cream-200 flex-shrink-0"
                         />
                         <div className="min-w-0 flex-1">

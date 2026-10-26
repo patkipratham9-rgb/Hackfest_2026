@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,6 +22,8 @@ export function CartDrawer() {
     isMinBillMet,
     setIsCheckoutOpen,
   } = useCart();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const remainingForMin = Math.max(0, minBillAmount - subtotal);
   const minBillProgress = Math.min(100, Math.round((subtotal / minBillAmount) * 100));
@@ -141,6 +145,7 @@ export function CartDrawer() {
                         <img
                           src={product.imageUrl}
                           alt={product.name}
+                          loading="lazy"
                           data-testid="cart-item-image"
                           className="w-16 h-16 object-cover rounded-xl bg-cream-200 flex-shrink-0"
                         />
@@ -300,6 +305,12 @@ export function CartDrawer() {
                     disabled={!isMinBillMet}
                     onClick={() => {
                       setIsCartOpen(false);
+                      // Browsing is public; an account is required only to place an order.
+                      // The cart is kept in localStorage, so it survives the login round trip.
+                      if (!isAuthenticated) {
+                        router.push("/login?next=checkout");
+                        return;
+                      }
                       setIsCheckoutOpen(true);
                     }}
                     className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-warm tap-bounce transition-all ${
@@ -310,7 +321,9 @@ export function CartDrawer() {
                   >
                     <span>
                       {isMinBillMet
-                        ? "Select Pickup & Checkout"
+                        ? isAuthenticated
+                          ? "Select Pickup & Checkout"
+                          : "Sign In to Checkout"
                         : `Add ₹${remainingForMin} More to Order`}
                     </span>
                     <ArrowRight className="w-4 h-4" />

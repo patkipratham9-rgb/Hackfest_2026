@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -31,8 +30,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
-  const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const {
     userLocation,
     setUserLocation,
@@ -74,13 +72,6 @@ export default function HomePage() {
       return () => clearTimeout(timer);
     }
   }, [searchQuery]);
-
-  // Guard: User must log in before loading the front page
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace("/login");
-    }
-  }, [isLoading, isAuthenticated, router]);
 
   // Sync dynamic stores & products added manually via merchant portal & database
   useEffect(() => {
@@ -254,19 +245,6 @@ export default function HomePage() {
 
   const activeStoreObj = stores.find((s) => s.id === selectedStoreId);
 
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
-        <div className="w-12 h-12 rounded-2xl bg-forest-800 flex items-center justify-center text-cream-100 font-bold text-xl shadow-warm">
-          <span className="font-serif">L</span>
-          <span className="w-2 h-2 rounded-full bg-terracotta-500 -ml-0.5 mt-2" />
-        </div>
-        <div className="w-6 h-6 rounded-full border-2 border-terracotta-500 border-t-transparent animate-spin" />
-        <span className="text-xs text-forest-600 font-medium">Redirecting to login...</span>
-      </div>
-    );
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -350,10 +328,18 @@ export default function HomePage() {
         <div className="flex items-center justify-between pb-1">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-terracotta-500 animate-pulse" />
-            <span className="text-xs font-bold text-forest-900 uppercase tracking-wider">
-              Search Local Marketplace
-            </span>
+            <h1 className="text-xs font-bold text-forest-900 uppercase tracking-wider">
+              Search local stores in Hubballi-Dharwad
+            </h1>
           </div>
+          {!isAuthenticated ? (
+            <Link
+              href="/login"
+              className="text-xs font-bold text-terracotta-700 hover:text-terracotta-800 hover:underline"
+            >
+              Sign In
+            </Link>
+          ) : null}
           {searchQuery && (
             <button
               data-testid="reset-filters-btn"

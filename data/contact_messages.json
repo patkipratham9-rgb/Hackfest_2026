@@ -1,0 +1,15 @@
+[
+  {
+    "id": "msg_1793030839109",
+    "ticket_id": "TICK-LL-1017",
+    "full_name": "Pratham Patki",
+    "email": "pratham@example.com",
+    "phone": "+91 9845122334",
+    "category": "Order Status & Delivery",
+    "order_id": null,
+    "message": "Inquiring about delivery timelines for Vidyanagar orders.",
+    "status": "open",
+    "created_at": "2026-10-26T16:07:19.084Z",
+    "savedToDb": false
+  }
+]

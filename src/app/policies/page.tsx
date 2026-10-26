@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import {
   FileText,
   ShieldCheck,
@@ -65,6 +66,8 @@ function PoliciesContent() {
     <div className="min-h-screen bg-cream-100 py-8 px-4 sm:px-6 lg:px-8 space-y-8">
       {/* Top Banner */}
       <div className="max-w-5xl mx-auto space-y-4">
+        <Breadcrumbs items={[{ name: "Policies & Terms" }]} />
+
         <div className="flex items-center justify-between">
           <Link
             href="/"

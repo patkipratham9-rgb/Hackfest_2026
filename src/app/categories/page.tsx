@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { Product } from "@/types";
 import { ShoppingBag, ArrowLeft, Search } from "lucide-react";
@@ -73,11 +74,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <title>Product Catalog • LocalLoop Hubballi</title>
-      <meta
-        name="description"
-        content="Browse authentic locally crafted products and neighborhood store goods in Hubballi."
-      />
+      <Breadcrumbs items={[{ name: "Categories" }]} />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-cream-300">

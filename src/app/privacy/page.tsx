@@ -1,6 +1,8 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/seo";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import {
   ShieldCheck,
   ArrowLeft,
@@ -19,16 +21,19 @@ import {
   DATA_COLLECTION_TABLE,
 } from "@/lib/legalPolicies";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy • LocalLoop Hubballi",
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy Policy",
   description:
-    "Official Privacy Policy for LocalLoop hyperlocal marketplace in Hubballi-Dharwad. Formulated under Section 43A of the Information Technology Act 2000.",
-};
+    "How LocalLoop collects, uses, stores and protects personal data of shoppers and merchants in Hubballi-Dharwad, under the IT Act 2000 and SPDI Rules.",
+  path: "/privacy",
+});
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-cream-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
+        <Breadcrumbs items={[{ name: "Privacy Policy" }]} />
+
         {/* Navigation */}
         <div className="flex items-center justify-between">
           <Link
@@ -62,7 +67,8 @@ export default function PrivacyPolicyPage() {
           </p>
           <div className="pt-2 flex flex-wrap gap-4 text-[11px] font-semibold text-forest-500 border-t border-cream-200">
             <span>Effective Date: October 24, 2026</span>
-            <span>Version: 1.0.0 (Public Release)</span>
+            <span>Last Updated: October 26, 2026</span>
+            <span>Version: 1.1.0</span>
             <span>Jurisdiction: Hubballi, Karnataka, India</span>
           </div>
         </div>
@@ -144,14 +150,44 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          {/* Cookies & Tracking */}
+          {/* Cookies, Analytics & Contact Form */}
           <section className="space-y-3">
             <h2 className="font-serif font-bold text-lg text-forest-950 flex items-center gap-2">
               <FileText className="w-4 h-4 text-amber-700" />
-              <span>5. Cookies &amp; Local Storage</span>
+              <span>5. Cookies, Local Storage &amp; Analytics</span>
             </h2>
             <p>
-              LocalLoop uses essential client-side local storage and cookies strictly necessary to maintain your shopping cart, session authentication, and preferred Hubballi delivery locality across visits. No non-essential third-party advertising trackers are loaded.
+              LocalLoop uses essential local storage and cookies to keep your shopping cart, sign-in session and preferred delivery locality across visits. These are required for the site to work.
+            </p>
+            <p>
+              We use Google Analytics 4 to understand which pages are visited and how the site performs. It sets first-party cookies (such as <code>_ga</code>) and sends Google information about your device, browser, approximate location derived from your IP address, and the pages you view. Google Analytics 4 does not log or store full IP addresses. We do not use this data for advertising and do not load advertising trackers. You can opt out with the{" "}
+              <a
+                href="https://tools.google.com/dlpage/gaoptout"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-terracotta-700 hover:underline"
+              >
+                Google Analytics opt-out browser add-on
+              </a>{" "}
+              or by blocking cookies in your browser.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-serif font-bold text-lg text-forest-950 flex items-center gap-2">
+              <Mail className="w-4 h-4 text-terracotta-600" />
+              <span>6. Messages Sent Through Our Contact Form</span>
+            </h2>
+            <p>
+              When you use the{" "}
+              <Link href="/contact" className="font-semibold text-terracotta-700 hover:underline">
+                contact form
+              </Link>
+              , we store your name, email address, optional phone number, the topic and your message so our support team can reply. These records are kept in our database (hosted by Supabase) for up to 24 months and then deleted, unless they relate to an open order dispute. Email{" "}
+              <a href={`mailto:${CUSTOMER_SUPPORT.deskEmail}`} className="font-semibold text-terracotta-700 hover:underline">
+                {CUSTOMER_SUPPORT.deskEmail}
+              </a>{" "}
+              to ask for a copy of, or deletion of, your messages.
             </p>
           </section>
 
@@ -159,7 +195,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-3 pt-4 border-t border-cream-200">
             <h2 className="font-serif font-bold text-lg text-forest-950 flex items-center gap-2">
               <Building className="w-4 h-4 text-terracotta-600" />
-              <span>6. Grievance Officer &amp; Statutory Contacts</span>
+              <span>7. Grievance Officer &amp; Statutory Contacts</span>
             </h2>
             <p>
               In accordance with Rule 5(9) of the SPDI Rules, 2011 and Consumer Protection (E-Commerce) Rules, 2020, the details of our designated Nodal &amp; Grievance Officer are set forth below:

@@ -38,7 +38,7 @@ export default function NotFound() {
 
         {/* 404 Header */}
         <div className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-terracotta-600 bg-terracotta-50 px-3 py-1 rounded-full border border-terracotta-200">
+          <span className="text-xs font-bold uppercase tracking-widest text-terracotta-600 bg-terracotta-50 px-3 py-1 rounded-lg border border-terracotta-200">
             Error 404 • Lost in the Lanes
           </span>
           <h1 className="font-serif font-extrabold text-3xl sm:text-4xl text-forest-950">

@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
 import { SellerProvider } from "@/context/SellerContext";
 
-export const metadata: Metadata = {
-  title: "Sign In • LocalLoop Hubballi",
-  description: "Sign in to LocalLoop as a Shopper or Merchant Partner. Explore, buy and fulfill local handmade orders.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Sign In",
+  description:
+    "Sign in to LocalLoop as a shopper or merchant partner to order from, or sell through, neighbourhood shops in Hubballi-Dharwad.",
+  path: "/login",
+  noindex: true,
+});
 
 export default function LoginLayout({
   children,

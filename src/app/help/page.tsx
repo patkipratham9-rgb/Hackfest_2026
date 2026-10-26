@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import {
   HelpCircle,
   Search,
@@ -38,6 +39,8 @@ export default function HelpCenterPage() {
   return (
     <div className="min-h-screen bg-cream-100 py-10 px-4 sm:px-6 lg:px-8 space-y-8">
       <div className="max-w-4xl mx-auto space-y-6">
+        <Breadcrumbs items={[{ name: "Help Centre" }]} />
+
         {/* Back Link */}
         <Link
           href="/"

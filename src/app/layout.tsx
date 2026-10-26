@@ -4,6 +4,9 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { AppLayoutWrapper } from "@/components/AppLayoutWrapper";
+import { OrganizationSchema } from "@/components/seo/JsonLd";
+import { GoogleAnalytics } from "@/components/seo/GoogleAnalytics";
+import { SITE, SITE_URL } from "@/lib/site";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -12,43 +15,52 @@ export const viewport: Viewport = {
   themeColor: "#FBF8F3",
 };
 
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://localloop.in"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "LocalLoop • Hubballi's Hyperlocal Digital Marketplace",
-    template: "%s • LocalLoop Hubballi",
+    default: "LocalLoop | Neighbourhood Shops in Hubballi-Dharwad",
+    template: "%s | LocalLoop",
   },
-  description:
-    "Discover, compare, and order authentic goods from neighborhood corner shops in Hubballi-Dharwad. 0% commission local marketplace with express counter pickup.",
+  description: SITE.description,
+  applicationName: SITE.name,
   keywords: [
     "Hubballi",
     "Dharwad",
-    "hyperlocal",
-    "marketplace",
+    "Hubli local shops",
+    "online grocery Hubballi",
     "Dharwad Pedha",
     "Vidyanagar",
     "Station Road",
-    "local shopping",
-    "express counter pickup",
+    "counter pickup",
+    "home delivery Hubballi",
   ],
   authors: [{ name: "Team Digital Titans", url: "https://kletech.ac.in" }],
   icons: {
     icon: [
-      { url: "/logo.png", type: "image/png" },
-      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/logo.png", type: "image/png" },
     ],
-    apple: "/logo.png",
+    apple: "/apple-touch-icon.png",
   },
+  // The share image comes from src/app/opengraph-image.tsx (file convention).
   openGraph: {
-    title: "LocalLoop • Hubballi's Hyperlocal Digital Marketplace",
-    description:
-      "Support authentic neighborhood corner shops in Hubballi-Dharwad. Browse local catalogs, reserve items, and pick up fresh at the counter.",
-    siteName: "LocalLoop Hubballi",
-    locale: "en_IN",
     type: "website",
-    images: [{ url: "/logo.png", width: 1200, height: 800, alt: "LocalLoop Logo" }],
+    siteName: SITE.name,
+    locale: SITE.locale,
+    title: "LocalLoop | Neighbourhood Shops in Hubballi-Dharwad",
+    description: SITE.description,
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "LocalLoop | Neighbourhood Shops in Hubballi-Dharwad",
+    description: SITE.description,
+  },
+  // Google Search Console ownership token. Set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+  // to the "content" value of the HTML-tag verification method.
+  ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),
 };
 
 export default function RootLayout({
@@ -62,6 +74,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-screen bg-cream-100 text-forest-950 font-sans antialiased selection:bg-terracotta-200 selection:text-terracotta-900 overflow-x-hidden w-full max-w-full"
       >
+        <OrganizationSchema />
         <AuthProvider>
           <CartProvider>
             <AppLayoutWrapper>{children}</AppLayoutWrapper>
@@ -71,6 +84,7 @@ export default function RootLayout({
           src="https://sdk.cashfree.com/js/v3/cashfree.js"
           strategy="lazyOnload"
         />
+        <GoogleAnalytics />
       </body>
     </html>
   );
