@@ -67,7 +67,7 @@ export function OrdersView() {
           <p className="text-xs text-forest-600 mt-0.5">
             {isAuthenticated && user
               ? `Personalized reorder history for ${user.name} (${user.number}). No data is shared with other accounts.`
-              : "Repeat your favorite neighborhood essentials in one tap, or track live pickup progress."}
+              : "Sign in with your phone or email to view your order history and 1-tap reorders."}
           </p>
         </div>
 
@@ -145,17 +145,31 @@ export function OrdersView() {
               No previous orders found
             </h3>
             <p className="text-xs text-forest-600 max-w-sm mx-auto mt-1">
-              Once you complete a local pickup order in Hubballi, it will appear here for fast one-tap reordering anytime!
+              {!isAuthenticated
+                ? "Sign in with your phone or email to view your past orders, or complete a local pickup order in Hubballi to repeat essentials in 1-tap!"
+                : "Once you complete a local pickup order in Hubballi, it will appear here for fast one-tap reordering anytime!"}
             </p>
           </div>
-          <Link
-            href="/categories"
-            data-testid="orders-again-empty-cta"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl text-xs font-bold shadow-warm transition-all"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Discover Local Stores</span>
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {!isAuthenticated && (
+              <Link
+                href="/login"
+                data-testid="orders-again-signin-cta"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-forest-900 hover:bg-forest-950 text-white rounded-xl text-xs font-bold shadow-warm transition-all"
+              >
+                <ShieldCheck className="w-4 h-4 text-terracotta-400" />
+                <span>Sign In with Phone (OTP)</span>
+              </Link>
+            )}
+            <Link
+              href="/categories"
+              data-testid="orders-again-empty-cta"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl text-xs font-bold shadow-warm transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Discover Local Stores</span>
+            </Link>
+          </div>
 
           {/* Quick steps explainer */}
           <ol

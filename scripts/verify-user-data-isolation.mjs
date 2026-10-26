@@ -77,7 +77,9 @@ function filterOrdersForUser(allOrders, user) {
     });
   }
 
-  return allOrders.filter((o) => !o.userId && !o.customerId);
+  // When unauthenticated / guest (without signing in):
+  // Guest browsing must NOT display any order history or recent orders.
+  return [];
 }
 
 // Helper for user-specific recently ordered items
@@ -194,9 +196,10 @@ check("User B recently ordered items include Artisan Chicory Coffee Powder", rec
 check("User B recently ordered items include Heritage CTC Tea", recentsB.some(r => r.product.name.includes("Tea")));
 check("User B recently ordered items NEVER contains Dharwad Pedha", !recentsB.some(r => r.product.name.includes("Pedha")));
 
-// Test Guest user
+// Test Guest user (Without signing in)
 const ordersGuest = filterOrdersForUser(sampleOrders, userGuest);
-check("Guest user only sees unauthenticated guest orders", ordersGuest.length === 1 && ordersGuest[0].id === "ORD-GUEST-003");
+check("Guest user without signing in has 0 order history", ordersGuest.length === 0);
+check("Guest user without signing in has 0 recent orders", computeRecentlyOrderedItems(ordersGuest).length === 0);
 check("Guest user NEVER sees User A's order", !ordersGuest.some(o => o.id === "ORD-PRATHAM-001"));
 check("Guest user NEVER sees User B's order", !ordersGuest.some(o => o.id === "ORD-SRUSHTI-002"));
 

@@ -243,7 +243,7 @@ export function ProfilePanel() {
                       Past Pickups
                     </span>
                     <span className="font-serif font-extrabold text-2xl text-forest-950 block mt-0.5">
-                      {orders.length}
+                      {user ? orders.length : 0}
                     </span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-cream-100 border border-cream-300 text-center">

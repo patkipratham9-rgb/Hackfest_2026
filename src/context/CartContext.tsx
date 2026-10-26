@@ -167,7 +167,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
       if (savedOrders) {
-        setAllOrders(JSON.parse(savedOrders));
+        const parsed = JSON.parse(savedOrders);
+        if (Array.isArray(parsed)) {
+          // Remove any unauthenticated legacy demo/test orders without an owner ID
+          const cleaned = parsed.filter(
+            (o: any) => o && Boolean(o.userId || o.customerId)
+          );
+          setAllOrders(cleaned);
+          localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(cleaned));
+        } else {
+          setAllOrders([]);
+        }
       } else {
         setAllOrders([]);
       }
@@ -272,9 +282,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    // When unauthenticated / guest (e.g. initial demo or unauthenticated journey tests)
-    // Only return orders without an authenticated userId or customerId
-    return allOrders.filter((o) => !o.userId && !o.customerId);
+    // When unauthenticated / guest (without signing in):
+    // Strict privacy: Guest browsing must NOT display any order history or recent orders.
+    return [];
   }, [allOrders, user]);
 
   // Compute strictly user-isolated recently ordered items
@@ -451,7 +461,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const minBillAmount = 599;
   const isMinBillMet = subtotal >= minBillAmount;
   const totalAmount = subtotal + gstAmount + platformFee;
-  const reorderableCount = userOrders.length;
+  const reorderableCount = user && user.id ? userOrders.length : 0;
 
   const getOrderById = (orderId: string): Order | undefined => {
     // 1. Look in current user's authorized isolated orders
@@ -660,7 +670,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalAmount,
         minBillAmount,
         isMinBillMet,
-        reorderableCount: userOrders.length,
+        reorderableCount,
       }}
     >
       {children}
