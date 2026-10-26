@@ -406,10 +406,10 @@ export default function SellerDashboardPage() {
                 </div>
 
                 <Link
-                  href={`/orders/${order.id}`}
-                  className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-cream-200 hover:bg-cream-300 text-forest-800 font-bold text-[11px] transition-colors"
+                  href="/seller/orders"
+                  className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-forest-800 hover:bg-forest-900 text-cream-100 font-bold text-[11px] transition-colors"
                 >
-                  Track Status →
+                  Fulfill Order →
                 </Link>
               </div>
             ))}

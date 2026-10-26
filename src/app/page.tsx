@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -30,7 +31,16 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
-  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
+
+  // Merchants must not be able to view user application at all
+  useEffect(() => {
+    if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+      router.replace("/seller");
+    }
+  }, [isAuthenticated, user, activeAppMode, router]);
+
   const {
     userLocation,
     setUserLocation,
@@ -50,6 +60,11 @@ export default function HomePage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Block rendering shopper catalog while redirecting merchant to /seller
+  if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+    return null;
+  }
 
   // Personalized user recommendations
   const { recommendations, recentSearches, primaryInterestCategory } = useMemo(() => {

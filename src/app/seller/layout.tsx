@@ -89,11 +89,11 @@ function SellerPortalProtectedShell({
           </div>
 
           <Link
-            href="/"
+            href="/login/merchant"
             className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-forest-700 hover:text-terracotta-600 transition-colors pt-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Return to Consumer Marketplace</span>
+            <span>Go to Merchant Sign In</span>
           </Link>
         </motion.div>
       </div>

@@ -396,6 +396,29 @@ it("App Separation: Protected seller layout blocks customer sessions with unauth
   assert.strictEqual(layoutSource.includes('data-testid="grant-seller-demo-access"'), true);
 });
 
+it("App Separation: Merchant is strictly blocked from viewing user application and redirected to /seller", () => {
+  const appLayoutSource = fs.readFileSync(
+    path.join(process.cwd(), "src/components/AppLayoutWrapper.tsx"),
+    "utf-8"
+  );
+  assert.strictEqual(appLayoutSource.includes('isMerchant && !isMerchantApp && !isAuthPage'), true);
+  assert.strictEqual(appLayoutSource.includes('router.replace("/seller")'), true);
+  assert.strictEqual(appLayoutSource.includes("Redirecting to Merchant Portal..."), true);
+
+  const homePageSource = fs.readFileSync(
+    path.join(process.cwd(), "src/app/page.tsx"),
+    "utf-8"
+  );
+  assert.strictEqual(homePageSource.includes('user?.role === "seller" || activeAppMode === "merchant"'), true);
+  assert.strictEqual(homePageSource.includes('router.replace("/seller")'), true);
+
+  const navbarSource = fs.readFileSync(
+    path.join(process.cwd(), "src/components/Navbar.tsx"),
+    "utf-8"
+  );
+  assert.strictEqual(navbarSource.includes("isMerchant ||"), true);
+});
+
 // ----------------------------------------------------------------------
 // 5. PHONE APPLICATION (USER & MERCHANT FLAVORS IN ANDROID STUDIO)
 // ----------------------------------------------------------------------

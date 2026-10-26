@@ -5,11 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass, LayoutGrid, RotateCcw, History } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { reorderableCount, isLoaded } = useCart();
+  const { user, activeAppMode } = useAuth();
+
+  const isMerchant = activeAppMode === "merchant" || user?.role === "seller";
 
   const navTabs = [
     {
@@ -45,6 +49,7 @@ export function BottomNav() {
 
   // Hide consumer bottom navigation (Categories, Orders Again, Recent) from Merchant & Auth apps
   if (
+    isMerchant ||
     pathname?.startsWith("/login") ||
     pathname?.startsWith("/merchant/login") ||
     pathname?.startsWith("/seller") ||

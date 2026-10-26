@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -19,9 +20,17 @@ import {
 import { motion } from "framer-motion";
 
 export function OrdersView() {
+  const router = useRouter();
   const { orders, reorderOrder, recentlyOrderedItems, addToCart } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
   const [reorderedId, setReorderedId] = useState<string | null>(null);
+
+  // Exclude merchants from consumer reorder and past order details view
+  useEffect(() => {
+    if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+      router.replace("/seller/orders");
+    }
+  }, [isAuthenticated, user, activeAppMode, router]);
 
   const handleReorder = (e: React.MouseEvent, orderId: string) => {
     e.preventDefault();

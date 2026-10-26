@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { ProductCard } from "@/components/ProductCard";
@@ -9,8 +10,16 @@ import { History, Sparkles, ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function RecentView() {
+  const router = useRouter();
   const { recentlyViewed } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
+
+  // Exclude merchants from consumer recent explored view
+  useEffect(() => {
+    if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+      router.replace("/seller");
+    }
+  }, [isAuthenticated, user, activeAppMode, router]);
 
   return (
     <div className="space-y-6">

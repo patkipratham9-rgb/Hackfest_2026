@@ -3,8 +3,9 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { OrderStatus } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import { OrderCancelCooldown } from "@/components/OrderCancelCooldown";
@@ -96,6 +97,16 @@ function OrderTrackingContent({
 }: {
   initialId?: string;
 }) {
+  const router = useRouter();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
+
+  // Merchants must not be able to view user application at all
+  useEffect(() => {
+    if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+      router.replace("/seller/orders");
+    }
+  }, [isAuthenticated, user, activeAppMode, router]);
+
   const routeParams = useParams();
   const rawParamId = routeParams?.id;
   const orderId =
@@ -107,6 +118,11 @@ function OrderTrackingContent({
 
   const { orders, getOrderById, updateOrderStatus, isLoaded } = useCart();
   const order = orderId ? getOrderById(orderId) : undefined;
+
+  // Block rendering consumer tracking view while redirecting merchant to /seller/orders
+  if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+    return null;
+  }
 
   // If initial hydration / storage load is still occurring and order not found yet
   if (!isLoaded && !order) {

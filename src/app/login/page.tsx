@@ -40,9 +40,13 @@ export default function LoginPage() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const { setIsCartOpen } = useCart();
 
-  // Return the shopper to where they started. "?next=checkout" is set by the
-  // cart drawer when a logged-out shopper tries to check out.
+  // Return the shopper to where they started, or redirect merchants directly to /seller
   const finishLoginRedirect = () => {
+    if (user?.role === "seller" || activeAppMode === "merchant") {
+      router.push("/seller");
+      router.refresh();
+      return;
+    }
     const next =
       typeof window !== "undefined"
         ? new URLSearchParams(window.location.search).get("next")

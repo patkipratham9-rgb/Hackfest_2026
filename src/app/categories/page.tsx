@@ -2,16 +2,27 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { Product } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 import { ShoppingBag, ArrowLeft, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CategoriesPage() {
+  const router = useRouter();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Exclude merchants from consumer category catalog
+  useEffect(() => {
+    if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+      router.replace("/seller");
+    }
+  }, [isAuthenticated, user, activeAppMode, router]);
 
   useEffect(() => {
     const syncProducts = async () => {

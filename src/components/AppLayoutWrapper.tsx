@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
 import { CartDrawer } from "@/components/CartDrawer";
@@ -12,6 +13,8 @@ import { Footer } from "@/components/Footer";
 
 export function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
 
   React.useEffect(() => {
     // Intercept and suppress non-Error unhandled rejections and recover from chunk loading errors
@@ -57,6 +60,33 @@ export function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/login") || pathname?.startsWith("/merchant/login");
   const isMerchantApp =
     pathname?.startsWith("/seller") || pathname?.startsWith("/merchant");
+
+  const isMerchant =
+    isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant");
+
+  // Merchant must not be able to view user application at all
+  React.useEffect(() => {
+    if (isMerchant && !isMerchantApp && !isAuthPage) {
+      router.replace("/seller");
+    }
+  }, [isMerchant, isMerchantApp, isAuthPage, router]);
+
+  // Block rendering any shopper components or pages while redirecting merchant to /seller
+  if (isMerchant && !isMerchantApp && !isAuthPage) {
+    return (
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center p-6 text-center">
+        <div className="space-y-3 max-w-sm">
+          <div className="w-10 h-10 border-3 border-terracotta-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-bold text-forest-900">
+            Redirecting to Merchant Portal...
+          </p>
+          <p className="text-[11px] text-forest-600">
+            Merchants operate exclusively in the LocalLoop Merchant Portal.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Merchant Application is completely separated from consumer shopper layout:
   // Categories, Orders Again, Cart, and Recent options are excluded from Merchant pages.

@@ -36,12 +36,14 @@ export function Navbar() {
     setIsProfileOpen,
     isLoaded,
   } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
+  const isMerchant = activeAppMode === "merchant" || user?.role === "seller";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   // Exclude shopper navbar from Merchant Application & Auth pages
   if (
+    isMerchant ||
     pathname?.startsWith("/login") ||
     pathname?.startsWith("/merchant/login") ||
     pathname?.startsWith("/seller") ||
@@ -206,22 +208,45 @@ export function Navbar() {
                 <Compass className="w-4 h-4 text-terracotta-600" />
                 <span>Storefront</span>
               </Link>
-              <Link
-                href="/categories"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-3 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center gap-2 border border-cream-200"
-              >
-                <LayoutGrid className="w-4 h-4 text-forest-700" />
-                <span>Categories</span>
-              </Link>
-              <Link
-                href="/orders-again"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-3 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center gap-2 border border-cream-200"
-              >
-                <RotateCcw className="w-4 h-4 text-forest-700" />
-                <span>Past Orders</span>
-              </Link>
+              {!isMerchant ? (
+                <>
+                  <Link
+                    href="/categories"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-3 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center gap-2 border border-cream-200"
+                  >
+                    <LayoutGrid className="w-4 h-4 text-forest-700" />
+                    <span>Categories</span>
+                  </Link>
+                  <Link
+                    href="/orders-again"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-3 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center gap-2 border border-cream-200"
+                  >
+                    <RotateCcw className="w-4 h-4 text-forest-700" />
+                    <span>Past Orders</span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/seller"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-3 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center gap-2 border border-cream-200"
+                  >
+                    <Store className="w-4 h-4 text-terracotta-600" />
+                    <span>Seller Studio</span>
+                  </Link>
+                  <Link
+                    href="/seller/orders"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-3 rounded-xl bg-cream-100 hover:bg-cream-200 flex items-center gap-2 border border-cream-200"
+                  >
+                    <ShoppingBag className="w-4 h-4 text-forest-700" />
+                    <span>Order Board</span>
+                  </Link>
+                </>
+              )}
               <Link
                 href="/account"
                 onClick={() => setIsMobileMenuOpen(false)}

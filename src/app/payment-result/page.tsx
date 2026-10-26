@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Clock, ArrowRight, RefreshCw, ShieldCheck, ShoppingBag, Store, Truck, Phone, Star } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { OrderCancelCooldown } from "@/components/OrderCancelCooldown";
 import { CheckoutReturnBadge } from "@/components/CheckoutReturnBadge";
 
@@ -18,7 +19,15 @@ function money(amount: number) {
 function PaymentResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user, isAuthenticated, activeAppMode } = useAuth();
   const { clearCart, getOrderById } = useCart();
+
+  // Merchants must not be able to view user application at all
+  useEffect(() => {
+    if (isAuthenticated && (user?.role === "seller" || activeAppMode === "merchant")) {
+      router.replace("/seller/orders");
+    }
+  }, [isAuthenticated, user, activeAppMode, router]);
 
   const orderId = searchParams.get("order_id") || searchParams.get("orderId");
   const currentOrder = orderId ? getOrderById(orderId) : undefined;

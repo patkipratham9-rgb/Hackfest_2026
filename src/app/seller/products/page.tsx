@@ -52,7 +52,7 @@ const PRODUCT_CATEGORIES: ProductCategory[] = [
   "Spices & Pantry",
 ];
 
-export const PRODUCT_TYPES = [
+const PRODUCT_TYPES = [
   "Solid / Packaged",
   "Liquid / Beverage / Oil",
   "Grain / Pulses / Dal",
@@ -64,7 +64,7 @@ export const PRODUCT_TYPES = [
   "Other / Custom",
 ];
 
-export const QUANTITY_METRIC_UNITS = [
+const QUANTITY_METRIC_UNITS = [
   { value: "KG", label: "KG (Kilograms)" },
   { value: "L", label: "L (Litres)" },
   { value: "GM", label: "GM (Grams)" },
