@@ -24,13 +24,13 @@ import { useCart } from "@/context/CartContext";
 
 export default function UserLoginPage() {
   const router = useRouter();
-  const { user, isAuthenticated, setActiveAppMode, setAuthenticatedSession } = useAuth();
+  const { user, isAuthenticated, activeAppMode, setActiveAppMode, setAuthenticatedSession } = useAuth();
   const [showLocationModal, setShowLocationModal] = useState(false);
   const { setIsCartOpen } = useCart();
 
   // Return the shopper to where they started, or redirect merchants directly to /seller
   const finishLoginRedirect = () => {
-    if (user?.role === "seller") {
+    if (user?.role === "seller" || activeAppMode === "merchant") {
       router.push("/seller");
       router.refresh();
       return;

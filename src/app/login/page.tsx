@@ -29,6 +29,7 @@ export default function LoginPage() {
   const {
     user,
     isAuthenticated,
+    activeAppMode,
     signup,
     sendOtp,
     loginWithPhoneOtp,
