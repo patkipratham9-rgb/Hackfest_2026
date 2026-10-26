@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { ProductCard } from "@/components/ProductCard";
+import { deduplicateProducts } from "@/lib/productDeduplication";
 import { History, Sparkles, ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,6 +21,11 @@ export function RecentView() {
       router.replace("/seller");
     }
   }, [isAuthenticated, user, activeAppMode, router]);
+
+  const uniqueRecentlyViewed = useMemo(
+    () => deduplicateProducts(recentlyViewed),
+    [recentlyViewed]
+  );
 
   return (
     <div className="space-y-6">
@@ -71,7 +77,7 @@ export function RecentView() {
       </div>
 
       {/* Grid or Empty State */}
-      {recentlyViewed.length === 0 ? (
+      {uniqueRecentlyViewed.length === 0 ? (
         <motion.div
           data-testid="recent-explored-empty-state"
           initial={{ opacity: 0, scale: 0.96 }}
@@ -107,14 +113,14 @@ export function RecentView() {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs text-forest-600 font-medium">
-            <span>Showing {recentlyViewed.length} recently viewed items</span>
+            <span>Showing {uniqueRecentlyViewed.length} recently viewed items</span>
             <span className="text-[11px] text-terracotta-600">Saved to device</span>
           </div>
 
           {/* Responsive Grid: 1 col on mobile, 2 col sm, 3-4 col on desktop */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <AnimatePresence>
-              {recentlyViewed.map((product, idx) => (
+              {uniqueRecentlyViewed.map((product, idx) => (
                 <ProductCard key={product.id || `recent-${idx}`} product={product} />
               ))}
             </AnimatePresence>

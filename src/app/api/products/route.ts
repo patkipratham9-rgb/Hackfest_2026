@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabaseServer";
 import { Product } from "@/types";
+import { deduplicateProducts } from "@/lib/productDeduplication";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
       availableFormats: row.available_formats || undefined,
     }));
 
-    return NextResponse.json({ products });
+    return NextResponse.json({ products: deduplicateProducts(products) });
   } catch (err: any) {
     console.warn("API GET /api/products notice:", err?.message);
     return NextResponse.json({ products: [] });

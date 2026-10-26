@@ -15,6 +15,7 @@ import {
   computePersonalizedRecommendations,
   recordUserSearchQuery,
 } from "@/lib/userRecommendations";
+import { deduplicateProducts } from "@/lib/productDeduplication";
 import {
   Sparkles,
   MapPin,
@@ -70,12 +71,16 @@ export default function HomePage() {
   const { recommendations, recentSearches, primaryInterestCategory } = useMemo(() => {
     if (!isMounted) {
       return {
-        recommendations: products.slice(0, 4),
+        recommendations: deduplicateProducts(products).slice(0, 4),
         recentSearches: [],
         primaryInterestCategory: "Local",
       };
     }
-    return computePersonalizedRecommendations(products, recentlyViewed || []);
+    const computed = computePersonalizedRecommendations(products, recentlyViewed || []);
+    return {
+      ...computed,
+      recommendations: deduplicateProducts(computed.recommendations),
+    };
   }, [products, recentlyViewed, isMounted]);
 
   // Record user searches for ML recommendations
@@ -182,7 +187,7 @@ export default function HomePage() {
         });
 
         setStores(Array.from(storeMap.values()));
-        setProducts(productList);
+        setProducts(deduplicateProducts(productList));
       } catch (e) {
         console.warn("Storage sync note:", e);
       }
@@ -244,9 +249,9 @@ export default function HomePage() {
     });
   }, [stores, products, searchQuery]);
 
-  // Filter products based on selected store and search
+  // Filter products based on selected store and search (Deduplicated)
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    const matched = products.filter((product) => {
       const matchesStore = !selectedStoreId || product.storeId === selectedStoreId;
       const matchesSearch =
         searchQuery === "" ||
@@ -256,6 +261,8 @@ export default function HomePage() {
 
       return matchesStore && matchesSearch;
     });
+
+    return deduplicateProducts(matched);
   }, [products, selectedStoreId, searchQuery]);
 
   const activeStoreObj = stores.find((s) => s.id === selectedStoreId);

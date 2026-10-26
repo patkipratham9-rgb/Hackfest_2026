@@ -5,6 +5,7 @@ import { CartItem, Product, Order, OrderStatus, NeighborhoodArea, DeliveryPartne
 import { placeOrderAtomicAction, updateOrderStatusAction } from "@/actions/marketplaceActions";
 import { recordStoreAnalyticsEvent } from "@/lib/analyticsTracker";
 import { useAuth } from "@/context/AuthContext";
+import { getProductDeduplicationKey } from "@/lib/productDeduplication";
 
 function useSafeAuth() {
   try {
@@ -287,13 +288,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return [];
   }, [allOrders, user]);
 
-  // Compute strictly user-isolated recently ordered items
+  // Compute strictly user-isolated recently ordered items (deduplicated by exact product signature)
   const recentlyOrderedItems = useMemo(() => {
     const map = new Map<string, { product: Product; quantity: number; orderId: string; orderedAt: string }>();
     userOrders.forEach((order) => {
       order.items.forEach((item) => {
-        if (!map.has(item.product.id)) {
-          map.set(item.product.id, {
+        const key = getProductDeduplicationKey(item.product) || item.product.id;
+        if (!map.has(key)) {
+          map.set(key, {
             product: item.product,
             quantity: item.quantity,
             orderId: order.id,
@@ -365,7 +367,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     setRecentlyViewed((prev) => {
-      const filtered = prev.filter((p) => p.id !== product.id);
+      const targetKey = getProductDeduplicationKey(product);
+      const filtered = prev.filter((p) => (targetKey ? getProductDeduplicationKey(p) !== targetKey : p.id !== product.id));
       return [product, ...filtered].slice(0, 10);
     });
   };

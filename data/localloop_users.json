@@ -1,27 +1,6 @@
 {
   "users": [
     {
-      "id": "fb9d95c9-88d6-49a5-a214-c6067a8604a6",
-      "name": "Pratham Patki",
-      "number": "9876543210",
-      "email": "pratham.patki@hubballi.in",
-      "role": "customer",
-      "addresses": [
-        {
-          "id": "addr_test_1",
-          "label": "Home",
-          "street": "Plot 42, 3rd Main, Vidyanagar",
-          "locality": "Vidyanagar",
-          "city": "Hubballi-Dharwad",
-          "pincode": "580021",
-          "isDefault": true
-        }
-      ],
-      "emailPermissionsGranted": true,
-      "createdAt": "2026-10-25T08:05:42.930Z",
-      "updatedAt": "2026-10-25T08:06:49.515Z"
-    },
-    {
       "id": "0bb1807f-0d44-4628-a8f1-30288427194b",
       "name": "Hubballi Test Shopper",
       "number": "9845122334",
@@ -39,21 +18,21 @@
         }
       ],
       "emailPermissionsGranted": true,
-      "createdAt": "2026-10-26T18:46:15.448Z",
-      "updatedAt": "2026-10-26T18:46:15.449Z"
+      "createdAt": "2026-10-26T21:40:42.716Z",
+      "updatedAt": "2026-10-26T21:40:42.717Z"
     },
     {
       "id": "e8582be7-de9e-449b-aef4-d6f1546a42a0",
-      "name": "Srushti Desai",
+      "name": "Knot & Tale",
       "number": "8618636617",
       "email": "srushtiudesai007@gmail.com",
       "role": "seller",
       "addresses": [
         {
-          "id": "addr_store_1793032702147",
+          "id": "addr_store_1793041501535",
           "label": "Office",
           "locality": "Hubballi",
-          "street": "#Shop 82, Desai Colont",
+          "street": "Hubballi Counter Pickup",
           "city": "Hubballi",
           "pincode": "580021",
           "isDefault": true
@@ -61,7 +40,7 @@
       ],
       "emailPermissionsGranted": true,
       "createdAt": "2026-10-26T16:12:03.634Z",
-      "updatedAt": "2026-10-26T16:38:24.426Z",
+      "updatedAt": "2026-10-26T19:05:02.149Z",
       "storeId": "store_8618636617",
       "storeName": "Srushti Desai"
     },
@@ -71,11 +50,23 @@
       "number": "7975633023",
       "email": "patkipratham9@gmail.com",
       "role": "customer",
-      "addresses": [],
+      "addresses": [
+        {
+          "id": "addr_store_1793047873178",
+          "label": "Office",
+          "locality": "Hubballi",
+          "street": "Hubballi Counter Pickup",
+          "city": "Hubballi",
+          "pincode": "580021",
+          "isDefault": true
+        }
+      ],
       "emailPermissionsGranted": true,
       "createdAt": "2026-10-26T17:06:52.680Z",
-      "updatedAt": "2026-10-26T18:43:03.037Z"
+      "updatedAt": "2026-10-26T21:26:20.258Z",
+      "storeId": "store_7975633023",
+      "storeName": "The Golden Crums"
     }
   ],
-  "updatedAt": "2026-10-26T18:43:03.037Z"
+  "updatedAt": "2026-10-26T21:26:20.258Z"
 }

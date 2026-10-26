@@ -7,6 +7,7 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { Product } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import { deduplicateProducts } from "@/lib/productDeduplication";
 import { ShoppingBag, ArrowLeft, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -52,7 +53,7 @@ export default function CategoriesPage() {
           // Graceful fallback
         }
 
-        setProducts(productList);
+        setProducts(deduplicateProducts(productList));
       } catch {}
       setIsLoaded(true);
     };
@@ -73,7 +74,7 @@ export default function CategoriesPage() {
 
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return products.filter((product) => {
+    const matched = products.filter((product) => {
       if (!q) return true;
       return (
         product.name.toLowerCase().includes(q) ||
@@ -81,6 +82,7 @@ export default function CategoriesPage() {
         product.tags?.some((t) => t.toLowerCase().includes(q))
       );
     });
+    return deduplicateProducts(matched);
   }, [products, searchQuery]);
 
   return (
