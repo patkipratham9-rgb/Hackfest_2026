@@ -43,8 +43,6 @@ export default function LoginPage() {
   const [signupName, setSignupName] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
-  const [signupStreet, setSignupStreet] = useState("");
-  const [signupLocality, setSignupLocality] = useState("Vidyanagar");
   const [signupError, setSignupError] = useState("");
 
   // Login Phone OTP States
@@ -108,17 +106,6 @@ export default function LoginPage() {
       phone: signupPhone,
       email: signupEmail,
       role: "customer",
-      initialAddress: signupStreet
-        ? {
-            label: "Home",
-            street: signupStreet,
-            landmark: `Near ${signupLocality}`,
-            locality: signupLocality,
-            city: "Hubballi-Dharwad",
-            pincode: "580021",
-            isDefault: true,
-          }
-        : undefined,
     });
 
     setIsLoading(false);
@@ -419,36 +406,9 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              <div>
-                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                  Primary Delivery Street
-                </label>
-                <input
-                  type="text"
-                  value={signupStreet}
-                  onChange={(e) => setSignupStreet(e.target.value)}
-                  placeholder="e.g. Plot 14, 2nd Cross"
-                  className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider block mb-1">
-                  Locality
-                </label>
-                <select
-                  value={signupLocality}
-                  onChange={(e) => setSignupLocality(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
-                >
-                  <option value="Vidyanagar">Vidyanagar (580021)</option>
-                  <option value="Gokul Road">Gokul Road (580030)</option>
-                  <option value="CBT">CBT / Market (580020)</option>
-                  <option value="Station Road">Station Road (580023)</option>
-                  <option value="Unkal Lake">Unkal Lake (580031)</option>
-                </select>
-              </div>
+            <div className="p-3 bg-cream-100 border border-cream-300 rounded-xl flex items-center gap-2 text-xs text-forest-700">
+              <span className="text-terracotta-500 text-sm">💡</span>
+              <span>You can add your delivery address later at checkout.</span>
             </div>
 
             <button
