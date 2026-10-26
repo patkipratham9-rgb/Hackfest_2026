@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useCart } from "@/context/CartContext";
 import { MapPin, Navigation, X, Check, AlertCircle, Compass, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,6 +30,11 @@ export function LocationModal() {
   const [manualInput, setManualInput] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleShareGps = async () => {
     setErrorMessage(null);
@@ -72,12 +78,17 @@ export function LocationModal() {
     }, 600);
   };
 
-  return (
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {isLocationModalOpen && (
-        <motion.div
+        <div
           key="location-modal-container"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[99999] overflow-y-auto flex items-center justify-center p-4"
+          style={{ zIndex: 99999 }}
         >
           {/* Backdrop */}
           <motion.div
@@ -86,7 +97,8 @@ export function LocationModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsLocationModalOpen(false)}
-            className="fixed inset-0 bg-forest-950/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-forest-950/75 backdrop-blur-md cursor-pointer"
+            style={{ zIndex: 99999 }}
           />
 
           {/* Modal Window */}
@@ -98,7 +110,8 @@ export function LocationModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-warm-xl overflow-hidden z-10"
+            className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-warm-xl overflow-hidden z-[100000] my-auto"
+            style={{ zIndex: 100000 }}
           >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200 bg-cream-100">
@@ -229,8 +242,9 @@ export function LocationModal() {
             )}
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     )}
-  </AnimatePresence>
+  </AnimatePresence>,
+  document.body
 );
 }

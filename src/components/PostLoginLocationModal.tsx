@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useCart } from "@/context/CartContext";
 import {
   MapPin,
@@ -48,6 +49,11 @@ export function PostLoginLocationModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [customInput, setCustomInput] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleShareGps = async () => {
     setErrorMessage(null);
@@ -89,19 +95,32 @@ export function PostLoginLocationModal({
     }, 500);
   };
 
-  return (
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          key="post-login-location-modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => {
-            if (!requireLocation) onSkip();
-          }}
-          className="fixed inset-0 z-50 overflow-y-auto bg-forest-950/70 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+        <div
+          key="post-login-location-modal-container"
+          className="fixed inset-0 z-[99999] overflow-y-auto flex items-center justify-center p-4 sm:p-6"
+          style={{ zIndex: 99999 }}
         >
+          {/* Backdrop Overlay */}
+          <motion.div
+            key="post-login-location-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!requireLocation) onSkip();
+            }}
+            className="fixed inset-0 bg-forest-950/75 backdrop-blur-md cursor-pointer"
+            style={{ zIndex: 99999 }}
+          />
+
+          {/* Modal Pop-up Dialog Window */}
           <motion.div
             key="post-login-location-modal-dialog"
             role="dialog"
@@ -111,7 +130,8 @@ export function PostLoginLocationModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ duration: 0.25 }}
-            className="relative w-full max-w-lg my-auto bg-cream-50 border border-cream-300 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-forest-950 overflow-hidden cursor-default"
+            className="relative w-full max-w-lg my-auto bg-cream-50 border border-cream-300 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-forest-950 overflow-hidden cursor-default z-[100000]"
+            style={{ zIndex: 100000 }}
           >
             {/* Top Close Button (for Pop-up screen dismiss) */}
             {!requireLocation && (
@@ -269,8 +289,9 @@ export function PostLoginLocationModal({
             )}
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     )}
-  </AnimatePresence>
+  </AnimatePresence>,
+  document.body
 );
 }
