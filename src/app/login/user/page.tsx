@@ -19,10 +19,24 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { loginOrRegisterUserDbAction } from "@/actions/authActions";
+import { PostLoginLocationModal } from "@/components/PostLoginLocationModal";
 
 export default function UserLoginPage() {
   const router = useRouter();
   const { user, isAuthenticated, setActiveAppMode } = useAuth();
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  const handleLocationComplete = (loc: string) => {
+    setShowLocationModal(false);
+    router.push("/");
+    router.refresh();
+  };
+
+  const handleSkipLocation = () => {
+    setShowLocationModal(false);
+    router.push("/");
+    router.refresh();
+  };
 
   // Mode: "login" (Sign In) vs "signup" (Create User Account)
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -139,9 +153,8 @@ export default function UserLoginPage() {
         );
         setActiveAppMode("shopper");
         setTimeout(() => {
-          router.push("/");
-          router.refresh();
-        }, 800);
+          setShowLocationModal(true);
+        }, 400);
       } else {
         setErrorMessage("Login failed. Please try again.");
       }
@@ -204,9 +217,8 @@ export default function UserLoginPage() {
         );
         setActiveAppMode("shopper");
         setTimeout(() => {
-          router.push("/");
-          router.refresh();
-        }, 900);
+          setShowLocationModal(true);
+        }, 400);
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "Login failed. Please verify credentials.");
@@ -253,9 +265,8 @@ export default function UserLoginPage() {
         );
         setActiveAppMode("shopper");
         setTimeout(() => {
-          router.push("/");
-          router.refresh();
-        }, 900);
+          setShowLocationModal(true);
+        }, 400);
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "Failed to create account.");
@@ -584,6 +595,13 @@ export default function UserLoginPage() {
           )}
         </div>
       </div>
+
+      {/* Post-Login Location Permission Step */}
+      <PostLoginLocationModal
+        isOpen={showLocationModal}
+        onLocationSet={handleLocationComplete}
+        onSkip={handleSkipLocation}
+      />
     </div>
   );
 }

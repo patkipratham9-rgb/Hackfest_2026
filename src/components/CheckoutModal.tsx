@@ -9,6 +9,7 @@ import { UserAddress } from "@/types";
 import { Map4MePicker } from "@/components/Map4MePicker";
 import { CashfreePaymentGatewayModal } from "@/components/CashfreePaymentGatewayModal";
 import { CheckoutReturnBadge } from "@/components/CheckoutReturnBadge";
+import { PostLoginLocationModal } from "@/components/PostLoginLocationModal";
 import {
   X,
   Clock,
@@ -93,6 +94,8 @@ export function CheckoutModal() {
     isMinBillMet,
     createOrder,
     cart,
+    userLocation,
+    setUserLocation,
   } = useCart();
   const { user, addAddress } = useAuth();
 
@@ -104,6 +107,8 @@ export function CheckoutModal() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>(defaultAddr?.id || "");
   const [deliveryOption, setDeliveryOption] = useState<"delivery" | "pickup">("delivery");
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
+  const [isLocationRequiredModalOpen, setIsLocationRequiredModalOpen] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [customDeliveryAddress, setCustomDeliveryAddress] = useState<UserAddress | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string>("quick-20");
   const [nameError, setNameError] = useState<string>("");
@@ -210,6 +215,19 @@ export function CheckoutModal() {
     e.preventDefault();
 
     if (!validate()) {
+      return;
+    }
+
+    // Enforce location before payment if user skipped sharing earlier
+    const hasSharedLocation = Boolean(
+      (userLocation && userLocation.trim() !== "" && !userLocation.toLowerCase().includes("add / share location")) ||
+      customDeliveryAddress ||
+      (user?.addresses && user.addresses.length > 0)
+    );
+
+    if (!hasSharedLocation) {
+      setLocationError("Location is required before payment. Please share your location.");
+      setIsLocationRequiredModalOpen(true);
       return;
     }
 
@@ -990,6 +1008,25 @@ export function CheckoutModal() {
 
             {/* Submit Action */}
             <div className="pt-2 space-y-2">
+              {locationError && (
+                <div
+                  data-testid="checkout-location-error"
+                  className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2 text-xs text-amber-900"
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-terracotta-600 shrink-0" />
+                    <span>{locationError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsLocationRequiredModalOpen(true)}
+                    className="px-2.5 py-1 rounded-lg bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-[11px] transition-colors cursor-pointer shrink-0"
+                  >
+                    Set Location
+                  </button>
+                </div>
+              )}
+
               {billError && (
                 <div
                   data-testid="checkout-bill-error"
@@ -1077,6 +1114,31 @@ export function CheckoutModal() {
           </div>
         </motion.div>
       )}
+
+      {/* Location Permission Prompt before Payment if user did not share earlier */}
+      <PostLoginLocationModal
+        isOpen={isLocationRequiredModalOpen}
+        requireLocation={true}
+        title="Delivery Location Required Before Payment"
+        description="You have not shared your location yet. Please share your current location or select your neighborhood so we can calculate delivery timing and dispatch your order."
+        onLocationSet={(loc) => {
+          setUserLocation(loc);
+          setCustomDeliveryAddress({
+            id: `addr_${Date.now()}`,
+            label: "Delivery Location",
+            locality: loc,
+            street: loc,
+            city: "Hubballi-Dharwad",
+            pincode: "580021",
+            isDefault: true,
+          });
+          setLocationError("");
+          setIsLocationRequiredModalOpen(false);
+        }}
+        onSkip={() => {
+          setIsLocationRequiredModalOpen(false);
+        }}
+      />
 
       {/* Cashfree Payment Gateway Interactive Checkout Modal */}
       <CashfreePaymentGatewayModal

@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { DEMO_OTP } from "@/lib/authSecurity";
 import { createRecaptchaVerifier, sendFirebasePhoneOtp } from "@/lib/firebaseClient";
+import { PostLoginLocationModal } from "@/components/PostLoginLocationModal";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,6 +35,20 @@ export default function LoginPage() {
     loginWithEmailPermission,
     setActiveAppMode,
   } = useAuth();
+
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  const handleLocationComplete = (loc: string) => {
+    setShowLocationModal(false);
+    router.push("/");
+    router.refresh();
+  };
+
+  const handleSkipLocation = () => {
+    setShowLocationModal(false);
+    router.push("/");
+    router.refresh();
+  };
 
   // Mode: "signup" (Create an account) vs "login" (Already have an account? Log in)
   const [authMode, setAuthMode] = useState<"signup" | "login">("signup");
@@ -117,8 +132,8 @@ export default function LoginPage() {
     setStatusMessage(res.message);
     setActiveAppMode("shopper");
     setTimeout(() => {
-      router.push("/");
-    }, 700);
+      setShowLocationModal(true);
+    }, 400);
   };
 
   // Handle Send OTP for Login
@@ -202,8 +217,8 @@ export default function LoginPage() {
           setStatusMessage("Firebase Phone Verification Successful! Welcome back.");
           setActiveAppMode("shopper");
           setTimeout(() => {
-            router.push("/");
-          }, 600);
+            setShowLocationModal(true);
+          }, 400);
           return;
         }
       } catch (fbErr: any) {
@@ -222,8 +237,8 @@ export default function LoginPage() {
     setStatusMessage(res.message);
     setActiveAppMode("shopper");
     setTimeout(() => {
-      router.push("/");
-    }, 600);
+      setShowLocationModal(true);
+    }, 400);
   };
 
   const handleFillDemoOtp = () => {
@@ -260,14 +275,12 @@ export default function LoginPage() {
     setStatusMessage(res.message);
     setActiveAppMode("shopper");
     setTimeout(() => {
-      router.push("/");
-    }, 600);
+      setShowLocationModal(true);
+    }, 400);
   };
 
   return (
     <div className="max-w-md mx-auto py-6 px-4 space-y-6">
-      <title>Shopper Account & Login • LocalLoop Hubballi</title>
-      <meta
         name="description"
         content="Create a user account or sign in to explore neighborhood stores, save pinpoint delivery addresses, and place orders."
       />
@@ -665,6 +678,13 @@ export default function LoginPage() {
       )}
 
       {/* Merchant Partner switch button to /merchant/login removed per strict app separation */}
+
+      {/* Post-Login Location Permission Step */}
+      <PostLoginLocationModal
+        isOpen={showLocationModal}
+        onLocationSet={handleLocationComplete}
+        onSkip={handleSkipLocation}
+      />
     </div>
   );
 }
