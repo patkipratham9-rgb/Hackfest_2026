@@ -102,6 +102,9 @@ testAssert(storePageContent.includes("data-testid=\"reset-store-profile-button\"
 testAssert(storePageContent.includes("data-testid=\"store-save-success-alert\""), "Success confirmation banner present");
 testAssert(storePageContent.includes("data-testid=\"store-name-error\""), "Name validation error state present");
 testAssert(storePageContent.includes("data-testid=\"store-phone-error\""), "Phone validation error state present");
+testAssert(storePageContent.includes("data-testid=\"merchant-sign-out-button\""), "Sign out button present under store profile");
+testAssert(storePageContent.includes("data-testid=\"merchant-header-sign-out-button\""), "Header sign out action present under store profile");
+testAssert(layoutContent.includes("data-testid=\"seller-sidebar-sign-out-button\""), "Sidebar sign out button present in merchant layout");
 
 // Context persistence test
 const sellerContextContent = fs.readFileSync("./src/context/SellerContext.tsx", "utf-8");

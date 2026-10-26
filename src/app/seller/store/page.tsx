@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSeller } from "@/context/SellerContext";
+import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { NeighborhoodArea, ProductCategory } from "@/types";
 import {
@@ -34,6 +35,7 @@ import {
   Trash2,
   Building2,
   CreditCard,
+  LogOut,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -67,8 +69,17 @@ const DAY_TEST_IDS: Record<DayOfWeek, string> = {
 
 export default function StoreProfilePage() {
   const router = useRouter();
-  const { activeStore, updateStoreProfile, toggleStoreOpen, deleteMerchantStore } = useSeller();
+  const { user, logout } = useAuth();
+  const { activeStore, updateStoreProfile, toggleStoreOpen, deleteMerchantStore, setUserRole } = useSeller();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSignOut = () => {
+    logout();
+    if (typeof setUserRole === "function") {
+      setUserRole("customer");
+    }
+    router.replace("/login/merchant");
+  };
 
   // Form states initialized with activeStore
   const [name, setName] = useState(activeStore.name);
@@ -416,25 +427,38 @@ export default function StoreProfilePage() {
           </p>
         </div>
 
-        {/* Live Status Switch */}
-        <div className="flex items-center gap-2 bg-cream-50 p-2 rounded-2xl border border-cream-300 shadow-xs self-start sm:self-auto">
-          <span className="text-xs font-semibold text-forest-700">Counter Status:</span>
+        {/* Live Status Switch & Sign Out */}
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <div className="flex items-center gap-2 bg-cream-50 p-2 rounded-2xl border border-cream-300 shadow-xs">
+            <span className="text-xs font-semibold text-forest-700">Counter Status:</span>
+            <button
+              type="button"
+              data-testid="store-status-toggle"
+              onClick={toggleStoreOpen}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeStore.isOpen
+                  ? "bg-forest-800 text-cream-100 shadow-xs"
+                  : "bg-rose-100 text-rose-800 border border-rose-200"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  activeStore.isOpen ? "bg-emerald-400 animate-pulse" : "bg-rose-600"
+                }`}
+              />
+              <span>{activeStore.isOpen ? "Open Now" : "Paused / Closed"}</span>
+            </button>
+          </div>
+
           <button
             type="button"
-            data-testid="store-status-toggle"
-            onClick={toggleStoreOpen}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeStore.isOpen
-                ? "bg-forest-800 text-cream-100 shadow-xs"
-                : "bg-rose-100 text-rose-800 border border-rose-200"
-            }`}
+            data-testid="merchant-header-sign-out-button"
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-cream-100 hover:bg-rose-50 text-forest-800 hover:text-rose-700 border border-cream-300 hover:border-rose-300 transition-colors cursor-pointer shadow-xs"
+            title="Sign out of Merchant Terminal"
           >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                activeStore.isOpen ? "bg-emerald-400 animate-pulse" : "bg-rose-600"
-              }`}
-            />
-            <span>{activeStore.isOpen ? "Open Now" : "Paused / Closed"}</span>
+            <LogOut className="w-3.5 h-3.5 text-rose-600" />
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
@@ -1197,6 +1221,33 @@ export default function StoreProfilePage() {
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Remove Store Account</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Merchant Account Session: Sign Out */}
+        <div
+          data-testid="merchant-session-signout-card"
+          className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-3 shadow-xs"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-bold text-forest-900 uppercase tracking-wider flex items-center gap-1.5">
+                <LogOut className="w-4 h-4 text-terracotta-600" />
+                <span>Merchant Account Session</span>
+              </span>
+              <p className="text-xs text-forest-600 mt-1">
+                Currently operating as <strong className="text-forest-950">{user?.name || activeStore.name}</strong> ({user?.number || activeStore.phone}). Sign out of the merchant terminal on this device.
+              </p>
+            </div>
+            <button
+              type="button"
+              data-testid="merchant-sign-out-button"
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-cream-200 hover:bg-rose-50 hover:border-rose-300 text-forest-800 hover:text-rose-700 border border-cream-300 rounded-xl text-xs font-bold transition-all cursor-pointer self-start sm:self-auto shadow-xs flex items-center gap-2"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>

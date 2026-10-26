@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { SellerProvider, useSeller } from "@/context/SellerContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   Store,
   LayoutDashboard,
@@ -20,6 +21,7 @@ import {
   ExternalLink,
   Power,
   UserCheck,
+  LogOut,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,9 +31,19 @@ function SellerPortalProtectedShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
   const { seller, activeStore, isAuthorizedSeller, userRole, setUserRole, toggleStoreOpen } =
     useSeller();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleSignOut = () => {
+    logout();
+    if (typeof setUserRole === "function") {
+      setUserRole("customer");
+    }
+    router.replace("/login/merchant");
+  };
 
   // Checkpoint CP-SP01: Role & Permission Verification Guard
   if (!isAuthorizedSeller) {
@@ -287,7 +299,7 @@ function SellerPortalProtectedShell({
           </nav>
         </div>
 
-        {/* Sidebar Footer: Role Status */}
+        {/* Sidebar Footer: Role Status & Sign Out */}
         <div className="p-4 border-t border-cream-300 bg-cream-100/70 space-y-2.5">
           {/* Role Status Tag */}
           <div className="flex items-center justify-between text-xs">
@@ -299,6 +311,16 @@ function SellerPortalProtectedShell({
               {userRole.toUpperCase()}
             </span>
           </div>
+
+          <button
+            type="button"
+            data-testid="seller-sidebar-sign-out-button"
+            onClick={handleSignOut}
+            className="w-full py-2 px-3 rounded-xl bg-cream-200 hover:bg-rose-50 hover:border-rose-300 text-forest-800 hover:text-rose-700 border border-cream-300 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <LogOut className="w-3.5 h-3.5 text-rose-600" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </aside>
 
@@ -319,6 +341,16 @@ function SellerPortalProtectedShell({
               <ShieldCheck className="w-3.5 h-3.5 text-forest-700" />
               <span>Seller: {seller.fullName}</span>
             </div>
+
+            <button
+              type="button"
+              data-testid="seller-header-sign-out-button"
+              onClick={handleSignOut}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-cream-200 hover:bg-rose-50 text-forest-700 hover:text-rose-700 border border-cream-300 text-xs font-bold transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </header>
 
