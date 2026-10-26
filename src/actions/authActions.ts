@@ -72,17 +72,14 @@ export async function loginOrRegisterUserDbAction(input: {
 
       // Update in Supabase
       try {
-        await supabase
-          .from("profiles")
-          .upsert({
-            id: userId,
-            full_name: mergedName,
-            phone: cleanPhone,
-            email: mergedEmail || null,
-            role: "customer",
-            addresses: mergedAddresses,
-            updated_at: new Date().toISOString(),
-          });
+        await supabase.rpc("sync_user_profile", {
+          p_id: userId,
+          p_full_name: mergedName,
+          p_phone: cleanPhone,
+          p_email: mergedEmail || null,
+          p_role: "customer",
+          p_addresses: mergedAddresses,
+        });
       } catch {}
 
       const userProfile: UserProfile = {
@@ -120,17 +117,14 @@ export async function loginOrRegisterUserDbAction(input: {
 
     // Synchronize to Supabase PostgreSQL
     try {
-      await supabase
-        .from("profiles")
-        .upsert({
-          id: newId,
-          full_name: input.fullName.trim(),
-          phone: cleanPhone,
-          email: input.email?.trim() || null,
-          role: "customer",
-          addresses: input.addresses || [],
-          updated_at: new Date().toISOString(),
-        });
+      await supabase.rpc("sync_user_profile", {
+        p_id: newId,
+        p_full_name: input.fullName.trim(),
+        p_phone: cleanPhone,
+        p_email: input.email?.trim() || null,
+        p_role: "customer",
+        p_addresses: input.addresses || [],
+      });
     } catch (e: any) {
       console.warn("Notice syncing profile to Supabase:", e?.message);
     }
@@ -262,13 +256,13 @@ export async function loginOrRegisterMerchantDbAction(input: {
 
     // Synchronize to Supabase PostgreSQL database
     try {
-      await supabase.from("profiles").upsert({
-        id: userId,
-        full_name: input.ownerName.trim(),
-        phone: cleanPhone,
-        email: input.email?.trim() || null,
-        role: "seller",
-        updated_at: new Date().toISOString(),
+      await supabase.rpc("sync_user_profile", {
+        p_id: userId,
+        p_full_name: input.ownerName.trim(),
+        p_phone: cleanPhone,
+        p_email: input.email?.trim() || null,
+        p_role: "seller",
+        p_addresses: storedMerchant.addresses,
       });
 
       await supabase.from("stores").upsert({

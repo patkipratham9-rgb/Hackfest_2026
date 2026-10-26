@@ -1320,25 +1320,22 @@ export async function saveUserProfileToDbAction(profile: {
       addresses: profile.addresses || [],
     });
 
-    // 2. Synchronize to Supabase PostgreSQL database
+    // 2. Synchronize to Supabase PostgreSQL database via atomic RPC
     try {
       const supabase = createServerSupabaseClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .upsert({
-          id: validId,
-          full_name: profile.fullName,
-          phone: cleanPhone,
-          email: profile.email || null,
-          addresses: profile.addresses || [],
-          updated_at: new Date().toISOString(),
-        })
-        .select();
+      const { data, error } = await supabase.rpc("sync_user_profile", {
+        p_id: validId,
+        p_full_name: profile.fullName || "Hubballi Shopper",
+        p_phone: cleanPhone,
+        p_email: profile.email || null,
+        p_role: "customer",
+        p_addresses: profile.addresses || [],
+      });
 
       if (error) {
         console.warn("Supabase profile sync notice (RLS/Auth):", error.message);
       }
-      return { success: true, data: data?.[0] || storedUser };
+      return { success: true, data: data || storedUser };
     } catch (dbErr: any) {
       console.warn("Supabase profile sync exception:", dbErr?.message);
       return { success: true, data: storedUser };

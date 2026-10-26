@@ -39,8 +39,8 @@
         }
       ],
       "emailPermissionsGranted": true,
-      "createdAt": "2026-10-26T17:56:18.645Z",
-      "updatedAt": "2026-10-26T17:56:18.646Z"
+      "createdAt": "2026-10-26T18:25:12.471Z",
+      "updatedAt": "2026-10-26T18:25:12.472Z"
     },
     {
       "id": "e8582be7-de9e-449b-aef4-d6f1546a42a0",
@@ -67,15 +67,15 @@
     },
     {
       "id": "c017aedf-a30b-4d88-ae04-7954d0b88225",
-      "name": "Pratham Sogalad",
+      "name": "Pratham Patki",
       "number": "7975633023",
       "email": "patkipratham9@gmail.com",
       "role": "customer",
       "addresses": [],
       "emailPermissionsGranted": true,
       "createdAt": "2026-10-26T17:06:52.680Z",
-      "updatedAt": "2026-10-26T17:06:52.856Z"
+      "updatedAt": "2026-10-26T18:24:47.048Z"
     }
   ],
-  "updatedAt": "2026-10-26T17:06:52.856Z"
+  "updatedAt": "2026-10-26T18:16:32.592Z"
 }

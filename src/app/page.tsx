@@ -252,35 +252,7 @@ export default function HomePage() {
       transition={{ duration: 0.3 }}
       className="space-y-8"
     >
-      {/* Dynamic Moving Advertisements Hero Section */}
-      <MovingAdsBanner
-        userLocation={userLocation}
-        onOpenLocationModal={() => setIsLocationModalOpen(true)}
-        slides={[
-          {
-            id: "ad-hubballi-hyperlocal",
-            badge: "Official City Marketplace • Hubli-Dharwad",
-            badgeIcon: "sparkles",
-            taglineSmall: "Hyperlocal Marketplace • Direct Store Pickup",
-            title: "Your city’s hyperlocal digital marketplace.",
-            titleHighlight:
-              "Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.",
-            description:
-              "Support independent local vendors in Hubli-Dharwad. Choose Home Delivery or express Counter Pick-up with zero markups.",
-            offerPill: "FLAT 20% OFF FIRST 3 ORDERS • CODE: LOCAL20",
-            bgGradient: "from-forest-900 via-forest-800 to-forest-950",
-            accentColor: "text-terracotta-400",
-            primaryCtaText: "Change Location",
-            primaryCtaAction: "location",
-            secondaryCtaText: "Explore Catalog",
-            secondaryCtaHref: "/categories",
-          },
-          ...DEFAULT_ADS.slice(1),
-        ]}
-      />
-
-
-      {/* Active Delivery Location Bar */}
+      {/* Active Delivery Location Bar (Rendered at top above advertisements for immediate delivery address context) */}
       <section data-testid="location-prompt-card" className="space-y-2">
         <div
           data-testid="active-location-card"
@@ -322,6 +294,33 @@ export default function HomePage() {
           </motion.div>
         )}
       </section>
+
+      {/* Dynamic Moving Advertisements Hero Section */}
+      <MovingAdsBanner
+        userLocation={userLocation}
+        onOpenLocationModal={() => setIsLocationModalOpen(true)}
+        slides={[
+          {
+            id: "ad-hubballi-hyperlocal",
+            badge: "Official City Marketplace • Hubli-Dharwad",
+            badgeIcon: "sparkles",
+            taglineSmall: "Hyperlocal Marketplace • Direct Store Pickup",
+            title: "Your city’s hyperlocal digital marketplace.",
+            titleHighlight:
+              "Connecting authentic corner shops across Hubli-Dharwad with citywide shoppers.",
+            description:
+              "Support independent local vendors in Hubli-Dharwad. Choose Home Delivery or express Counter Pick-up with zero markups.",
+            offerPill: "FLAT 20% OFF FIRST 3 ORDERS • CODE: LOCAL20",
+            bgGradient: "from-forest-900 via-forest-800 to-forest-950",
+            accentColor: "text-terracotta-400",
+            primaryCtaText: "Change Location",
+            primaryCtaAction: "location",
+            secondaryCtaText: "Explore Catalog",
+            secondaryCtaHref: "/categories",
+          },
+          ...DEFAULT_ADS.slice(1),
+        ]}
+      />
 
       {/* Live Search Section */}
       <section className="space-y-4 bg-cream-50/90 p-4 sm:p-5 rounded-3xl border border-cream-300 shadow-warm">

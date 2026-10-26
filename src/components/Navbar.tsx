@@ -78,11 +78,11 @@ export function Navbar() {
         </Link>
 
         {/* Location Selector Pill (Desktop & Tablet) */}
-        <div className="relative hidden xs:block">
+        <div className="relative hidden sm:block">
           <button
             onClick={() => setIsLocationModalOpen(true)}
             data-testid="nav-location-btn"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cream-200 border border-cream-300 hover:border-terracotta-400 text-xs font-semibold text-forest-800 transition-colors shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cream-200 border border-cream-300 hover:border-terracotta-400 text-xs font-semibold text-forest-800 transition-colors shadow-xs cursor-pointer"
             aria-label="Set Delivery Location"
           >
             <MapPin className="w-3.5 h-3.5 text-terracotta-500 flex-shrink-0" />
