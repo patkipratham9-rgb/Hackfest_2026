@@ -216,61 +216,378 @@ export interface DialogflowIntentResult {
   actionRequired?: string;
 }
 
+export const CHATBOX_FALLBACK_REPLY =
+  "I can reply only regarding the orders, delivery and in app search.";
+
 export async function sendDialogflowMessage(params: {
   sessionId: string;
   message: string;
   role?: "customer" | "seller";
 }): Promise<DialogflowIntentResult> {
-  const msg = params.message.toLowerCase();
+  const rawMsg = (params.message || "").trim();
+  const msg = rawMsg.toLowerCase();
 
-  if (msg.includes("where is my order") || msg.includes("track") || msg.includes("status")) {
+  // If empty input
+  if (!msg) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "out_of_scope",
+      confidence: 1.0,
+      fulfillmentText: CHATBOX_FALLBACK_REPLY,
+    };
+  }
+
+  // 1. Explicit Out-of-Scope Patterns:
+  // General knowledge, trivia, politics, recipes, code, math, weather, entertainment, etc.
+  const outOfScopePatterns = [
+    /\b(who is|who was|who wrote|who won|who invented|who founded)\b/i,
+    /\b(capital of|currency of|population of|distance to|meaning of life)\b/i,
+    /\b(weather|temperature|forecast|rain|climate)\b/i,
+    /\b(politics|politician|mla|mp|minister|election|president|prime minister|governor|bjp|congress)\b/i,
+    /\b(write code|python|javascript|typescript|c\+\+|java|html|css|sql|function|fibonacci|regex|debug)\b/i,
+    /\b(solve|equation|calculate|integral|derivative|math problem)\b/i,
+    /\b(tell me a joke|tell me a story|sing a song|write a poem|write an essay|riddle)\b/i,
+    /\b(movie|cinema|actor|actress|bollywood|hollywood|song|cricket score|ipl|football|world cup)\b/i,
+    /\b(recipe for|how to make pizza|how to cook|how to bake|how to prepare biryani)\b/i,
+    /\b(quantum|physics|chemistry|biology|astronomy|medical advice|cure for|symptoms of)\b/i,
+    /\b(crypto|bitcoin|ethereum|stock market|share price)\b/i,
+    /\b(homework|essay on|assignment)\b/i,
+  ];
+
+  // If query is an in-app search action, let it proceed to in-app search
+  const isSearchAction = /\b(how (to|do i|can i) search|search for|find (stores?|shops?|items?|products?)|filter by)\b/i.test(msg);
+
+  if (!isSearchAction && outOfScopePatterns.some((pattern) => pattern.test(msg))) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "out_of_scope",
+      confidence: 1.0,
+      fulfillmentText: CHATBOX_FALLBACK_REPLY,
+    };
+  }
+
+  // 2. In-Domain Intent Matching:
+
+  // A. ORDERS & TRACKING
+  if (
+    msg.includes("where is my order") ||
+    msg.includes("track order") ||
+    msg.includes("order status") ||
+    msg.includes("my order") ||
+    msg.includes("track") ||
+    /\border status\b/.test(msg) ||
+    /\b(pickup pin|pickup code|token|ord-ll)\b/.test(msg)
+  ) {
     return {
       engine: "Google Dialogflow",
       intent: "order.track",
-      confidence: 0.97,
+      confidence: 0.98,
       fulfillmentText:
-        "You can track your live order progress in the Orders tab. Choose between Home Delivery doorstep ETA or Express Counter Pick-up PIN token.",
+        "You can track your live order progress in the Orders tab. You will see real-time status updates (Placed, Packed, Ready for Pickup, Completed), your delivery partner ETA for Home Delivery, or your 4-digit pickup PIN for express counter collection.",
       actionRequired: "NAVIGATE_ORDERS",
     };
   }
 
-  if (msg.includes("home delivery") || msg.includes("pick up") || msg.includes("delivery")) {
+  // Order cancellation / returns / refunds
+  if (
+    msg.includes("cancel order") ||
+    msg.includes("cancellation") ||
+    msg.includes("cancel my order") ||
+    msg.includes("return policy") ||
+    msg.includes("easy 7-day") ||
+    (msg.includes("refund") && (msg.includes("order") || msg.includes("return") || msg.includes("policy")))
+  ) {
     return {
       engine: "Google Dialogflow",
-      intent: "delivery.inquiry",
-      confidence: 0.95,
+      intent: "order.cancel_return",
+      confidence: 0.96,
       fulfillmentText:
-        "LocalLoop offers two delivery options: 1. Home Delivery directly to your doorstep in Hubli-Dharwad via Route4Me, or 2. Express Store Pick-up ready at the shop counter in 15-20 minutes.",
+        "Orders can be cancelled from the Orders tab before merchant packing begins. LocalLoop also provides an Easy 7-Day Return policy for eligible items, with instant refund initiation to your original UPI or bank payment method.",
+      actionRequired: "NAVIGATE_ORDERS",
     };
   }
 
-  if (msg.includes("cashfree") || msg.includes("payment") || msg.includes("upi")) {
+  // Reorder / past orders
+  if (msg.includes("reorder") || msg.includes("past orders") || msg.includes("order again")) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "order.reorder",
+      confidence: 0.95,
+      fulfillmentText:
+        "You can repeat past purchases in 1-tap from the 'Past Orders' (Repeat Orders) section. Items from completed orders will be repopulated into your cart automatically.",
+      actionRequired: "NAVIGATE_ORDERS_AGAIN",
+    };
+  }
+
+  // General orders / cart / checkout inquiry
+  if (msg.includes("order") || msg.includes("orders") || msg.includes("cart") || msg.includes("checkout")) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "order.general",
+      confidence: 0.94,
+      fulfillmentText:
+        "You can browse items from Hubballi-Dharwad corner shops, add them to your cart, and choose between Home Delivery (min. ₹599) or Store Counter Pick-up with zero wait time.",
+    };
+  }
+
+  // B. DELIVERY & PICKUP
+  if (
+    msg.includes("home delivery") ||
+    msg.includes("store pick-up") ||
+    msg.includes("pick up") ||
+    msg.includes("pickup") ||
+    msg.includes("delivery option") ||
+    msg.includes("delivery") ||
+    msg.includes("deliver") ||
+    msg.includes("shipping") ||
+    msg.includes("route4me")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "delivery.inquiry",
+      confidence: 0.97,
+      fulfillmentText:
+        "LocalLoop offers two delivery options across Hubballi-Dharwad: 1. Home Delivery directly to your doorstep via Route4Me dispatch, and 2. Express Store Pick-up ready at the shop counter in 15–20 minutes with zero markups.",
+    };
+  }
+
+  // Delivery coverage / areas / fees
+  if (
+    msg.includes("delivery area") ||
+    msg.includes("delivery charge") ||
+    msg.includes("platform fee") ||
+    msg.includes("minimum bill") ||
+    msg.includes("min bill") ||
+    msg.includes("coverage")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "delivery.coverage",
+      confidence: 0.95,
+      fulfillmentText:
+        "Home delivery covers Vidyanagar, Station Road, CBT, Gokul Road, Keshwapur, Unkal Lake, Navanagar, and Dharwad Center. Home delivery requires a minimum store bill of ₹599 with a fair platform fee of ₹15. Express Store Pick-up has no minimum bill requirement.",
+    };
+  }
+
+  // C. IN-APP SEARCH & NAVIGATION
+  if (
+    msg.includes("search") ||
+    msg.includes("find shop") ||
+    msg.includes("find store") ||
+    msg.includes("find item") ||
+    msg.includes("filter") ||
+    msg.includes("browse") ||
+    msg.includes("voice search") ||
+    msg.includes("mic") ||
+    msg.includes("categories") ||
+    msg.includes("category") ||
+    msg.includes("navigation")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "app.search",
+      confidence: 0.96,
+      fulfillmentText:
+        "You can use the in-app search bar at the top of the marketplace to find items, brands, or shops across Hubballi-Dharwad. You can tap the microphone icon for speech-to-text search, filter by neighborhood, or explore categories like Bakery, Sweets & Snacks, Filter Coffee & Tea, and Groceries.",
+      actionRequired: "SEARCH_FOCUS",
+    };
+  }
+
+  // D. ITEMS LISTED IN THE MERCHANT MARKETPLACE
+  // Dharwad Pedha
+  if (
+    msg.includes("pedha") ||
+    msg.includes("pede") ||
+    msg.includes("dharwad pedha") ||
+    msg.includes("mishra") ||
+    msg.includes("babu singh") ||
+    msg.includes("line bazaar")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "items.pedha",
+      confidence: 0.98,
+      fulfillmentText:
+        "Authentic GI-tagged Dharwad Pedha is available from trusted heritage sweet makers like Mishra Authentic Dharwad Pedha in Line Bazaar and Station Road. Available in 250g, 500g, and 1kg gift boxes made with slow-simmered milk khawa and green cardamom.",
+      actionRequired: "SHOW_PEDHA",
+    };
+  }
+
+  // Filter Coffee & Tea
+  if (
+    msg.includes("coffee") ||
+    msg.includes("filter coffee") ||
+    msg.includes("tea") ||
+    msg.includes("chicory") ||
+    msg.includes("meena")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "items.coffee",
+      confidence: 0.97,
+      fulfillmentText:
+        "Freshly roasted South Indian Filter Coffee powder (80:20 plantation coffee-chicory blend) is available from Meena's in Vidyanagar. Perfect for authentic traditional filter decoction.",
+      actionRequired: "SHOW_COFFEE",
+    };
+  }
+
+  // Sweets, bakery, snacks, groceries, handicrafts, etc.
+  if (
+    msg.includes("sweet") ||
+    msg.includes("bakery") ||
+    msg.includes("snack") ||
+    msg.includes("grocery") ||
+    msg.includes("groceries") ||
+    msg.includes("roti") ||
+    msg.includes("jowar") ||
+    msg.includes("girmit") ||
+    msg.includes("chivda") ||
+    msg.includes("ladoo") ||
+    msg.includes("diya") ||
+    msg.includes("clay") ||
+    msg.includes("terracotta") ||
+    msg.includes("handicraft") ||
+    msg.includes("spices") ||
+    msg.includes("masala")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "items.catalog",
+      confidence: 0.95,
+      fulfillmentText:
+        "Items listed in our merchant marketplace include GI-tagged Dharwad Pedha, artisanal Filter Coffee powder, freshly baked bakery breads & cookies, North Karnataka Jowar Rotis, authentic Girmit & Chivda, pantry groceries, and handcrafted terracotta clay diyas.",
+      actionRequired: "SHOW_CATALOG",
+    };
+  }
+
+  // Recommendations / Best sellers / Pricing
+  if (
+    msg.includes("recommend") ||
+    msg.includes("bestseller") ||
+    msg.includes("popular") ||
+    msg.includes("what items") ||
+    msg.includes("which items") ||
+    msg.includes("marketplace items") ||
+    msg.includes("listed items") ||
+    msg.includes("what do you sell") ||
+    msg.includes("price") ||
+    msg.includes("cost")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "recommendations.suggest",
+      confidence: 0.95,
+      fulfillmentText:
+        "Top recommended items in the marketplace include Mishra Authentic Dharwad Pedha (₹280/500g), Artisan Chicory Filter Coffee Powder (₹180/250g), Handcrafted Terracotta Clay Diya Sets (₹199), and freshly baked goods from local bakeries. All items are sold at genuine in-store counter prices.",
+      actionRequired: "SHOW_RECOMMENDATIONS",
+    };
+  }
+
+  // E. PAYMENTS & CASHFREE
+  if (
+    msg.includes("payment") ||
+    msg.includes("pay") ||
+    msg.includes("cashfree") ||
+    msg.includes("upi") ||
+    msg.includes("gpay") ||
+    msg.includes("phonepe") ||
+    msg.includes("paytm") ||
+    msg.includes("card") ||
+    msg.includes("cod") ||
+    msg.includes("cash")
+  ) {
     return {
       engine: "Google Dialogflow",
       intent: "payment.inquiry",
       confidence: 0.98,
       fulfillmentText:
-        "Payments on LocalLoop are secured by Cashfree Payment Gateway with instant UPI settlement (GPay, PhonePe, Paytm) or Cash/UPI at the store counter.",
+        "Payments on LocalLoop are secured by Cashfree Payment Gateway with instant UPI settlement (Google Pay, PhonePe, Paytm, BHIM), Credit/Debit cards, and Net Banking, or Cash at the store counter for pickup orders.",
     };
   }
 
-  if (msg.includes("recommend") || msg.includes("coffee") || msg.includes("pedha") || msg.includes("sweet")) {
+  // F. STORES, HUBLI-DHARWAD NEIGHBORHOODS, MERCHANT ONBOARDING
+  if (
+    msg.includes("store") ||
+    msg.includes("shop") ||
+    msg.includes("merchant") ||
+    msg.includes("seller") ||
+    msg.includes("vidyanagar") ||
+    msg.includes("station road") ||
+    msg.includes("cbt") ||
+    msg.includes("keshwapur") ||
+    msg.includes("gokul road") ||
+    msg.includes("unkal") ||
+    msg.includes("hubli") ||
+    msg.includes("hubballi") ||
+    msg.includes("dharwad")
+  ) {
     return {
       engine: "Google Dialogflow",
-      intent: "recommendations.suggest",
-      confidence: 0.92,
+      intent: "stores.inquiry",
+      confidence: 0.94,
       fulfillmentText:
-        "Based on Google Vertex AI Recommendations, authentic Dharwad Pedha from Line Bazaar and freshly ground Filter Coffee from Vidyanagar are today's top picks!",
-      actionRequired: "SHOW_RECOMMENDATIONS",
+        "LocalLoop connects authentic corner shops across Vidyanagar, Station Road, CBT Old City, Gokul Road, Keshwapur, and Dharwad. Independent merchants can register their store with 0% commission at /seller.",
     };
   }
 
+  // G. ACCOUNT, LOGIN, HELP & CONTACT
+  if (
+    msg.includes("login") ||
+    msg.includes("sign in") ||
+    msg.includes("otp") ||
+    msg.includes("account") ||
+    msg.includes("address") ||
+    msg.includes("profile")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "app.account",
+      confidence: 0.95,
+      fulfillmentText:
+        "You can sign in securely using your mobile number and a 6-digit OTP. You can save multiple delivery addresses (Home, Office, Primary, Others) in your Account profile.",
+    };
+  }
+
+  if (
+    msg.includes("help") ||
+    msg.includes("support") ||
+    msg.includes("contact") ||
+    msg.includes("helpline") ||
+    msg.includes("customer care") ||
+    msg.includes("grievance")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "app.support",
+      confidence: 0.95,
+      fulfillmentText:
+        "Our customer support desk is available 9 AM – 9 PM IST at +91 98860 12345 or via email at support@localloop.in. You can also submit inquiries anytime through the /contact page.",
+    };
+  }
+
+  // H. GREETINGS & INTRO
+  if (
+    /^(hi|hello|hey|namaskara|namaste|good morning|good afternoon|good evening)\b/i.test(msg) ||
+    msg === "hi" ||
+    msg === "hello" ||
+    msg.includes("who are you") ||
+    msg.includes("what can you do")
+  ) {
+    return {
+      engine: "Google Dialogflow",
+      intent: "greeting",
+      confidence: 0.95,
+      fulfillmentText:
+        "Namaskara! I am your LocalLoop Assistant. I can assist you with your orders, delivery options, in-app search, and items listed in our Hubballi-Dharwad merchant marketplace.",
+    };
+  }
+
+  // 3. ANY OTHER QUESTIONS: Strict fallback
   return {
     engine: "Google Dialogflow",
-    intent: "default.fallback",
-    confidence: 0.88,
-    fulfillmentText:
-      "Hello! I am LocalLoop 24/7 Smart Concierge. How can I assist you with orders, stores, or delivery across Hubli-Dharwad today?",
+    intent: "out_of_scope",
+    confidence: 1.0,
+    fulfillmentText: CHATBOX_FALLBACK_REPLY,
   };
 }
 

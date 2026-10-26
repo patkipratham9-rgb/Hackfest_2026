@@ -13,6 +13,8 @@ import {
   CreditCard,
   MessageSquare,
   ChevronDown,
+  Search,
+  Package,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -33,7 +35,7 @@ export function LocalLoopAssistantBot() {
     {
       id: "msg_welcome",
       sender: "bot",
-      text: "Namaskara! I am your 24/7 LocalLoop Concierge. Connecting you with authentic corner shops across Hubli-Dharwad. How can I help you today?",
+      text: "Namaskara! I am your LocalLoop Assistant. I can assist you with orders, delivery options, in-app search, and items listed in our merchant marketplace.",
       time: "Just now",
       engine: "Google Dialogflow",
     },
@@ -83,7 +85,7 @@ export function LocalLoopAssistantBot() {
       const data = await res.json();
       const botResponse =
         data.data?.fulfillmentText ||
-        "I am always here to assist you with orders, delivery options, or finding neighborhood shops in Hubli-Dharwad.";
+        "I can reply only regarding the orders, delivery and in app search.";
 
       setTimeout(() => {
         setMessages((prev) => [
@@ -105,7 +107,7 @@ export function LocalLoopAssistantBot() {
           {
             id: `bot_${Date.now()}`,
             sender: "bot",
-            text: "LocalLoop offers 1. Home Delivery to your doorstep and 2. Express Store Pick-up. Payments are securely processed via Cashfree PG.",
+            text: "I can reply only regarding the orders, delivery and in app search.",
             time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             engine: "Google Dialogflow",
           },
@@ -187,18 +189,25 @@ export function LocalLoopAssistantBot() {
                 <span>Delivery Options</span>
               </button>
               <button
-                onClick={() => handleSendMessage("How is Cashfree payment handled?")}
+                onClick={() => handleSendMessage("How can I search for items and stores?")}
                 className="px-2.5 py-1 rounded-xl bg-white text-forest-800 border border-cream-300 hover:border-terracotta-400 shrink-0 flex items-center gap-1 cursor-pointer transition-colors"
               >
-                <CreditCard className="w-3 h-3 text-terracotta-600" />
-                <span>Cashfree Payment</span>
+                <Search className="w-3 h-3 text-terracotta-600" />
+                <span>In-App Search</span>
               </button>
               <button
-                onClick={() => handleSendMessage("Recommend popular items in Vidyanagar")}
+                onClick={() => handleSendMessage("How do I track my order?")}
                 className="px-2.5 py-1 rounded-xl bg-white text-forest-800 border border-cream-300 hover:border-terracotta-400 shrink-0 flex items-center gap-1 cursor-pointer transition-colors"
               >
-                <Sparkles className="w-3 h-3 text-terracotta-600" />
-                <span>Recommendations</span>
+                <Package className="w-3 h-3 text-terracotta-600" />
+                <span>Track Orders</span>
+              </button>
+              <button
+                onClick={() => handleSendMessage("What items are listed in the merchant marketplace?")}
+                className="px-2.5 py-1 rounded-xl bg-white text-forest-800 border border-cream-300 hover:border-terracotta-400 shrink-0 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Store className="w-3 h-3 text-terracotta-600" />
+                <span>Marketplace Items</span>
               </button>
             </div>
 
@@ -251,7 +260,7 @@ export function LocalLoopAssistantBot() {
                 data-testid="bot-input-field"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask anything about stores, orders, delivery..."
+                placeholder="Ask about orders, delivery, in-app search, or marketplace items..."
                 className="flex-1 px-3 py-2 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-900 placeholder-forest-400 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
               />
               <button

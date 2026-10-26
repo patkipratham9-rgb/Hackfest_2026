@@ -194,16 +194,24 @@ export function CheckoutModal() {
     // Phone validation
     const digitsOnly = customerPhone.replace(/\D/g, "");
     if (digitsOnly.length < 10) {
-      setPhoneError("Please enter a valid 10-digit mobile number for pickup SMS.");
+      setPhoneError(
+        deliveryOption === "delivery"
+          ? "Please enter a valid 10-digit mobile number for delivery updates."
+          : "Please enter a valid 10-digit mobile number for pickup SMS."
+      );
       isValid = false;
     } else {
       setPhoneError("");
     }
 
-    // Slot validation
-    if (!selectedSlot || !selectedSlot.isAvailable) {
-      setSlotError("Please choose an available pickup window before proceeding.");
-      isValid = false;
+    // Slot validation (only required when Express Pick-up is selected)
+    if (deliveryOption === "pickup") {
+      if (!selectedSlot || !selectedSlot.isAvailable) {
+        setSlotError("Please choose an available pickup window before proceeding.");
+        isValid = false;
+      } else {
+        setSlotError("");
+      }
     } else {
       setSlotError("");
     }
@@ -708,179 +716,239 @@ export function CheckoutModal() {
               )}
             </div>
 
-            {/* Pickup Time Selector (Always present for test compliance and available for counter pickup) */}
-            <div data-testid="pickup-time-selector" className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-xs font-bold text-forest-900 uppercase tracking-wider">
-                  <Clock className="w-3.5 h-3.5 text-terracotta-500" />
-                  <span>Select Available Pickup Window</span>
-                </label>
-                {selectedSlot && (
-                  <span
-                    data-testid="selected-pickup-slot"
-                    className="text-[11px] font-bold text-terracotta-700 bg-terracotta-50 border border-terracotta-200 px-2 py-0.5 rounded-full"
-                  >
-                    {selectedSlot.time}
-                  </span>
-                )}
-              </div>
-
-              {/* Slots Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PICKUP_SLOTS.map((slot, idx) => {
-                  const isSelected = selectedSlotId === slot.id && slot.isAvailable;
-                  return (
-                    <button
-                      type="button"
-                      key={slot.id || `pickup-slot-${idx}`}
-                      data-testid={`pickup-slot-${slot.id}`}
-                      data-available={slot.isAvailable ? "true" : "false"}
-                      data-selected={isSelected ? "true" : "false"}
-                      disabled={!slot.isAvailable}
-                      onClick={() => handleSlotSelect(slot)}
-                      className={`relative p-3 rounded-2xl text-xs font-semibold text-left transition-all border ${
-                        !slot.isAvailable
-                          ? "bg-cream-200/50 text-forest-400 border-cream-300 opacity-60 cursor-not-allowed"
-                          : isSelected
-                          ? "bg-forest-800 text-cream-100 border-forest-900 shadow-warm ring-2 ring-forest-700"
-                          : "bg-cream-100 text-forest-800 border-cream-300 hover:border-terracotta-400 hover:bg-cream-50 cursor-pointer"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <div>
-                          <p className={`font-bold leading-tight ${isSelected ? "text-cream-100" : "text-forest-950"}`}>
-                            {slot.time}
-                          </p>
-                          <p className={`text-[10px] mt-0.5 ${isSelected ? "text-cream-200" : "text-forest-500"}`}>
-                            {slot.label}
-                          </p>
-                        </div>
-
-                        {/* Status / Selected Icon */}
-                        <div className="flex-shrink-0">
-                          {isSelected ? (
-                            <div className="w-4 h-4 rounded-full bg-terracotta-500 flex items-center justify-center text-white">
-                              <Check className="w-3 h-3 stroke-[3]" />
-                            </div>
-                          ) : !slot.isAvailable ? (
-                            <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-700 bg-rose-100 border border-rose-200 px-1.5 py-0.5 rounded-md">
-                              <Ban className="w-2.5 h-2.5" />
-                              <span>Full</span>
-                            </span>
-                          ) : slot.badge ? (
-                            <span className="text-[9px] font-bold uppercase tracking-wider text-terracotta-700 bg-terracotta-100 px-1.5 py-0.5 rounded-md">
-                              {slot.badge}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      {/* Reason if unavailable */}
-                      {!slot.isAvailable && (
-                        <p className="text-[10px] text-rose-600 font-medium mt-1">
-                          {slot.unavailableReason}
-                        </p>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Slot Validation Error message */}
-              {slotError && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  data-testid="pickup-slot-error"
-                  className="flex items-center gap-1.5 text-xs text-rose-700 font-semibold bg-rose-50 border border-rose-200 p-2.5 rounded-xl mt-1"
-                >
-                  <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                  <span>{slotError}</span>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Delivery Address & Map4Me Pinpoint */}
-            <div className="space-y-2 p-3.5 rounded-2xl bg-cream-100/90 border border-cream-300">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-forest-900 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-terracotta-600" />
-                  <span>Delivery Address [Home, Office, Others]</span>
-                </span>
-                <button
-                  type="button"
-                  data-testid="checkout-open-map4me-btn"
-                  onClick={() => setIsMapPickerOpen(true)}
-                  className="text-[11px] font-bold text-terracotta-700 hover:text-terracotta-900 bg-white border border-terracotta-300 px-2 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-                >
-                  <MapPin className="w-3 h-3 text-terracotta-600" />
-                  <span>Pinpoint on Map4Me</span>
-                </button>
-              </div>
-
-              {customDeliveryAddress ? (
-                <div className="bg-amber-50/90 p-2.5 rounded-xl border border-amber-300 flex items-center justify-between text-xs">
-                  <div className="min-w-0 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-forest-950 px-1.5 py-0.5 rounded-md bg-amber-200 text-[10px] uppercase tracking-wide">
-                        {customDeliveryAddress.label} (Map4Me Pinned)
-                      </span>
-                      <span className="text-[11px] font-semibold text-emerald-800">
-                        {deliveryDistance.toFixed(1)} km away
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-forest-800 font-medium truncate mt-1">
-                      {customDeliveryAddress.street}
-                      {customDeliveryAddress.landmark ? `, Near ${customDeliveryAddress.landmark}` : ""}, {customDeliveryAddress.locality} - {customDeliveryAddress.pincode}
+            {/* Home Delivery Estimated Arrival Notice */}
+            {deliveryOption === "delivery" && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-emerald-950">Doorstep Delivery (35–45 mins)</p>
+                    <p className="text-[11px] text-emerald-700">
+                      Dispatched across Hubli-Dharwad directly to your doorstep
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsMapPickerOpen(true)}
-                    className="shrink-0 text-[11px] font-bold text-terracotta-700 hover:underline px-2 py-1"
-                  >
-                    Change Pin
-                  </button>
                 </div>
-              ) : user && user.addresses && user.addresses.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {user.addresses.map((a, idx) => (
-                    <button
-                      key={a.id || `user-addr-${idx}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedAddressId(a.id);
-                        setCustomDeliveryAddress(null);
-                      }}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
-                        selectedAddressId === a.id
-                          ? "bg-terracotta-600 text-cream-50 border-terracotta-600 shadow-xs"
-                          : "bg-white text-forest-700 border-cream-300 hover:bg-cream-200"
-                      }`}
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-200/70 text-emerald-900 px-2 py-0.5 rounded-full shrink-0">
+                  Express Dispatch
+                </span>
+              </motion.div>
+            )}
+
+            {/* Pickup Time Selector (Shown ONLY when Express Pick-up is selected) */}
+            {deliveryOption === "pickup" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                data-testid="pickup-time-selector"
+                className="space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-forest-900 uppercase tracking-wider">
+                    <Clock className="w-3.5 h-3.5 text-terracotta-500" />
+                    <span>Select Available Pickup Window</span>
+                  </label>
+                  {selectedSlot && (
+                    <span
+                      data-testid="selected-pickup-slot"
+                      className="text-[11px] font-bold text-terracotta-700 bg-terracotta-50 border border-terracotta-200 px-2 py-0.5 rounded-full"
                     >
-                      <span>{a.label}</span>
-                      <span className="text-[10px] opacity-80 line-clamp-1">({a.street}, {a.locality})</span>
-                    </button>
-                  ))}
+                      {selectedSlot.time}
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <div className="text-[11px] text-forest-600 bg-cream-50 p-2.5 rounded-xl border border-dashed border-cream-300 flex items-center justify-between">
-                  <span>No delivery address saved yet.</span>
+
+                {/* Slots Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {PICKUP_SLOTS.map((slot, idx) => {
+                    const isSelected = selectedSlotId === slot.id && slot.isAvailable;
+                    return (
+                      <button
+                        type="button"
+                        key={slot.id || `pickup-slot-${idx}`}
+                        data-testid={`pickup-slot-${slot.id}`}
+                        data-available={slot.isAvailable ? "true" : "false"}
+                        data-selected={isSelected ? "true" : "false"}
+                        disabled={!slot.isAvailable}
+                        onClick={() => handleSlotSelect(slot)}
+                        className={`relative p-3 rounded-2xl text-xs font-semibold text-left transition-all border ${
+                          !slot.isAvailable
+                            ? "bg-cream-200/50 text-forest-400 border-cream-300 opacity-60 cursor-not-allowed"
+                            : isSelected
+                            ? "bg-forest-800 text-cream-100 border-forest-900 shadow-warm ring-2 ring-forest-700"
+                            : "bg-cream-100 text-forest-800 border-cream-300 hover:border-terracotta-400 hover:bg-cream-50 cursor-pointer"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-1">
+                          <div>
+                            <p className={`font-bold leading-tight ${isSelected ? "text-cream-100" : "text-forest-950"}`}>
+                              {slot.time}
+                            </p>
+                            <p className={`text-[10px] mt-0.5 ${isSelected ? "text-cream-200" : "text-forest-500"}`}>
+                              {slot.label}
+                            </p>
+                          </div>
+
+                          {/* Status / Selected Icon */}
+                          <div className="flex-shrink-0">
+                            {isSelected ? (
+                              <div className="w-4 h-4 rounded-full bg-terracotta-500 flex items-center justify-center text-white">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                              </div>
+                            ) : !slot.isAvailable ? (
+                              <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-700 bg-rose-100 border border-rose-200 px-1.5 py-0.5 rounded-md">
+                                <Ban className="w-2.5 h-2.5" />
+                                <span>Full</span>
+                              </span>
+                            ) : slot.badge ? (
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-terracotta-700 bg-terracotta-100 px-1.5 py-0.5 rounded-md">
+                                {slot.badge}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {/* Reason if unavailable */}
+                        {!slot.isAvailable && (
+                          <p className="text-[10px] text-rose-600 font-medium mt-1">
+                            {slot.unavailableReason}
+                          </p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Slot Validation Error message */}
+                {slotError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    data-testid="pickup-slot-error"
+                    className="flex items-center gap-1.5 text-xs text-rose-700 font-semibold bg-rose-50 border border-rose-200 p-2.5 rounded-xl mt-1"
+                  >
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                    <span>{slotError}</span>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Delivery Address for Home Delivery OR Store Counter Location for Pick-up */}
+            {deliveryOption === "delivery" ? (
+              <div className="space-y-2 p-3.5 rounded-2xl bg-cream-100/90 border border-cream-300">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-forest-900 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-terracotta-600" />
+                    <span>Delivery Address [Home, Office, Others]</span>
+                  </span>
                   <button
                     type="button"
+                    data-testid="checkout-open-map4me-btn"
                     onClick={() => setIsMapPickerOpen(true)}
-                    className="font-bold text-terracotta-700 underline"
+                    className="text-[11px] font-bold text-terracotta-700 hover:text-terracotta-900 bg-white border border-terracotta-300 px-2 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
                   >
-                    Set Pinpoint Location
+                    <MapPin className="w-3 h-3 text-terracotta-600" />
+                    <span>Pinpoint on Map4Me</span>
                   </button>
                 </div>
-              )}
-            </div>
+
+                {customDeliveryAddress ? (
+                  <div className="bg-amber-50/90 p-2.5 rounded-xl border border-amber-300 flex items-center justify-between text-xs">
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-forest-950 px-1.5 py-0.5 rounded-md bg-amber-200 text-[10px] uppercase tracking-wide">
+                          {customDeliveryAddress.label} (Map4Me Pinned)
+                        </span>
+                        <span className="text-[11px] font-semibold text-emerald-800">
+                          {deliveryDistance.toFixed(1)} km away
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-forest-800 font-medium truncate mt-1">
+                        {customDeliveryAddress.street}
+                        {customDeliveryAddress.landmark ? `, Near ${customDeliveryAddress.landmark}` : ""}, {customDeliveryAddress.locality} - {customDeliveryAddress.pincode}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsMapPickerOpen(true)}
+                      className="shrink-0 text-[11px] font-bold text-terracotta-700 hover:underline px-2 py-1"
+                    >
+                      Change Pin
+                    </button>
+                  </div>
+                ) : user && user.addresses && user.addresses.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {user.addresses.map((a, idx) => (
+                      <button
+                        key={a.id || `user-addr-${idx}`}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAddressId(a.id);
+                          setCustomDeliveryAddress(null);
+                        }}
+                        className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                          selectedAddressId === a.id
+                            ? "bg-terracotta-600 text-cream-50 border-terracotta-600 shadow-xs"
+                            : "bg-white text-forest-700 border-cream-300 hover:bg-cream-200"
+                        }`}
+                      >
+                        <span>{a.label}</span>
+                        <span className="text-[10px] opacity-80 line-clamp-1">({a.street}, {a.locality})</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-forest-600 bg-cream-50 p-2.5 rounded-xl border border-dashed border-cream-300 flex items-center justify-between">
+                    <span>No delivery address saved yet.</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsMapPickerOpen(true)}
+                      className="font-bold text-terracotta-700 underline"
+                    >
+                      Set Pinpoint Location
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Store Counter Pick-up Information for Express Pick-up */
+              <div className="p-3.5 rounded-2xl bg-forest-50/80 border border-forest-200 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-forest-950">
+                  <span className="flex items-center gap-1.5">
+                    <Store className="w-4 h-4 text-forest-700" />
+                    <span>Store Counter Pick-up Location</span>
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    FREE Pick-up
+                  </span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-forest-100 text-xs space-y-1">
+                  <p className="font-bold text-forest-950">
+                    {cart[0]?.product?.storeName || "Neighborhood Artisan Store"}
+                  </p>
+                  <p className="text-[11px] text-forest-600">
+                    Market Road, Hubballi-Dharwad • Ready in 15–20 minutes
+                  </p>
+                  <p className="text-[11px] text-terracotta-700 font-semibold pt-0.5">
+                    Show your 6-digit pick-up code at the counter during your chosen window: {selectedSlot?.time || "Express"}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Customer Contact */}
             <div className="space-y-3">
               <label className="text-xs font-bold text-forest-900 uppercase tracking-wider block">
-                Shopper Pickup Identification
+                {deliveryOption === "delivery"
+                  ? "Recipient Contact Details"
+                  : "Shopper Pickup Identification"}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
@@ -918,7 +986,11 @@ export function CheckoutModal() {
                 <div>
                   <span className="text-[11px] font-medium text-forest-600 mb-1 flex items-center gap-1">
                     <Phone className="w-3 h-3 text-forest-500" />
-                    <span>Phone (for pickup SMS token)</span>
+                    <span>
+                      {deliveryOption === "delivery"
+                        ? "Phone (for doorstep delivery OTP & updates)"
+                        : "Phone (for pickup SMS token)"}
+                    </span>
                   </span>
                   <input
                     type="tel"
@@ -992,16 +1064,24 @@ export function CheckoutModal() {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <Store className="w-4 h-4 text-forest-700" />
+                    {deliveryOption === "delivery" ? (
+                      <Truck className="w-4 h-4 text-forest-700" />
+                    ) : (
+                      <Store className="w-4 h-4 text-forest-700" />
+                    )}
                     {paymentMethod === "counter" && (
                       <span className="w-2 h-2 rounded-full bg-forest-600" />
                     )}
                   </div>
                   <div className="font-bold text-xs text-forest-950">
-                    Pay at Store Counter
+                    {deliveryOption === "delivery"
+                      ? "Cash on Delivery (COD)"
+                      : "Pay at Store Counter"}
                   </div>
                   <div className="text-[10px] text-forest-600 mt-0.5">
-                    Cash or UPI on pickup
+                    {deliveryOption === "delivery"
+                      ? "Cash or UPI at doorstep"
+                      : "Cash or UPI on pickup"}
                   </div>
                 </button>
               </div>
@@ -1047,7 +1127,12 @@ export function CheckoutModal() {
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>{paymentStatusMessage || "Confirming with Store Counter..."}</span>
+                    <span>
+                      {paymentStatusMessage ||
+                        (deliveryOption === "delivery"
+                          ? "Confirming Home Delivery Order..."
+                          : "Confirming with Store Counter...")}
+                    </span>
                   </div>
                 ) : !isMinBillMet ? (
                   <>

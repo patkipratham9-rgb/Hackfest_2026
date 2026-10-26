@@ -39,9 +39,32 @@
         }
       ],
       "emailPermissionsGranted": true,
-      "createdAt": "2026-10-26T16:08:35.548Z",
-      "updatedAt": "2026-10-26T16:08:35.549Z"
+      "createdAt": "2026-10-26T16:37:59.910Z",
+      "updatedAt": "2026-10-26T16:37:59.911Z"
+    },
+    {
+      "id": "e8582be7-de9e-449b-aef4-d6f1546a42a0",
+      "name": "Srushti Desai",
+      "number": "8618636617",
+      "email": "srushtiudesai007@gmail.com",
+      "role": "seller",
+      "addresses": [
+        {
+          "id": "addr_store_1793032702147",
+          "label": "Office",
+          "locality": "Hubballi",
+          "street": "#Shop 82, Desai Colont",
+          "city": "Hubballi",
+          "pincode": "580021",
+          "isDefault": true
+        }
+      ],
+      "emailPermissionsGranted": true,
+      "createdAt": "2026-10-26T16:12:03.634Z",
+      "updatedAt": "2026-10-26T16:38:24.426Z",
+      "storeId": "store_8618636617",
+      "storeName": "Srushti Desai"
     }
   ],
-  "updatedAt": "2026-10-25T08:06:49.515Z"
+  "updatedAt": "2026-10-26T16:38:24.426Z"
 }
