@@ -39,8 +39,8 @@
         }
       ],
       "emailPermissionsGranted": true,
-      "createdAt": "2026-10-26T18:25:12.471Z",
-      "updatedAt": "2026-10-26T18:25:12.472Z"
+      "createdAt": "2026-10-26T18:46:15.448Z",
+      "updatedAt": "2026-10-26T18:46:15.449Z"
     },
     {
       "id": "e8582be7-de9e-449b-aef4-d6f1546a42a0",
@@ -74,8 +74,8 @@
       "addresses": [],
       "emailPermissionsGranted": true,
       "createdAt": "2026-10-26T17:06:52.680Z",
-      "updatedAt": "2026-10-26T18:24:47.048Z"
+      "updatedAt": "2026-10-26T18:43:03.037Z"
     }
   ],
-  "updatedAt": "2026-10-26T18:16:32.592Z"
+  "updatedAt": "2026-10-26T18:43:03.037Z"
 }

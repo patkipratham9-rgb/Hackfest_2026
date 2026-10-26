@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
@@ -98,6 +99,11 @@ export function CheckoutModal() {
     setUserLocation,
   } = useCart();
   const { user, addAddress } = useAuth();
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [customerName, setCustomerName] = useState(user?.name || "");
   const [customerPhone, setCustomerPhone] = useState(
@@ -378,17 +384,19 @@ export function CheckoutModal() {
     }
   };
 
-  return (
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <>
       <AnimatePresence>
       {isCheckoutOpen && cart.length > 0 && (
-        <motion.div
+        <div
           key="checkout-modal-wrapper"
           data-testid="checkout-modal"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-[99990] overflow-y-auto flex items-center justify-center p-3 sm:p-4"
+          style={{ zIndex: 99990 }}
         >
           {/* Backdrop */}
           <motion.div
@@ -397,7 +405,8 @@ export function CheckoutModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsCheckoutOpen(false)}
-            className="fixed inset-0 bg-forest-950/60 backdrop-blur-xs cursor-pointer"
+            className="fixed inset-0 bg-forest-950/75 backdrop-blur-md cursor-pointer"
+            style={{ zIndex: 99990 }}
           />
 
           {/* Modal Dialog */}
@@ -407,7 +416,8 @@ export function CheckoutModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ duration: 0.2 }}
-            className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden z-10 my-4 sm:my-8"
+            className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden z-[99991] my-4 sm:my-8"
+            style={{ zIndex: 99991 }}
           >
           {/* Header */}
           <div className="p-4 sm:p-5 bg-cream-100 border-b border-cream-300 flex items-center justify-between shrink-0">
@@ -1162,20 +1172,35 @@ export function CheckoutModal() {
               </div>
             </div>
           </form>
-        </motion.div>
-      </motion.div>
+          </motion.div>
+        </div>
       )}
 
       {/* Map4Me Pinpoint Delivery Modal */}
       {isMapPickerOpen && (
-        <motion.div
+        <div
           key="map4me-picker-modal-container"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-forest-950/70 backdrop-blur-xs overflow-y-auto"
+          className="fixed inset-0 z-[999999] overflow-y-auto flex items-center justify-center p-4"
+          style={{ zIndex: 999999 }}
         >
-          <div className="w-full max-w-xl my-8">
+          <motion.div
+            key="map4me-picker-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMapPickerOpen(false)}
+            className="fixed inset-0 bg-forest-950/80 backdrop-blur-md cursor-pointer"
+            style={{ zIndex: 999999 }}
+          />
+          <motion.div
+            key="map4me-picker-content"
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-xl my-8 z-[1000000]"
+            style={{ zIndex: 1000000 }}
+          >
             <Map4MePicker
               title="Map4Me: Pinpoint Delivery Location"
               onSaveAddress={(saved) => {
@@ -1203,8 +1228,8 @@ export function CheckoutModal() {
               }}
               onCancel={() => setIsMapPickerOpen(false)}
             />
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       )}
       </AnimatePresence>
 
@@ -1250,6 +1275,7 @@ export function CheckoutModal() {
           setPaymentStatusMessage(err || "Payment failed");
         }}
       />
-    </>
+    </>,
+    document.body
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   X,
@@ -59,6 +60,11 @@ export function CashfreePaymentGatewayModal({
   onPaymentSuccess,
   onPaymentFailure,
 }: CashfreePaymentGatewayModalProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<TabType>("upi");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState("");
@@ -157,23 +163,37 @@ export function CashfreePaymentGatewayModal({
     }
   };
 
-  return (
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          key="cashfree-gateway-modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
+          key="cashfree-gateway-modal-wrapper"
           data-testid="cashfree-gateway-modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-forest-950/75 backdrop-blur-xs overflow-y-auto"
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          style={{ zIndex: 999999 }}
         >
+          {/* Backdrop */}
+          <motion.div
+            key="cashfree-gateway-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-forest-950/80 backdrop-blur-md cursor-pointer"
+            style={{ zIndex: 999999 }}
+          />
+
           <motion.div
             key="cashfree-gateway-modal-card"
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96 }}
-            className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-cream-300 overflow-hidden my-6"
+            className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-cream-300 overflow-hidden my-6 z-[1000000]"
+            style={{ zIndex: 1000000 }}
           >
         {/* Cashfree Header */}
         <div className="bg-forest-950 text-white p-5 sm:p-6 relative">
@@ -528,8 +548,9 @@ export function CashfreePaymentGatewayModal({
           </div>
         )}
           </motion.div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

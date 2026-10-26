@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -650,9 +651,17 @@ export default function AccountPage() {
       )}
 
       {/* Map4Me Pinpoint Delivery Address Modal */}
-      {isAddressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/70 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-xl my-8">
+      {isAddressModalOpen && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto"
+          style={{ zIndex: 999999 }}
+        >
+          <div
+            onClick={() => setIsAddressModalOpen(false)}
+            className="fixed inset-0 bg-forest-950/80 backdrop-blur-md cursor-pointer"
+            style={{ zIndex: 999999 }}
+          />
+          <div className="w-full max-w-xl my-8 relative z-[1000000]" style={{ zIndex: 1000000 }}>
             <Map4MePicker
               title={
                 editingAddressId
@@ -682,7 +691,8 @@ export default function AccountPage() {
               onCancel={() => setIsAddressModalOpen(false)}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Remove Account Confirmation Modal */}
