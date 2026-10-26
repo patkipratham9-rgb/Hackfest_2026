@@ -281,10 +281,6 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto py-6 px-4 space-y-6">
-        name="description"
-        content="Create a user account or sign in to explore neighborhood stores, save pinpoint delivery addresses, and place orders."
-      />
-
       {/* Header */}
       <div className="text-center space-y-2.5">
         <div className="flex justify-center">
@@ -681,6 +677,7 @@ export default function LoginPage() {
 
       {/* Post-Login Location Permission Step */}
       <PostLoginLocationModal
+        key="unified-login-post-location-modal"
         isOpen={showLocationModal}
         onLocationSet={handleLocationComplete}
         onSkip={handleSkipLocation}

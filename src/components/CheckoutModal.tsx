@@ -365,7 +365,8 @@ export function CheckoutModal() {
   };
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isCheckoutOpen && cart.length > 0 && (
         <motion.div
           key="checkout-modal-wrapper"
@@ -1114,9 +1115,11 @@ export function CheckoutModal() {
           </div>
         </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Location Permission Prompt before Payment if user did not share earlier */}
       <PostLoginLocationModal
+        key="checkout-location-required-modal"
         isOpen={isLocationRequiredModalOpen}
         requireLocation={true}
         title="Delivery Location Required Before Payment"
@@ -1125,7 +1128,7 @@ export function CheckoutModal() {
           setUserLocation(loc);
           setCustomDeliveryAddress({
             id: `addr_${Date.now()}`,
-            label: "Delivery Location",
+            label: "Home",
             locality: loc,
             street: loc,
             city: "Hubballi-Dharwad",
@@ -1142,6 +1145,7 @@ export function CheckoutModal() {
 
       {/* Cashfree Payment Gateway Interactive Checkout Modal */}
       <CashfreePaymentGatewayModal
+        key="checkout-cashfree-gateway-modal"
         isOpen={isGatewayOpen}
         onClose={() => setIsGatewayOpen(false)}
         orderId={pendingCashfreeOrderId || `cf_ord_${Date.now()}`}
@@ -1155,6 +1159,6 @@ export function CheckoutModal() {
           setPaymentStatusMessage(err || "Payment failed");
         }}
       />
-    </AnimatePresence>
+    </>
   );
 }

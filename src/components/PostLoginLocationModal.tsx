@@ -48,8 +48,6 @@ export function PostLoginLocationModal({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [customInput, setCustomInput] = useState("");
 
-  if (!isOpen) return null;
-
   const handleShareGps = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -92,12 +90,16 @@ export function PostLoginLocationModal({
 
   return (
     <AnimatePresence>
-      <div
-        key="post-login-location-modal-container"
-        className="fixed inset-0 z-50 overflow-y-auto bg-forest-950/70 backdrop-blur-md flex items-center justify-center p-4"
-      >
+      {isOpen && (
         <motion.div
-          key="post-login-location-modal-dialog"
+          key="post-login-location-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 overflow-y-auto bg-forest-950/70 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <motion.div
+            key="post-login-location-modal-dialog"
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -247,7 +249,8 @@ export function PostLoginLocationModal({
             )}
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
-  );
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 }

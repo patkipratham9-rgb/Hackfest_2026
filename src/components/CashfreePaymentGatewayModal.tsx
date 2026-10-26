@@ -157,19 +157,24 @@ export function CashfreePaymentGatewayModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      data-testid="cashfree-gateway-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-forest-950/75 backdrop-blur-xs overflow-y-auto"
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-cream-300 overflow-hidden my-6"
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="cashfree-gateway-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          data-testid="cashfree-gateway-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-forest-950/75 backdrop-blur-xs overflow-y-auto"
+        >
+          <motion.div
+            key="cashfree-gateway-modal-card"
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-cream-300 overflow-hidden my-6"
+          >
         {/* Cashfree Header */}
         <div className="bg-forest-950 text-white p-5 sm:p-6 relative">
           <button
@@ -522,7 +527,9 @@ export function CashfreePaymentGatewayModal({
             </div>
           </div>
         )}
-      </motion.div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

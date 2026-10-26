@@ -23,7 +23,7 @@ import { PostLoginLocationModal } from "@/components/PostLoginLocationModal";
 
 export default function UserLoginPage() {
   const router = useRouter();
-  const { user, isAuthenticated, setActiveAppMode } = useAuth();
+  const { user, isAuthenticated, setActiveAppMode, setAuthenticatedSession } = useAuth();
   const [showLocationModal, setShowLocationModal] = useState(false);
 
   const handleLocationComplete = (loc: string) => {
@@ -143,15 +143,7 @@ export default function UserLoginPage() {
       if (res.success) {
         setDbVerified(true);
         setStatusMessage(res.message);
-        localStorage.setItem(
-          "localloop_auth_session_v1",
-          JSON.stringify({
-            isAuthenticated: true,
-            user: res.user,
-            token: `token_${Date.now()}`,
-          })
-        );
-        setActiveAppMode("shopper");
+        await setAuthenticatedSession(res.user);
         setTimeout(() => {
           setShowLocationModal(true);
         }, 400);
@@ -207,15 +199,7 @@ export default function UserLoginPage() {
       if (res.success) {
         setDbVerified(true);
         setStatusMessage(res.message);
-        localStorage.setItem(
-          "localloop_auth_session_v1",
-          JSON.stringify({
-            isAuthenticated: true,
-            user: res.user,
-            token: `token_${Date.now()}`,
-          })
-        );
-        setActiveAppMode("shopper");
+        await setAuthenticatedSession(res.user);
         setTimeout(() => {
           setShowLocationModal(true);
         }, 400);
@@ -255,15 +239,7 @@ export default function UserLoginPage() {
       if (res.success) {
         setDbVerified(true);
         setStatusMessage("Account successfully registered!");
-        localStorage.setItem(
-          "localloop_auth_session_v1",
-          JSON.stringify({
-            isAuthenticated: true,
-            user: res.user,
-            token: `token_${Date.now()}`,
-          })
-        );
-        setActiveAppMode("shopper");
+        await setAuthenticatedSession(res.user);
         setTimeout(() => {
           setShowLocationModal(true);
         }, 400);
@@ -598,6 +574,7 @@ export default function UserLoginPage() {
 
       {/* Post-Login Location Permission Step */}
       <PostLoginLocationModal
+        key="user-login-post-location-modal"
         isOpen={showLocationModal}
         onLocationSet={handleLocationComplete}
         onSkip={handleSkipLocation}
