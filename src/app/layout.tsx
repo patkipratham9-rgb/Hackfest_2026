@@ -57,8 +57,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="overflow-x-hidden">
-      <body className="min-h-screen bg-cream-100 text-forest-950 font-sans antialiased selection:bg-terracotta-200 selection:text-terracotta-900 overflow-x-hidden w-full max-w-full">
+    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-cream-100 text-forest-950 font-sans antialiased selection:bg-terracotta-200 selection:text-terracotta-900 overflow-x-hidden w-full max-w-full"
+      >
         <AuthProvider>
           <CartProvider>
             <AppLayoutWrapper>{children}</AppLayoutWrapper>

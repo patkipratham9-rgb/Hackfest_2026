@@ -47,11 +47,23 @@ export default function HomePage() {
   const [stores, setStores] = useState<Store[]>(MOCK_STORES);
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [locationFeedback, setLocationFeedback] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Personalized user recommendations
   const { recommendations, recentSearches, primaryInterestCategory } = useMemo(() => {
+    if (!isMounted) {
+      return {
+        recommendations: products.slice(0, 4),
+        recentSearches: [],
+        primaryInterestCategory: "Local",
+      };
+    }
     return computePersonalizedRecommendations(products, recentlyViewed || []);
-  }, [products, recentlyViewed]);
+  }, [products, recentlyViewed, isMounted]);
 
   // Record user searches for ML recommendations
   useEffect(() => {
@@ -514,7 +526,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {recentSearches.length > 0 && (
+            {isMounted && recentSearches.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] uppercase font-bold text-cream-300">Searched:</span>
                 {recentSearches.slice(0, 3).map((term, idx) => (
