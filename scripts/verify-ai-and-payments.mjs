@@ -152,6 +152,13 @@ test("Delivery: CheckoutModal supports Home Delivery and Express Pick-up options
   assert.ok(modalContent.includes('data-testid="delivery-option-pickup"'));
   assert.ok(modalContent.includes("1. Home Delivery"));
   assert.ok(modalContent.includes("2. Express Pick-up"));
+  // Pickup window selector must be conditional only on Express Pick-up
+  assert.ok(modalContent.includes('deliveryOption === "pickup" && ('));
+  assert.ok(modalContent.includes('data-testid="pickup-time-selector"'));
+  // Payment option dynamically presents Cash on Delivery for Home Delivery vs Pay at Store Counter for Pickup
+  assert.ok(modalContent.includes('Cash on Delivery (COD)'));
+  assert.ok(modalContent.includes('Pay at Store Counter'));
+  assert.ok(modalContent.includes('Cash or UPI at doorstep'));
 });
 
 test("Delivery: Order interface and CartContext support deliveryOption", () => {

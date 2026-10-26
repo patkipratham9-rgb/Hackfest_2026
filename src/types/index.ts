@@ -101,6 +101,9 @@ export interface Order {
   storeLane: string;
   customerName: string;
   customerPhone: string;
+  customerId?: string;
+  userId?: string;
+  customerEmail?: string;
   items: CartItem[];
   subtotal: number;
   gst?: number;

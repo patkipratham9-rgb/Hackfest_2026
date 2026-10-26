@@ -301,6 +301,9 @@ export function CheckoutModal() {
       const order = createOrder({
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
+        customerId: user?.id,
+        userId: user?.id,
+        customerEmail: user?.email,
         pickupTime: deliveryOption === "delivery" ? "Doorstep Delivery (35-45 mins)" : (selectedSlot?.time || "Express 20 Mins"),
         paymentMethod,
         paymentStatus: paymentMethod === "upi" ? "paid" : "pending",
@@ -348,6 +351,9 @@ export function CheckoutModal() {
     const order = createOrder({
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
+      customerId: user?.id,
+      userId: user?.id,
+      customerEmail: user?.email,
       pickupTime:
         deliveryOption === "delivery"
           ? "Doorstep Delivery (35-45 mins)"

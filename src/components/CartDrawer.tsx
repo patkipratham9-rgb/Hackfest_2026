@@ -322,7 +322,7 @@ export function CartDrawer() {
                     <span>
                       {isMinBillMet
                         ? isAuthenticated
-                          ? "Select Pickup & Checkout"
+                          ? "Proceed to Checkout"
                           : "Sign In to Checkout"
                         : `Add ₹${remainingForMin} More to Order`}
                     </span>

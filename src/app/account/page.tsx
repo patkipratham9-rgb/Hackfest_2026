@@ -23,6 +23,8 @@ import {
   Building,
   Tag,
   ShieldCheck,
+  Package,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
@@ -444,6 +446,80 @@ export default function AccountPage() {
                     Set as Default
                   </button>
                 )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Account Order History Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-serif font-bold text-lg text-forest-950 flex items-center gap-2">
+              <Package className="w-5 h-5 text-terracotta-600" />
+              <span>Your Account Orders</span>
+            </h2>
+            <p className="text-xs text-forest-600">
+              Private order history for {user.name} ({user.number})
+            </p>
+          </div>
+          <Link
+            href="/orders-again"
+            className="text-xs font-bold text-terracotta-700 hover:text-terracotta-800 hover:underline flex items-center gap-1"
+          >
+            <span>View All &amp; Reorder</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {orders.length === 0 ? (
+          <div className="p-8 text-center rounded-3xl bg-cream-50 border border-dashed border-cream-300 space-y-2">
+            <Package className="w-8 h-8 text-forest-300 mx-auto" />
+            <p className="font-bold text-sm text-forest-900">No orders placed yet for this account</p>
+            <p className="text-xs text-forest-500">
+              Orders placed under {user.number} will be securely recorded here.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {orders.slice(0, 3).map((order) => (
+              <div
+                key={`account-order-${order.id}`}
+                className="p-3.5 rounded-2xl bg-cream-50 border border-cream-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif font-bold text-xs text-forest-950">
+                      {order.storeName}
+                    </span>
+                    <span className="text-[10px] text-forest-500 font-mono">
+                      #{order.id}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-forest-600">
+                    {order.items.length} item{order.items.length > 1 ? "s" : ""} • ₹{order.total} • {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      order.status === "completed"
+                        ? "bg-forest-100 text-forest-800 border border-forest-300"
+                        : order.status === "ready"
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                        : "bg-terracotta-100 text-terracotta-800 border border-terracotta-300"
+                    }`}
+                  >
+                    {order.status}
+                  </span>
+                  <Link
+                    href={`/orders/${order.id}`}
+                    className="px-3 py-1.5 rounded-xl bg-forest-900 hover:bg-forest-950 text-cream-100 text-[11px] font-bold transition-colors"
+                  >
+                    Track
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

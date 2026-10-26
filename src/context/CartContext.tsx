@@ -1,9 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { CartItem, Product, Order, OrderStatus, NeighborhoodArea, DeliveryPartner } from "@/types";
 import { placeOrderAtomicAction, updateOrderStatusAction } from "@/actions/marketplaceActions";
 import { recordStoreAnalyticsEvent } from "@/lib/analyticsTracker";
+import { useAuth } from "@/context/AuthContext";
+
+function useSafeAuth() {
+  try {
+    return useAuth();
+  } catch {
+    return { user: null, isAuthenticated: false };
+  }
+}
+
+function normalizePhone(phone?: string): string {
+  if (!phone) return "";
+  return phone.replace(/\D/g, "").slice(-10);
+}
 
 export function createDefaultDeliveryPartner(orderTime = new Date()): DeliveryPartner {
   const arrivalTime = new Date(orderTime.getTime() + 25 * 60 * 1000);
@@ -65,6 +79,8 @@ interface CartContextType {
   cart: CartItem[];
   isLoaded: boolean;
   orders: Order[];
+  allOrders?: Order[];
+  recentlyOrderedItems?: Array<{ product: Product; quantity: number; orderId: string; orderedAt: string }>;
   activeArea: NeighborhoodArea;
   setActiveArea: (area: NeighborhoodArea) => void;
   userLocation: string;
@@ -101,6 +117,9 @@ interface CartContextType {
     deliveryFee?: number;
     deliveryDistance?: number;
     gst?: number;
+    customerId?: string;
+    userId?: string;
+    customerEmail?: string;
   }) => Order | null;
   updateOrderStatus: (
     orderId: string,
@@ -126,8 +145,9 @@ const RECENT_STORAGE_KEY = "localloop_recent_v1";
 const LOCATION_STORAGE_KEY = "localloop_user_location_v1";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useSafeAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [activeArea, setActiveAreaState] = useState<NeighborhoodArea>("All");
   const [userLocation, setUserLocationState] = useState<string>("");
   const [isLocating, setIsLocating] = useState(false);
@@ -138,10 +158,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // User-scoped storage keys
+  const userCartKey = user?.id ? `localloop_cart_user_${user.id}` : CART_STORAGE_KEY;
+  const userRecentKey = user?.id ? `localloop_recent_user_${user.id}` : RECENT_STORAGE_KEY;
+
+  // Load master order store, area and location on initial mount
   useEffect(() => {
     try {
-      const savedCart = localStorage.getItem(CART_STORAGE_KEY);
+      const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
+      if (savedOrders) {
+        setAllOrders(JSON.parse(savedOrders));
+      } else {
+        setAllOrders([]);
+      }
+
+      const savedArea = localStorage.getItem(AREA_STORAGE_KEY);
+      if (savedArea) setActiveAreaState(savedArea as NeighborhoodArea);
+
+      const savedLocation = localStorage.getItem(LOCATION_STORAGE_KEY);
+      if (savedLocation) setUserLocationState(savedLocation);
+    } catch (e) {
+      console.warn("Storage sync error:", e);
+    } finally {
+      setIsLoaded(true);
+    }
+  }, []);
+
+  // Whenever active user changes: load cart and recently viewed strictly for that user
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem(userCartKey);
       if (savedCart) {
         const parsed = JSON.parse(savedCart);
         if (Array.isArray(parsed)) {
@@ -155,34 +201,99 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               item.quantity > 0
           );
           setCart(validItems);
+        } else {
+          setCart([]);
         }
-      }
-
-      const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
-      if (savedOrders) {
-        setOrders(JSON.parse(savedOrders));
       } else {
-        setOrders([]);
+        setCart([]);
       }
 
-      const savedArea = localStorage.getItem(AREA_STORAGE_KEY);
-      if (savedArea) setActiveAreaState(savedArea as NeighborhoodArea);
-
-      const savedLocation = localStorage.getItem(LOCATION_STORAGE_KEY);
-      if (savedLocation) setUserLocationState(savedLocation);
-
-      const savedRecent = localStorage.getItem(RECENT_STORAGE_KEY);
+      const savedRecent = localStorage.getItem(userRecentKey);
       if (savedRecent) {
         setRecentlyViewed(JSON.parse(savedRecent));
       } else {
         setRecentlyViewed([]);
       }
-    } catch (e) {
-      console.warn("Storage sync error:", e);
-    } finally {
-      setIsLoaded(true);
+    } catch {
+      setCart([]);
+      setRecentlyViewed([]);
     }
-  }, []);
+  }, [userCartKey, userRecentKey]);
+
+  // Save cart to the active user's storage key
+  useEffect(() => {
+    if (isLoaded) {
+      try {
+        localStorage.setItem(userCartKey, JSON.stringify(cart));
+        // Keep default guest key in sync if no logged-in user
+        if (!user?.id) {
+          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        }
+      } catch {}
+    }
+  }, [cart, userCartKey, user?.id, isLoaded]);
+
+  // Save all orders to localStorage
+  useEffect(() => {
+    if (isLoaded) {
+      try {
+        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(allOrders));
+      } catch {}
+    }
+  }, [allOrders, isLoaded]);
+
+  // Save recently viewed to the active user's storage key
+  useEffect(() => {
+    if (isLoaded) {
+      try {
+        localStorage.setItem(userRecentKey, JSON.stringify(recentlyViewed));
+      } catch {}
+    }
+  }, [recentlyViewed, userRecentKey, isLoaded]);
+
+  // Compute strictly user-isolated orders
+  const userOrders = useMemo(() => {
+    // When merchant views orders in seller portal, they access their store orders
+    if (user?.role === "seller") {
+      return allOrders;
+    }
+
+    // When an authenticated customer is logged in, ONLY return their own orders
+    if (user && user.id) {
+      const cleanUserPhone = normalizePhone(user.number);
+      const cleanUserEmail = user.email?.trim().toLowerCase();
+
+      return allOrders.filter((o) => {
+        if (o.userId && o.userId === user.id) return true;
+        if (o.customerId && o.customerId === user.id) return true;
+        if (cleanUserPhone && normalizePhone(o.customerPhone) === cleanUserPhone) return true;
+        if (cleanUserEmail && o.customerEmail && o.customerEmail.trim().toLowerCase() === cleanUserEmail) return true;
+        return false;
+      });
+    }
+
+    // When unauthenticated / guest (e.g. initial demo or unauthenticated journey tests)
+    // Only return orders without an authenticated userId or customerId
+    return allOrders.filter((o) => !o.userId && !o.customerId);
+  }, [allOrders, user]);
+
+  // Compute strictly user-isolated recently ordered items
+  const recentlyOrderedItems = useMemo(() => {
+    const map = new Map<string, { product: Product; quantity: number; orderId: string; orderedAt: string }>();
+    userOrders.forEach((order) => {
+      order.items.forEach((item) => {
+        if (!map.has(item.product.id)) {
+          map.set(item.product.id, {
+            product: item.product,
+            quantity: item.quantity,
+            orderId: order.id,
+            orderedAt: order.createdAt,
+          });
+        }
+      });
+    });
+    return Array.from(map.values());
+  }, [userOrders]);
 
   const setUserLocation = (loc: string) => {
     setUserLocationState(loc);
@@ -223,27 +334,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       );
     });
   };
-
-  // Save cart to localStorage
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-    }
-  }, [cart, isLoaded]);
-
-  // Save orders to localStorage
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-    }
-  }, [orders, isLoaded]);
-
-  // Save recently viewed to localStorage
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(recentlyViewed));
-    }
-  }, [recentlyViewed, isLoaded]);
 
   const setActiveArea = (area: NeighborhoodArea) => {
     setActiveAreaState(area);
@@ -320,15 +410,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = () => {
     setCart([]);
     try {
-      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(userCartKey);
+      if (!user?.id) {
+        localStorage.removeItem(CART_STORAGE_KEY);
+      }
     } catch (e) {
       console.warn("Error removing cart storage:", e);
     }
   };
 
-  // One-tap reorder action
+  // One-tap reorder action strictly from user's authorized order history
   const reorderOrder = (orderId: string): boolean => {
-    const targetOrder = orders.find((o) => o.id === orderId);
+    const targetOrder = userOrders.find((o) => o.id === orderId);
     if (!targetOrder || targetOrder.items.length === 0) return false;
 
     setCart((prev) => {
@@ -358,24 +451,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const minBillAmount = 599;
   const isMinBillMet = subtotal >= minBillAmount;
   const totalAmount = subtotal + gstAmount + platformFee;
-  const reorderableCount = orders.length;
+  const reorderableCount = userOrders.length;
 
   const getOrderById = (orderId: string): Order | undefined => {
-    const fromState = orders.find((o) => o.id === orderId);
-    if (fromState) return fromState;
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
-        if (raw) {
-          const parsed: Order[] = JSON.parse(raw);
-          if (Array.isArray(parsed)) {
-            return parsed.find((o) => o.id === orderId);
-          }
-        }
-      } catch (err) {
-        console.warn("Error reading order from localStorage:", err);
-      }
+    // 1. Look in current user's authorized isolated orders
+    const fromUser = userOrders.find((o) => o.id === orderId);
+    if (fromUser) return fromUser;
+
+    // 2. For merchants / sellers, allow looking up store orders
+    if (user?.role === "seller") {
+      return allOrders.find((o) => o.id === orderId);
     }
+
+    // 3. For guest users, allow looking up guest order placed in this browser session
+    if (!user) {
+      return allOrders.find((o) => o.id === orderId && !o.userId && !o.customerId);
+    }
+
+    // Strict privacy: Deny access if order belongs to a different registered user
     return undefined;
   };
 
@@ -393,6 +486,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     deliveryFee?: number;
     deliveryDistance?: number;
     gst?: number;
+    customerId?: string;
+    userId?: string;
+    customerEmail?: string;
   }): Order | null => {
     const orderItems = data.items && data.items.length > 0 ? data.items : cart;
     if (orderItems.length === 0) return null;
@@ -414,14 +510,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const orderCreatedAt = new Date();
     const partner = createDefaultDeliveryPartner(orderCreatedAt);
 
+    const assignedUserId = data.userId || data.customerId || user?.id;
+    const assignedPhone = data.customerPhone || user?.number || "";
+    const assignedEmail = data.customerEmail || user?.email;
+    const assignedName = data.customerName || user?.name || "Customer";
+
     const newOrder: Order = {
       id: `ORD-LL-${orderNumber}`,
       storeId: primaryStoreId,
       storeName: primaryStoreName,
       storeArea: activeArea === "All" ? "Vidyanagar" : activeArea,
       storeLane: "Main Market Cross",
-      customerName: data.customerName,
-      customerPhone: data.customerPhone,
+      customerName: assignedName,
+      customerPhone: assignedPhone,
+      customerId: assignedUserId,
+      userId: assignedUserId,
+      customerEmail: assignedEmail,
       items: [...orderItems],
       subtotal: orderSubtotal,
       gst: orderGst,
@@ -443,9 +547,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       createdAt: orderCreatedAt.toISOString(),
     };
 
-    const updated = [newOrder, ...orders];
-    setOrders(updated);
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
+    const updated = [newOrder, ...allOrders];
+    setAllOrders(updated);
+    try {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
+    } catch {}
 
     // Checkpoint CP-GC01: Track order conversion analytics event
     try {
@@ -472,8 +578,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     placeOrderAtomicAction({
       orderId: newOrder.id,
       storeId: primaryStoreId,
-      customerName: data.customerName,
-      customerPhone: data.customerPhone,
+      customerId: newOrder.customerId,
+      customerName: newOrder.customerName,
+      customerPhone: newOrder.customerPhone,
       items: cart.map((i) => ({
         product_id: i.product.id,
         quantity: i.quantity,
@@ -497,7 +604,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     status: OrderStatus,
     meta?: { packedAt?: string; readyAt?: string; shelfSlot?: string; packingNotes?: string }
   ) => {
-    setOrders((prev) => {
+    setAllOrders((prev) => {
       const updated = prev.map((ord) =>
         ord.id === orderId ? { ...ord, status, ...(meta || {}) } : ord
       );
@@ -519,7 +626,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       value={{
         cart,
         isLoaded,
-        orders,
+        orders: userOrders,
+        allOrders,
+        recentlyOrderedItems,
         activeArea,
         setActiveArea,
         userLocation,
@@ -551,7 +660,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalAmount,
         minBillAmount,
         isMinBillMet,
-        reorderableCount,
+        reorderableCount: userOrders.length,
       }}
     >
       {children}

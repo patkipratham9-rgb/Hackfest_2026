@@ -273,7 +273,11 @@ function PaymentResultContent() {
               className="w-full py-3 px-4 rounded-xl bg-forest-900 hover:bg-forest-950 text-cream-100 text-xs font-bold shadow-warm flex items-center justify-center gap-2 transition-all"
             >
               <ShoppingBag className="w-4 h-4" />
-              <span>Track Order & Counter Pickup PIN</span>
+              <span>
+                {currentOrder?.deliveryOption === "delivery"
+                  ? "Track Live Doorstep Delivery"
+                  : "Track Order & Counter Pickup PIN"}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (

@@ -3,12 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { ProductCard } from "@/components/ProductCard";
-import { History, Sparkles, ArrowLeft } from "lucide-react";
+import { History, Sparkles, ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function RecentView() {
   const { recentlyViewed } = useCart();
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -21,12 +23,20 @@ export function RecentView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>
-          <p
-            data-testid="recent-explored-overline"
-            className="text-[11px] font-bold uppercase tracking-[0.2em] text-terracotta-600 mb-1"
-          >
-            Browsing History
-          </p>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p
+              data-testid="recent-explored-overline"
+              className="text-[11px] font-bold uppercase tracking-[0.2em] text-terracotta-600"
+            >
+              Browsing History
+            </p>
+            {isAuthenticated && user && (
+              <span className="px-2 py-0.5 rounded-full bg-forest-100 text-forest-800 text-[10px] font-bold border border-forest-300 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-forest-600" />
+                <span>Account: {user.name}</span>
+              </span>
+            )}
+          </div>
           <h1
             data-testid="recent-explored-title"
             className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950"
@@ -34,7 +44,9 @@ export function RecentView() {
             Recent Explored
           </h1>
           <p className="text-xs text-forest-600 mt-0.5">
-            Pick up right where you left off: items and stores you recently viewed in Hubballi
+            {isAuthenticated && user
+              ? `Private browsing history for ${user.name}. Items are stored separately for your account.`
+              : "Pick up right where you left off: items and stores you recently viewed in Hubballi"}
           </p>
         </div>
 

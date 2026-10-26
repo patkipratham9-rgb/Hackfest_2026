@@ -377,24 +377,36 @@ function OrderTrackingContent({
               </motion.div>
             </AnimatePresence>
 
-            <p className="text-xs text-forest-600 mt-2 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-terracotta-500" />
-              <span>
-                Pickup Slot:{" "}
-                <strong data-testid="order-pickup-slot" className="text-forest-900">
-                  {order.pickupTime}
-                </strong>
-              </span>
-            </p>
+            {isDeliveryOrder ? (
+              <p className="text-xs text-forest-600 mt-2 flex items-center gap-1">
+                <Truck className="w-3.5 h-3.5 text-terracotta-500" />
+                <span>
+                  Delivery Window:{" "}
+                  <strong data-testid="order-pickup-slot" className="text-forest-900">
+                    {order.pickupTime || "Doorstep Delivery (35–45 mins)"}
+                  </strong>
+                </span>
+              </p>
+            ) : (
+              <p className="text-xs text-forest-600 mt-2 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-terracotta-500" />
+                <span>
+                  Pickup Slot:{" "}
+                  <strong data-testid="order-pickup-slot" className="text-forest-900">
+                    {order.pickupTime}
+                  </strong>
+                </span>
+              </p>
+            )}
           </div>
 
-          {/* Pickup Verification Token Code */}
+          {/* Pickup Verification Token Code / Delivery OTP */}
           <motion.div
             whileHover={{ scale: 1.04 }}
             className="bg-cream-200/90 border border-cream-300 rounded-2xl p-3 text-center sm:text-right flex-shrink-0 shadow-xs"
           >
             <span className="text-[10px] font-bold text-forest-600 uppercase tracking-widest block">
-              Pickup Token Code
+              {isDeliveryOrder ? "Delivery OTP Token" : "Pickup Token Code"}
             </span>
             <span
               data-testid="order-pickup-code"
@@ -403,7 +415,7 @@ function OrderTrackingContent({
               {order.pickupCode}
             </span>
             <span className="text-[10px] text-forest-500 block">
-              Show this code at counter
+              {isDeliveryOrder ? "Share OTP at doorstep" : "Show this code at counter"}
             </span>
           </motion.div>
         </div>
@@ -681,11 +693,35 @@ function OrderTrackingContent({
         </div>
       </motion.div>
 
-      {/* Pickup Store Details Card */}
+      {/* Delivery Destination Address (for Home Delivery) */}
+      {isDeliveryOrder && order.deliveryAddress && (
+        <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-2">
+          <h3 className="font-serif font-bold text-base text-forest-950 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-terracotta-600" />
+            <span>Delivery Destination Address</span>
+          </h3>
+          <div className="p-3.5 rounded-2xl bg-cream-100 border border-cream-200 text-xs text-forest-800 space-y-1">
+            <span className="font-bold text-forest-950 px-1.5 py-0.5 rounded-md bg-amber-200 text-[10px] uppercase tracking-wide">
+              {(order.deliveryAddress as any).label || "Home"}
+            </span>
+            <p className="font-semibold text-forest-900 mt-1">
+              {(order.deliveryAddress as any).street}
+              {(order.deliveryAddress as any).landmark ? `, Near ${(order.deliveryAddress as any).landmark}` : ""}, {(order.deliveryAddress as any).locality} - {(order.deliveryAddress as any).pincode}
+            </p>
+            <p className="text-[11px] text-forest-500">
+              Hubballi-Dharwad Hyperlocal Doorstep Delivery
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Store Fulfillment Details Card */}
       <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 space-y-3">
         <h3 className="font-serif font-bold text-base text-forest-950 flex items-center gap-2">
           <Store className="w-4 h-4 text-terracotta-600" />
-          <span>Pickup Location & Directions</span>
+          <span>
+            {isDeliveryOrder ? "Dispatched From Store" : "Pickup Location & Directions"}
+          </span>
         </h3>
 
         <div className="p-3.5 rounded-2xl bg-cream-100 border border-cream-200 flex flex-col sm:flex-row justify-between gap-3">

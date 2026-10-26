@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   Package,
   Clock,
@@ -12,11 +13,14 @@ import {
   CheckCircle2,
   ChevronRight,
   Sparkles,
+  Truck,
+  ShieldCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function OrdersView() {
-  const { orders, reorderOrder } = useCart();
+  const { orders, reorderOrder, recentlyOrderedItems, addToCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [reorderedId, setReorderedId] = useState<string | null>(null);
 
   const handleReorder = (e: React.MouseEvent, orderId: string) => {
@@ -40,20 +44,30 @@ export function OrdersView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-300">
         <div>
-          <p
-            data-testid="orders-again-overline"
-            className="text-[11px] font-bold uppercase tracking-[0.2em] text-terracotta-600 mb-1"
-          >
-            Orders Again & History
-          </p>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p
+              data-testid="orders-again-overline"
+              className="text-[11px] font-bold uppercase tracking-[0.2em] text-terracotta-600"
+            >
+              Orders Again &amp; History
+            </p>
+            {isAuthenticated && user && (
+              <span className="px-2 py-0.5 rounded-full bg-forest-100 text-forest-800 text-[10px] font-bold border border-forest-300 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-forest-600" />
+                <span>Account: {user.name}</span>
+              </span>
+            )}
+          </div>
           <h1
             data-testid="orders-again-title"
             className="font-serif font-extrabold text-2xl sm:text-3xl text-forest-950"
           >
-            Past Orders & Instant Reorder
+            Past Orders &amp; Instant Reorder
           </h1>
           <p className="text-xs text-forest-600 mt-0.5">
-            Repeat your favorite neighborhood essentials in one tap, or track live pickup progress
+            {isAuthenticated && user
+              ? `Personalized reorder history for ${user.name} (${user.number}). No data is shared with other accounts.`
+              : "Repeat your favorite neighborhood essentials in one tap, or track live pickup progress."}
           </p>
         </div>
 
@@ -65,6 +79,55 @@ export function OrdersView() {
           <span>Shop More Local</span>
         </Link>
       </div>
+
+      {/* Recently Ordered Items Shelf for this Specific User */}
+      {recentlyOrderedItems && recentlyOrderedItems.length > 0 && (
+        <div className="p-5 rounded-3xl bg-cream-50 border border-cream-300 shadow-warm space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-serif font-bold text-base text-forest-950 flex items-center gap-2">
+                <RotateCcw className="w-4 h-4 text-terracotta-600" />
+                <span>Recently Ordered Items</span>
+              </h2>
+              <p className="text-xs text-forest-600">
+                Your past favorites ready for fast 1-tap reordering.
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-forest-500 font-mono">
+              {recentlyOrderedItems.length} item{recentlyOrderedItems.length > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {recentlyOrderedItems.slice(0, 6).map((item, idx) => (
+              <div
+                key={`recent-ordered-${item.product.id || idx}`}
+                className="p-3 rounded-2xl bg-white border border-cream-200 hover:border-terracotta-300 transition-all flex items-center justify-between gap-3 shadow-2xs"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-xs text-forest-950 truncate">
+                    {item.product.name}
+                  </p>
+                  <p className="text-[10px] text-forest-500">
+                    ₹{item.product.price} • {item.product.category}
+                  </p>
+                  <p className="text-[10px] text-terracotta-600 truncate">
+                    {item.product.storeName}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addToCart(item.product)}
+                  className="px-2.5 py-1.5 rounded-xl bg-forest-900 hover:bg-forest-950 text-cream-100 text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-2xs flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3 text-terracotta-400" />
+                  <span>Reorder</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Orders List or Empty State */}
       {orders.length === 0 ? (
@@ -163,7 +226,15 @@ export function OrdersView() {
                           : "bg-terracotta-100 text-terracotta-800 border border-terracotta-300"
                       }`}
                     >
-                      {order.status === "placed"
+                      {order.deliveryOption === "delivery"
+                        ? order.status === "placed"
+                          ? "Order Placed"
+                          : order.status === "packed"
+                          ? "Out for Delivery"
+                          : order.status === "ready"
+                          ? "Arriving Shortly"
+                          : "Delivered"
+                        : order.status === "placed"
                         ? "Order Placed"
                         : order.status === "packed"
                         ? "Being Packed"
@@ -173,7 +244,7 @@ export function OrdersView() {
                     </span>
                     {order.pickupCode && (
                       <span className="px-2.5 py-1 bg-cream-200 text-forest-900 border border-cream-400 rounded-full text-[11px] font-mono font-bold">
-                        PIN: {order.pickupCode}
+                        {order.deliveryOption === "delivery" ? "OTP:" : "PIN:"} {order.pickupCode}
                       </span>
                     )}
                   </div>
@@ -213,8 +284,16 @@ export function OrdersView() {
                 <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-medium text-forest-600 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-terracotta-500" />
-                      <span>{order.pickupTime}</span>
+                      {order.deliveryOption === "delivery" ? (
+                        <Truck className="w-3.5 h-3.5 text-terracotta-500" />
+                      ) : (
+                        <Clock className="w-3.5 h-3.5 text-terracotta-500" />
+                      )}
+                      <span>
+                        {order.deliveryOption === "delivery"
+                          ? order.pickupTime || "Doorstep Delivery"
+                          : order.pickupTime}
+                      </span>
                     </span>
                     <span className="text-forest-300">•</span>
                     <span className="font-serif font-extrabold text-lg text-forest-950">
