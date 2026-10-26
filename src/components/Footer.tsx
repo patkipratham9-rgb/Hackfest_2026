@@ -113,8 +113,8 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 4 Main Footer Columns */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        {/* 3 Main Footer Columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {/* Col 1: Hubballi-Dharwad Markets */}
           <div className="space-y-3">
             <h4 className="font-serif font-bold text-xs sm:text-sm text-forest-950 uppercase tracking-wider flex items-center gap-1.5">
@@ -155,42 +155,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Col 2: Explore Marketplace */}
-          <div className="space-y-3">
-            <h4 className="font-serif font-bold text-xs sm:text-sm text-forest-950 uppercase tracking-wider flex items-center gap-1.5">
-              <ShoppingBag className="w-3.5 h-3.5 text-terracotta-600" />
-              <span>Explore Marketplace</span>
-            </h4>
-            <ul className="space-y-2 text-xs text-forest-700 font-medium">
-              <li>
-                <Link href="/" className="hover:text-terracotta-600 transition-colors">
-                  Storefront Discovery
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories" className="hover:text-terracotta-600 transition-colors">
-                  Product Categories
-                </Link>
-              </li>
-              <li>
-                <Link href="/orders-again" className="hover:text-terracotta-600 transition-colors">
-                  Repeat Past Orders
-                </Link>
-              </li>
-              <li>
-                <Link href="/account" className="hover:text-terracotta-600 transition-colors">
-                  Buyer Profile &amp; Addresses
-                </Link>
-              </li>
-              <li>
-                <Link href="/login/user" className="hover:text-terracotta-600 transition-colors">
-                  Customer Sign In
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Need Help & Support */}
+          {/* Col 2: Need Help & Support */}
           <div className="space-y-3">
             <h4 className="font-serif font-bold text-xs sm:text-sm text-forest-950 uppercase tracking-wider flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-terracotta-600" />
