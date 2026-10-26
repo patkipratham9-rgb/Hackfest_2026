@@ -134,7 +134,9 @@ export default function MerchantLoginPage() {
       setUserRole("seller");
 
       // Initialize store profile
+      const cleanPhone = storePhone.replace(/\D/g, "").slice(-10);
       updateStoreProfile({
+        id: res.user?.storeId || (cleanPhone ? `store_${cleanPhone}` : "store-manual-01"),
         name: shopName.trim(),
         category,
         area: storeArea,

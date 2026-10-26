@@ -39,9 +39,13 @@ export default function SellerDashboardPage() {
   }, [products, activeStore.id, activeStore.name]);
 
   const storeOrders = useMemo(() => {
-    return orders.filter(
-      (o) => o.storeId === activeStore.id || o.storeName === activeStore.name
-    );
+    const activeId = activeStore.id;
+    const activeName = activeStore.name?.trim().toLowerCase();
+    return orders.filter((o) => {
+      if (o.storeId && o.storeId === activeId) return true;
+      if (activeName && o.storeName && o.storeName.trim().toLowerCase() === activeName) return true;
+      return false;
+    });
   }, [orders, activeStore.id, activeStore.name]);
 
   const activeOrdersCount = storeOrders.filter(

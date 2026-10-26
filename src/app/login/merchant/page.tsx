@@ -157,6 +157,7 @@ export default function MerchantLoginPage() {
         await setAuthenticatedSession(res.user);
         setUserRole("seller");
         updateStoreProfile({
+          id: res.storeId,
           name: res.storeName,
           category: cat,
           area,
@@ -275,6 +276,7 @@ export default function MerchantLoginPage() {
         await setAuthenticatedSession(res.user);
         setUserRole("seller");
         updateStoreProfile({
+          id: res.storeId,
           name: shopName.trim(),
           phone: cleanPhone,
           lane: pickupAddress.trim() || "Hubballi",

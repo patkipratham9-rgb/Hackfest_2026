@@ -120,6 +120,39 @@ export default function StoreProfilePage() {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Sync state with activeStore when merchant switches or finishes loading
+  useEffect(() => {
+    if (activeStore && activeStore.name) {
+      setName(activeStore.name);
+      setTagline(activeStore.tagline || "");
+      if (activeStore.category) setCategory(activeStore.category);
+      if (activeStore.area) setArea(activeStore.area);
+      if (activeStore.lane) setLane(activeStore.lane);
+      if (activeStore.phone) setPhone(activeStore.phone);
+      if (activeStore.openingHours) {
+        setOpeningHours(activeStore.openingHours);
+        const parsed = parseOperatingHoursString(activeStore.openingHours);
+        setOpenTime(parsed.openTime);
+        setCloseTime(parsed.closeTime);
+        setSelectedDays(parsed.days);
+      }
+      if (activeStore.bannerUrl) setBannerUrl(activeStore.bannerUrl);
+      if (activeStore.imageUrl) setImageUrl(activeStore.imageUrl);
+      if (activeStore.location) setLocation(activeStore.location);
+      if (activeStore.shopTiming) setShopTiming(activeStore.shopTiming);
+      if (activeStore.holidays) setHolidays(activeStore.holidays);
+      if (activeStore.businessType) setBusinessType(activeStore.businessType);
+      if (activeStore.contactPhone) setContactPhone(activeStore.contactPhone);
+      if (activeStore.panNumber) setPanNumber(activeStore.panNumber);
+      if (activeStore.bankAccountNumber) setBankAccountNumber(activeStore.bankAccountNumber);
+      if (activeStore.bankIfscCode) setBankIfscCode(activeStore.bankIfscCode);
+      if (activeStore.bankName) setBankName(activeStore.bankName);
+      if (activeStore.pickupAddress) setPickupAddress(activeStore.pickupAddress);
+      if (activeStore.returnAddress) setReturnAddress(activeStore.returnAddress);
+      if (activeStore.logoUrl) setLogoUrl(activeStore.logoUrl);
+    }
+  }, [activeStore]);
+
   // Checkpoint CP-SP04: Live operating status calculation
   const liveOperatingStatus = useMemo(() => {
     return checkLiveOperatingStatus(openTime, closeTime, selectedDays, activeStore.isOpen);

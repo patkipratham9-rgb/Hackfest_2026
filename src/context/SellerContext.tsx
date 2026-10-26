@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { Store, Product } from "@/types";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { Store, Product, UserProfile } from "@/types";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockData";
+import { useAuth } from "@/context/AuthContext";
 import {
   saveStoreDetailsToDbAction,
   deleteStoreFromDbAction,
@@ -76,10 +77,32 @@ const REGISTERED_STORES_KEY = "localloop_registered_stores_v1";
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
 export function SellerProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [userRole, setUserRoleState] = useState<UserRole>("seller");
   const [activeStore, setActiveStore] = useState<Store>(MOCK_STORES[0] || EMPTY_STORE);
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS || []);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Compute unique merchant isolation key for tenant separation
+  const merchantKey = useMemo(() => {
+    if (!user) return null;
+    const cleanPhone = user.number ? user.number.replace(/\D/g, "").slice(-10) : "";
+    if (cleanPhone) return cleanPhone;
+    if (user.id) return user.id;
+    return null;
+  }, [user]);
+
+  const storeStorageKey = useMemo(() => {
+    return merchantKey
+      ? `localloop_seller_store_${merchantKey}`
+      : SELLER_STORE_STORAGE_KEY;
+  }, [merchantKey]);
+
+  const productsStorageKey = useMemo(() => {
+    return merchantKey
+      ? `localloop_seller_products_${merchantKey}`
+      : SELLER_PRODUCTS_STORAGE_KEY;
+  }, [merchantKey]);
 
   useEffect(() => {
     try {
@@ -88,24 +111,110 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         setUserRoleState(savedRole as UserRole);
       }
 
-      const savedStore = localStorage.getItem(SELLER_STORE_STORAGE_KEY);
-      if (savedStore) {
-        const parsed = JSON.parse(savedStore);
-        if (parsed && parsed.name) {
-          setActiveStore((prev) => ({ ...prev, ...parsed }));
+      // 1. Resolve merchant store strictly scoped to the active account
+      let resolvedStore: Store | null = null;
+      const savedScopedStore = localStorage.getItem(storeStorageKey);
+      if (savedScopedStore) {
+        try {
+          const parsed = JSON.parse(savedScopedStore);
+          if (parsed && parsed.name) {
+            resolvedStore = parsed;
+          }
+        } catch {}
+      }
+
+      // If no store found in scoped storage, check if merchant has store info in user profile or registered stores
+      if (!resolvedStore) {
+        if (user && (user.role === "seller" || user.storeName || user.storeId)) {
+          const cleanPhone = user.number ? user.number.replace(/\D/g, "").slice(-10) : "";
+          const sId = user.storeId || (cleanPhone ? `store_${cleanPhone}` : `store_${user.id}`);
+          const sName = user.storeName || `${user.name}'s Shop`;
+          const rawReg = localStorage.getItem(REGISTERED_STORES_KEY);
+          if (rawReg) {
+            try {
+              const regList: Store[] = JSON.parse(rawReg);
+              const found = regList.find(
+                (s) => s.id === sId || (cleanPhone && s.phone?.includes(cleanPhone)) || s.name === sName
+              );
+              if (found) resolvedStore = found;
+            } catch {}
+          }
+
+          if (!resolvedStore) {
+            resolvedStore = {
+              id: sId,
+              name: sName,
+              tagline: `Authentic local goods by ${user.name}`,
+              category: "Household",
+              area: (user.addresses?.[0]?.locality as any) || "Vidyanagar",
+              lane: user.addresses?.[0]?.street || "Main Market Lane",
+              distance: "0.5 km",
+              rating: 5.0,
+              reviewCount: 0,
+              isOpen: true,
+              openingHours: "8:00 AM - 9:00 PM",
+              imageUrl: DEFAULT_STORE_BANNER,
+              bannerUrl: DEFAULT_STORE_BANNER,
+              phone: cleanPhone ? `+91 ${cleanPhone}` : "+91 98450 12345",
+              verified: true,
+            };
+          }
+          localStorage.setItem(storeStorageKey, JSON.stringify(resolvedStore));
+        } else {
+          // Unauthenticated / fallback demo mode
+          const savedLegacy = localStorage.getItem(SELLER_STORE_STORAGE_KEY);
+          if (savedLegacy) {
+            try {
+              const parsed = JSON.parse(savedLegacy);
+              if (parsed && parsed.name) resolvedStore = parsed;
+            } catch {}
+          }
+          if (!resolvedStore) {
+            resolvedStore = MOCK_STORES[0] || EMPTY_STORE;
+          }
         }
       }
 
-      const savedProducts = localStorage.getItem(SELLER_PRODUCTS_STORAGE_KEY);
-      if (savedProducts) {
-        const parsedProds = JSON.parse(savedProducts);
-        if (Array.isArray(parsedProds) && parsedProds.length > 0) {
-          setProducts(parsedProds);
+      setActiveStore(resolvedStore);
+
+      // 2. Resolve merchant products strictly scoped to the active account
+      let resolvedProducts: Product[] | null = null;
+      const savedScopedProducts = localStorage.getItem(productsStorageKey);
+      if (savedScopedProducts) {
+        try {
+          const parsedProds = JSON.parse(savedScopedProducts);
+          if (Array.isArray(parsedProds)) {
+            resolvedProducts = parsedProds;
+          }
+        } catch {}
+      }
+
+      if (resolvedProducts === null) {
+        if (user && (user.role === "seller" || user.storeName || user.storeId)) {
+          // Check if mock products match this merchant store
+          const matching = MOCK_PRODUCTS.filter(
+            (p) => p.storeId === resolvedStore?.id || p.storeName === resolvedStore?.name
+          );
+          resolvedProducts = matching;
+          localStorage.setItem(productsStorageKey, JSON.stringify(resolvedProducts));
+        } else {
+          const savedLegacyProds = localStorage.getItem(SELLER_PRODUCTS_STORAGE_KEY);
+          if (savedLegacyProds) {
+            try {
+              const parsed = JSON.parse(savedLegacyProds);
+              if (Array.isArray(parsed) && parsed.length > 0) resolvedProducts = parsed;
+            } catch {}
+          }
+          if (!resolvedProducts) {
+            resolvedProducts = MOCK_PRODUCTS || [];
+          }
         }
       }
+
+      setProducts(resolvedProducts);
     } catch {}
     setIsLoaded(true);
-  }, []);
+  }, [merchantKey, storeStorageKey, productsStorageKey, user]);
 
   const setUserRole = (role: UserRole) => {
     setUserRoleState(role);
@@ -121,6 +230,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         isOpen: !prev.isOpen,
       };
       try {
+        localStorage.setItem(storeStorageKey, JSON.stringify(updated));
         localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
       } catch {}
       return updated;
@@ -128,44 +238,45 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateStoreProfile = (updates: Partial<Store>) => {
-    setActiveStore((prev) => ({
-      ...prev,
-      ...updates,
-    }));
-
-    try {
-      const raw = localStorage.getItem(SELLER_STORE_STORAGE_KEY);
-      const current = raw ? JSON.parse(raw) : activeStore;
+    setActiveStore((prev) => {
       const updated: Store = {
-        ...current,
+        ...prev,
         ...updates,
       };
 
-      localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
+      try {
+        // 1. Save into the active merchant's dedicated private storage key
+        localStorage.setItem(storeStorageKey, JSON.stringify(updated));
+        // 2. Also keep fallback key synced for test assertions
+        localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
 
-      if (updated.name && updated.name.trim() !== "") {
-        const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
-        let storeList: Store[] = rawRegistered ? JSON.parse(rawRegistered) : [];
-        const existingIdx = storeList.findIndex((s) => s.id === updated.id);
-        if (existingIdx >= 0) {
-          storeList[existingIdx] = updated;
-        } else {
-          storeList.unshift(updated);
+        // 3. Update the merchant's store entry in registered stores list
+        if (updated.name && updated.name.trim() !== "") {
+          const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
+          let storeList: Store[] = rawRegistered ? JSON.parse(rawRegistered) : [];
+          const existingIdx = storeList.findIndex((s) => s.id === updated.id);
+          if (existingIdx >= 0) {
+            storeList[existingIdx] = updated;
+          } else {
+            storeList.unshift(updated);
+          }
+          localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(storeList));
         }
-        localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(storeList));
+
+        // 4. Save to database
+        if (typeof window !== "undefined") {
+          setTimeout(() => {
+            saveStoreDetailsToDbAction(updated).catch((err) =>
+              console.warn("DB store sync note:", err)
+            );
+          }, 0);
+        }
+      } catch (e) {
+        console.warn("Store profile persistence note:", e);
       }
 
-      // Record store details in Supabase database outside of React state reducer
-      if (typeof window !== "undefined") {
-        setTimeout(() => {
-          saveStoreDetailsToDbAction(updated).catch((err) =>
-            console.warn("DB store sync note:", err)
-          );
-        }, 0);
-      }
-    } catch (e) {
-      console.warn("Store profile persistence note:", e);
-    }
+      return updated;
+    });
   };
 
   const deleteMerchantStore = async () => {
@@ -177,6 +288,8 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     setActiveStore(EMPTY_STORE);
     setProducts([]);
     try {
+      localStorage.removeItem(storeStorageKey);
+      localStorage.removeItem(productsStorageKey);
       localStorage.removeItem(SELLER_STORE_STORAGE_KEY);
       localStorage.removeItem(SELLER_PRODUCTS_STORAGE_KEY);
       const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
@@ -190,12 +303,12 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
 
   const addProduct = (newProd: Omit<Product, "id">): Product => {
     const id = `prod-custom-${Date.now()}`;
-    const created: Product = { ...newProd, id };
+    const storeName = newProd.storeName || activeStore.name || "Local Neighborhood Shop";
+    const storeId = newProd.storeId || activeStore.id || "store-manual-01";
+    const created: Product = { ...newProd, id, storeId, storeName };
 
     // Ensure active merchant store is recorded in registered stores collection
     try {
-      const storeName = newProd.storeName || activeStore.name || "Local Neighborhood Shop";
-      const storeId = newProd.storeId || activeStore.id || "store-manual-01";
       const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
       let storeList: Store[] = rawRegistered ? JSON.parse(rawRegistered) : [];
       if (!storeList.some((s) => s.id === storeId)) {
@@ -216,6 +329,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => {
       const next = [created, ...prev];
       try {
+        localStorage.setItem(productsStorageKey, JSON.stringify(next));
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("localloop_catalog_updated", { detail: created }));
@@ -241,6 +355,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
       try {
+        localStorage.setItem(productsStorageKey, JSON.stringify(next));
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("localloop_catalog_updated"));
@@ -255,6 +370,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => {
       const next = prev.filter((p) => p.id !== id);
       try {
+        localStorage.setItem(productsStorageKey, JSON.stringify(next));
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("localloop_catalog_updated"));
@@ -284,6 +400,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       resultNewStock = calcStock;
       const next = prev.map((p) => (p.id === productId ? { ...p, stock: calcStock } : p));
       try {
+        localStorage.setItem(productsStorageKey, JSON.stringify(next));
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
       } catch {}
       return next;
@@ -297,6 +414,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === productId ? { ...p, stock: newStock } : p));
       try {
+        localStorage.setItem(productsStorageKey, JSON.stringify(next));
         localStorage.setItem(SELLER_PRODUCTS_STORAGE_KEY, JSON.stringify(next));
       } catch {}
       return next;
@@ -306,11 +424,24 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthorizedSeller = userRole === "seller" || userRole === "admin";
 
-  const seller: SellerProfile = {
-    ...DEFAULT_SELLER,
-    role: userRole,
-    storeName: activeStore.name,
-  };
+  const seller: SellerProfile = useMemo(() => {
+    if (user && (user.role === "seller" || user.storeName)) {
+      return {
+        id: user.id,
+        fullName: user.name,
+        phone: user.number ? `+91 ${user.number}` : "+91 98450 12345",
+        email: user.email || "partner@localloop.in",
+        role: userRole,
+        storeId: activeStore.id,
+        storeName: activeStore.name,
+      };
+    }
+    return {
+      ...DEFAULT_SELLER,
+      role: userRole,
+      storeName: activeStore.name,
+    };
+  }, [user, userRole, activeStore]);
 
   return (
     <SellerContext.Provider

@@ -83,16 +83,20 @@ export default function SellerOrdersPage() {
   // Action Success Toast
   const [successToast, setSuccessToast] = useState("");
 
-  // Filter orders relevant to active store (or fallback to all orders for demonstration)
+  // Filter orders strictly relevant to active store (no sharing data across merchants!)
   const storeOrders = useMemo(() => {
-    return orders.filter(
-      (o) => o.storeId === activeStore.id || o.storeName === activeStore.name
-    );
+    const activeId = activeStore.id;
+    const activeName = activeStore.name?.trim().toLowerCase();
+    return orders.filter((o) => {
+      if (o.storeId && o.storeId === activeId) return true;
+      if (activeName && o.storeName && o.storeName.trim().toLowerCase() === activeName) return true;
+      return false;
+    });
   }, [orders, activeStore]);
 
   const displayOrders = useMemo(() => {
-    return storeOrders.length > 0 ? storeOrders : orders;
-  }, [storeOrders, orders]);
+    return storeOrders;
+  }, [storeOrders]);
 
   // Status-based breakdown for pipeline metrics
   const placedOrders = useMemo(
