@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useCart } from "@/context/CartContext";
 import { MapPin, Navigation, X, Check, AlertCircle, Compass, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Map4MePicker } from "@/components/Map4MePicker";
 
 const QUICK_LOCALITIES = [
   "Vidyanagar",
@@ -30,11 +31,21 @@ export function LocationModal() {
   const [manualInput, setManualInput] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Reset view when modal closes
+  useEffect(() => {
+    if (!isLocationModalOpen) {
+      setShowMapPicker(false);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+    }
+  }, [isLocationModalOpen]);
 
   const handleShareGps = async () => {
     setErrorMessage(null);
@@ -82,13 +93,13 @@ export function LocationModal() {
     return null;
   }
 
-  return createPortal(
+  const modalContent = (
     <AnimatePresence>
       {isLocationModalOpen && (
         <div
           key="location-modal-container"
-          className="fixed inset-0 z-[99999] overflow-y-auto flex items-center justify-center p-4"
-          style={{ zIndex: 99999 }}
+          className="fixed inset-0 z-[999999] overflow-y-auto flex items-center justify-center p-4"
+          style={{ zIndex: 999999 }}
         >
           {/* Backdrop */}
           <motion.div
@@ -98,21 +109,47 @@ export function LocationModal() {
             exit={{ opacity: 0 }}
             onClick={() => setIsLocationModalOpen(false)}
             className="fixed inset-0 bg-forest-950/75 backdrop-blur-md cursor-pointer"
-            style={{ zIndex: 99999 }}
+            style={{ zIndex: 999999 }}
           />
 
-          {/* Modal Window */}
-          <motion.div
-            key="location-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ duration: 0.2 }}
-            className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-warm-xl overflow-hidden z-[100000] my-auto"
-            style={{ zIndex: 100000 }}
-          >
+          {showMapPicker ? (
+            <motion.div
+              key="location-modal-map4me-view"
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-xl bg-cream-50 rounded-3xl border border-cream-300 shadow-warm-xl overflow-hidden z-[1000000] my-auto"
+              style={{ zIndex: 1000000 }}
+            >
+              <Map4MePicker
+                title="Map4Me: Pinpoint Delivery Location"
+                onSaveAddress={(saved) => {
+                  const fullLoc = saved.landmark
+                    ? `${saved.landmark}, ${saved.locality}`
+                    : `${saved.locality}, Hubballi`;
+                  setUserLocation(fullLoc);
+                  setShowMapPicker(false);
+                  setIsLocationModalOpen(false);
+                }}
+                onCancel={() => setShowMapPicker(false)}
+              />
+            </motion.div>
+          ) : (
+            /* Modal Window */
+            <motion.div
+              key="location-modal-dialog"
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-lg bg-cream-50 rounded-3xl border border-cream-300 shadow-warm-xl overflow-hidden z-[1000000] my-auto"
+              style={{ zIndex: 1000000 }}
+            >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200 bg-cream-100">
             <div className="flex items-center gap-2.5">
@@ -167,10 +204,21 @@ export function LocationModal() {
               data-testid="btn-share-location-gps"
               onClick={handleShareGps}
               disabled={isLocating}
-              className="w-full py-3.5 px-4 rounded-2xl bg-terracotta-600 hover:bg-terracotta-700 disabled:opacity-60 text-cream-100 font-bold text-sm shadow-warm flex items-center justify-center gap-2.5 transition-transform active:scale-[0.98]"
+              className="w-full py-3.5 px-4 rounded-2xl bg-terracotta-600 hover:bg-terracotta-700 disabled:opacity-60 text-cream-100 font-bold text-sm shadow-warm flex items-center justify-center gap-2.5 transition-transform active:scale-[0.98] cursor-pointer"
             >
               <Navigation className={`w-4 h-4 ${isLocating ? "animate-spin" : ""}`} />
               <span>{isLocating ? "Detecting GPS location..." : "Share Current Location (GPS)"}</span>
+            </button>
+
+            {/* Map4Me Interactive Pinpoint Button */}
+            <button
+              type="button"
+              data-testid="btn-open-map4me-picker"
+              onClick={() => setShowMapPicker(true)}
+              className="w-full py-3 px-4 rounded-2xl bg-forest-900 hover:bg-forest-800 text-cream-100 font-bold text-xs shadow-warm flex items-center justify-center gap-2 transition-transform active:scale-[0.98] cursor-pointer"
+            >
+              <Compass className="w-4 h-4 text-emerald-400" />
+              <span>Pinpoint on Interactive Map4Me Canvas</span>
             </button>
 
             <div className="relative flex items-center justify-center">
@@ -242,9 +290,11 @@ export function LocationModal() {
             )}
           </div>
         </motion.div>
+        )}
       </div>
     )}
-  </AnimatePresence>,
-  document.body
-);
+  </AnimatePresence>
+  );
+
+  return createPortal(modalContent, document.body);
 }
