@@ -690,6 +690,7 @@ export default function SellerProductsPage() {
                         src={product.imageUrl}
                         alt={product.name}
                         fill
+                        unoptimized
                         sizes="350px"
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -1457,6 +1458,7 @@ export default function SellerProductsPage() {
                         src={formData.imageUrl}
                         alt="Product Preview"
                         fill
+                        unoptimized
                         sizes="120px"
                         className="object-cover"
                       />

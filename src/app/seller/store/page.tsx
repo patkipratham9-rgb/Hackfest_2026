@@ -462,6 +462,7 @@ export default function StoreProfilePage() {
                 src={bannerUrl}
                 alt={name}
                 fill
+                unoptimized
                 sizes="800px"
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />

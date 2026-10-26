@@ -791,6 +791,7 @@ function OrderTrackingContent({
                       src={product.imageUrl}
                       alt={product.name}
                       fill
+                      unoptimized
                       sizes="40px"
                       className="object-cover"
                     />

@@ -476,6 +476,7 @@ export function CheckoutModal() {
                             src={item.product.imageUrl}
                             alt={item.product.name}
                             fill
+                            unoptimized
                             sizes="40px"
                             className="object-cover"
                           />
