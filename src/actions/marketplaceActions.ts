@@ -476,6 +476,7 @@ export async function getOrderDetailsAction(orderId: string): Promise<Order | nu
  */
 export interface CreateProductInput {
   storeId: string;
+  storeName?: string;
   name: string;
   description?: string;
   price: number;
@@ -517,6 +518,58 @@ export async function createProductAction(
     }
 
     const supabase = createServerSupabaseClient();
+
+    // 3. Save merchant product into Supabase via atomic SECURITY DEFINER RPC
+    try {
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("sync_merchant_product", {
+        p_store_id: input.storeId,
+        p_store_name: input.storeName || "Local Merchant Store",
+        p_name: input.name.trim(),
+        p_description: input.description?.trim() || "",
+        p_price: input.price,
+        p_original_price: input.originalPrice || null,
+        p_category: input.category,
+        p_stock: input.stock,
+        p_unit: input.unit?.trim() || "1 KG",
+        p_image_url: input.imageUrl?.trim() || "",
+        p_is_bestseller: !!input.isBestseller,
+        p_tags: input.tags || [],
+        p_product_type: input.productType?.trim() || null,
+        p_quantity_value: input.quantityValue?.trim() || null,
+        p_quantity_unit: input.quantityUnit?.trim() || null,
+        p_net_quantity: input.netQuantity?.trim() || null,
+        p_product_id: null,
+      });
+
+      if (!rpcErr && rpcData?.success) {
+        return {
+          success: true,
+          product: {
+            id: rpcData.id,
+            storeId: rpcData.store_id || input.storeId,
+            storeName: input.storeName || "Local Shop",
+            name: rpcData.name,
+            description: input.description?.trim() || "",
+            price: Number(rpcData.price),
+            originalPrice: input.originalPrice,
+            category: input.category as any,
+            stock: rpcData.stock,
+            unit: rpcData.unit,
+            imageUrl: input.imageUrl?.trim() || "",
+            isBestseller: !!input.isBestseller,
+            tags: input.tags || [],
+            productType: rpcData.product_type || input.productType,
+            quantityValue: rpcData.quantity_value || input.quantityValue,
+            quantityUnit: rpcData.quantity_unit || input.quantityUnit,
+            netQuantity: rpcData.net_quantity || input.netQuantity,
+          },
+        };
+      }
+    } catch (rpcEx) {
+      console.warn("RPC sync note:", rpcEx);
+    }
+
+    // Direct insert fallback
     const { data, error } = await supabase
       .from("products")
       .insert({
@@ -544,7 +597,7 @@ export async function createProductAction(
       const fallbackProduct: Product = {
         id: `prod-${Date.now()}`,
         storeId: input.storeId,
-        storeName: "Local Shop",
+        storeName: input.storeName || "Local Shop",
         name: input.name.trim(),
         description: input.description?.trim() || "",
         price: input.price,
@@ -568,7 +621,7 @@ export async function createProductAction(
       product: {
         id: data.id,
         storeId: data.store_id,
-        storeName: "Local Shop",
+        storeName: input.storeName || "Local Shop",
         name: data.name,
         description: data.description || "",
         price: Number(data.price),
@@ -634,6 +687,31 @@ export async function updateProductAction(
     if (updates.quantityUnit !== undefined) payload.quantity_unit = updates.quantityUnit.trim();
     if (updates.netQuantity !== undefined) payload.net_quantity = updates.netQuantity.trim();
 
+    // Attempt RPC update if full product details are available
+    if (updates.name && updates.price !== undefined) {
+      try {
+        await supabase.rpc("sync_merchant_product", {
+          p_store_id: updates.storeId || "",
+          p_store_name: updates.storeName || "",
+          p_name: updates.name.trim(),
+          p_description: updates.description?.trim() || "",
+          p_price: updates.price,
+          p_original_price: updates.originalPrice || null,
+          p_category: updates.category || "General",
+          p_stock: updates.stock ?? 0,
+          p_unit: updates.unit?.trim() || "1 KG",
+          p_image_url: updates.imageUrl?.trim() || "",
+          p_is_bestseller: !!updates.isBestseller,
+          p_tags: updates.tags || [],
+          p_product_type: updates.productType?.trim() || null,
+          p_quantity_value: updates.quantityValue?.trim() || null,
+          p_quantity_unit: updates.quantityUnit?.trim() || null,
+          p_net_quantity: updates.netQuantity?.trim() || null,
+          p_product_id: productId,
+        });
+      } catch {}
+    }
+
     const { error } = await supabase
       .from("products")
       .update(payload)
@@ -669,6 +747,10 @@ export async function deleteProductAction(
     }
 
     const supabase = createServerSupabaseClient();
+    try {
+      await supabase.rpc("delete_merchant_product", { p_product_id: productId });
+    } catch {}
+
     const { error } = await supabase.from("products").delete().eq("id", productId);
 
     if (error) {
