@@ -9,7 +9,7 @@ object AppConfig {
 
     const val DEFAULT_EMULATOR_URL = "http://10.0.2.2:3000"
     const val DEFAULT_LAN_URL = "http://192.168.29.56:3000"
-    const val DEFAULT_PROD_URL = "https://localloop.vercel.app"
+    const val DEFAULT_PROD_URL = "https://localloop.in"
 
     /**
      * Determines whether the app is running in an Android Emulator.

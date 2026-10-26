@@ -3,7 +3,7 @@
     <string name="app_name">LocalLoop</string>
     <string name="dev_host_emulator">http://10.0.2.2:3000</string>
     <string name="dev_host_lan">http://192.168.29.56:3000</string>
-    <string name="prod_host">https://localloop.vercel.app</string>
+    <string name="prod_host">https://localloop.in</string>
     <string name="connection_error_title">Cannot Connect to LocalLoop</string>
     <string name="connection_error_message">Ensure your Next.js dev server is running on your computer (npm run dev) and that both your phone and Mac are connected to the same Wi-Fi network.</string>
     <string name="retry_button">Retry Connection</string>
