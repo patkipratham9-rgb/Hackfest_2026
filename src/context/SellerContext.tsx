@@ -125,37 +125,51 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateStoreProfile = (updates: Partial<Store>) => {
-    setActiveStore((prev) => {
-      const updated = {
-        ...prev,
+    setActiveStore((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+
+    try {
+      const raw = localStorage.getItem(SELLER_STORE_STORAGE_KEY);
+      const current = raw ? JSON.parse(raw) : activeStore;
+      const updated: Store = {
+        ...current,
         ...updates,
       };
-      try {
-        localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
-        if (updated.name && updated.name.trim() !== "") {
-          const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
-          let storeList: Store[] = rawRegistered ? JSON.parse(rawRegistered) : [];
-          const existingIdx = storeList.findIndex((s) => s.id === updated.id);
-          if (existingIdx >= 0) {
-            storeList[existingIdx] = updated;
-          } else {
-            storeList.unshift(updated);
-          }
-          localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(storeList));
-        }
 
-        // Record store details in Supabase database
-        saveStoreDetailsToDbAction(updated).catch((err) =>
-          console.warn("DB store sync note:", err)
-        );
-      } catch {}
-      return updated;
-    });
+      localStorage.setItem(SELLER_STORE_STORAGE_KEY, JSON.stringify(updated));
+
+      if (updated.name && updated.name.trim() !== "") {
+        const rawRegistered = localStorage.getItem(REGISTERED_STORES_KEY);
+        let storeList: Store[] = rawRegistered ? JSON.parse(rawRegistered) : [];
+        const existingIdx = storeList.findIndex((s) => s.id === updated.id);
+        if (existingIdx >= 0) {
+          storeList[existingIdx] = updated;
+        } else {
+          storeList.unshift(updated);
+        }
+        localStorage.setItem(REGISTERED_STORES_KEY, JSON.stringify(storeList));
+      }
+
+      // Record store details in Supabase database outside of React state reducer
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          saveStoreDetailsToDbAction(updated).catch((err) =>
+            console.warn("DB store sync note:", err)
+          );
+        }, 0);
+      }
+    } catch (e) {
+      console.warn("Store profile persistence note:", e);
+    }
   };
 
   const deleteMerchantStore = async () => {
     if (activeStore?.id) {
-      await deleteStoreFromDbAction(activeStore.id);
+      await deleteStoreFromDbAction(activeStore.id).catch((err) =>
+        console.warn("DB delete note:", err)
+      );
     }
     setActiveStore(EMPTY_STORE);
     setProducts([]);

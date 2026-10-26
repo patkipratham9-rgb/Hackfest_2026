@@ -39,8 +39,8 @@
         }
       ],
       "emailPermissionsGranted": true,
-      "createdAt": "2026-10-26T17:05:32.367Z",
-      "updatedAt": "2026-10-26T17:05:32.368Z"
+      "createdAt": "2026-10-26T17:12:49.308Z",
+      "updatedAt": "2026-10-26T17:12:49.308Z"
     },
     {
       "id": "e8582be7-de9e-449b-aef4-d6f1546a42a0",
@@ -64,7 +64,18 @@
       "updatedAt": "2026-10-26T16:38:24.426Z",
       "storeId": "store_8618636617",
       "storeName": "Srushti Desai"
+    },
+    {
+      "id": "c017aedf-a30b-4d88-ae04-7954d0b88225",
+      "name": "Pratham Sogalad",
+      "number": "7975633023",
+      "email": "patkipratham9@gmail.com",
+      "role": "customer",
+      "addresses": [],
+      "emailPermissionsGranted": true,
+      "createdAt": "2026-10-26T17:06:52.680Z",
+      "updatedAt": "2026-10-26T17:06:52.856Z"
     }
   ],
-  "updatedAt": "2026-10-26T16:38:24.426Z"
+  "updatedAt": "2026-10-26T17:06:52.856Z"
 }
