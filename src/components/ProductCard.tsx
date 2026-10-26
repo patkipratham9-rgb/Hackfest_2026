@@ -125,6 +125,21 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="text-xs text-forest-700/80 line-clamp-2 mt-1 leading-relaxed">
             {product.description}
           </p>
+          {/* Product Type & Metric Quantity Pill */}
+          {(product.productType || (product.quantityValue && product.quantityUnit)) && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
+              {product.productType && (
+                <span className="text-[10px] bg-cream-200/90 text-forest-800 border border-cream-300 px-1.5 py-0.5 rounded font-semibold">
+                  {product.productType}
+                </span>
+              )}
+              {product.quantityValue && product.quantityUnit && (
+                <span className="text-[10px] bg-terracotta-50 text-terracotta-800 border border-terracotta-200/70 px-1.5 py-0.5 rounded font-extrabold">
+                  {product.quantityValue} {product.quantityUnit}
+                </span>
+              )}
+            </div>
+          )}
           {(product.availableSizes || product.availableFormats) && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               <span className="text-[10px] bg-cream-200/80 text-forest-700 px-2 py-0.5 rounded-md font-medium truncate max-w-full" title={product.availableSizes || product.availableFormats}>
@@ -149,7 +164,7 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           <span className="text-[10px] text-forest-500 font-medium">
-            {product.unit}
+            {product.unit || product.netQuantity || (product.quantityValue ? `${product.quantityValue} ${product.quantityUnit}` : "")}
           </span>
         </div>
 

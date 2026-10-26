@@ -36,6 +36,7 @@ import {
   Archive,
   ShieldCheck,
   UploadCloud,
+  Scale,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -51,6 +52,27 @@ const PRODUCT_CATEGORIES: ProductCategory[] = [
   "Spices & Pantry",
 ];
 
+export const PRODUCT_TYPES = [
+  "Solid / Packaged",
+  "Liquid / Beverage / Oil",
+  "Grain / Pulses / Dal",
+  "Powder / Spices / Flour",
+  "Fresh Produce / Fruits & Veggies",
+  "Dairy / Butter / Ghee",
+  "Bakery / Sweets / Snacks",
+  "Handloom & Crafts",
+  "Other / Custom",
+];
+
+export const QUANTITY_METRIC_UNITS = [
+  { value: "KG", label: "KG (Kilograms)" },
+  { value: "L", label: "L (Litres)" },
+  { value: "GM", label: "GM (Grams)" },
+  { value: "ML", label: "ML (Millilitres)" },
+  { value: "piece", label: "Piece / Unit" },
+  { value: "pack", label: "Pack / Box" },
+];
+
 const DEFAULT_FORM_STATE = {
   id: "",
   name: "",
@@ -59,7 +81,11 @@ const DEFAULT_FORM_STATE = {
   originalPrice: "",
   category: "Household" as ProductCategory,
   stock: "20",
-  unit: "per piece",
+  unit: "1 KG",
+  productType: "Solid / Packaged",
+  customProductType: "",
+  quantityValue: "1",
+  quantityUnit: "KG",
   imageUrl: "https://images.unsplash.com/photo-1604928141064-207cea6f571f?w=600&auto=format&fit=crop&q=80",
   isBestseller: false,
   tags: "local, artisanal, hubballi",
@@ -259,6 +285,27 @@ export default function SellerProductsPage() {
   // Open modal to edit product
   const handleOpenEdit = (product: Product) => {
     setEditingProductId(product.id);
+
+    let initialType = product.productType || "Solid / Packaged";
+    let initialQty = product.quantityValue || "";
+    let initialUnit = product.quantityUnit || "KG";
+
+    if (!initialQty && product.unit) {
+      const match = product.unit.match(/^([\d.]+)\s*([a-zA-Z]+)/);
+      if (match) {
+        initialQty = match[1];
+        const u = match[2].toUpperCase();
+        if (u === "KG" || u === "KGS" || u === "KILOGRAM" || u === "KILOGRAMS") initialUnit = "KG";
+        else if (u === "L" || u === "LT" || u === "LTR" || u === "LITRE" || u === "LITRES" || u === "LITER") initialUnit = "L";
+        else if (u === "G" || u === "GM" || u === "GMS" || u === "GRAM" || u === "GRAMS") initialUnit = "GM";
+        else if (u === "ML" || u === "MILLILITRE" || u === "MILLILITRES") initialUnit = "ML";
+        else if (u.toLowerCase().includes("piece") || u.toLowerCase().includes("pc")) initialUnit = "piece";
+        else if (u.toLowerCase().includes("pack") || u.toLowerCase().includes("box")) initialUnit = "pack";
+      }
+    }
+
+    const isCustomType = initialType && !PRODUCT_TYPES.includes(initialType);
+
     setFormData({
       id: product.id,
       name: product.name,
@@ -267,7 +314,11 @@ export default function SellerProductsPage() {
       originalPrice: product.originalPrice ? String(product.originalPrice) : "",
       category: product.category,
       stock: String(product.stock),
-      unit: product.unit || "per piece",
+      unit: product.unit || (initialQty ? `${initialQty} ${initialUnit}` : "1 KG"),
+      productType: isCustomType ? "Other / Custom" : (initialType || "Solid / Packaged"),
+      customProductType: isCustomType ? initialType : "",
+      quantityValue: initialQty || "1",
+      quantityUnit: initialUnit || "KG",
       imageUrl: product.imageUrl || "",
       isBestseller: !!product.isBestseller,
       tags: product.tags ? product.tags.join(", ") : "",
@@ -319,6 +370,17 @@ export default function SellerProductsPage() {
       .map((t) => t.trim())
       .filter(Boolean);
 
+    const resolvedProductType =
+      formData.productType === "Other / Custom" && formData.customProductType.trim()
+        ? formData.customProductType.trim()
+        : formData.productType;
+
+    const netQuantity = formData.quantityValue.trim()
+      ? `${formData.quantityValue.trim()} ${formData.quantityUnit.trim()}`
+      : formData.unit.trim();
+
+    const unitOfMeasure = formData.unit.trim() || netQuantity || "1 KG";
+
     setTimeout(() => {
       if (editingProductId) {
         // Update existing product
@@ -329,7 +391,11 @@ export default function SellerProductsPage() {
           originalPrice: parsedOriginalPrice,
           category: formData.category,
           stock: parsedStock,
-          unit: formData.unit.trim() || "per piece",
+          unit: unitOfMeasure,
+          productType: resolvedProductType,
+          quantityValue: formData.quantityValue.trim(),
+          quantityUnit: formData.quantityUnit.trim(),
+          netQuantity: netQuantity,
           imageUrl: formData.imageUrl.trim() || DEFAULT_FORM_STATE.imageUrl,
           isBestseller: formData.isBestseller,
           tags: parsedTags,
@@ -348,7 +414,11 @@ export default function SellerProductsPage() {
           originalPrice: parsedOriginalPrice,
           category: formData.category,
           stock: parsedStock,
-          unit: formData.unit.trim() || "per piece",
+          unit: unitOfMeasure,
+          productType: resolvedProductType,
+          quantityValue: formData.quantityValue.trim(),
+          quantityUnit: formData.quantityUnit.trim(),
+          netQuantity: netQuantity,
           imageUrl: formData.imageUrl.trim() || DEFAULT_FORM_STATE.imageUrl,
           isBestseller: formData.isBestseller,
           tags: parsedTags,
@@ -681,6 +751,18 @@ export default function SellerProductsPage() {
 
                   {/* Title & Description */}
                   <div>
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      {product.productType && (
+                        <span className="text-[10px] font-bold text-forest-800 bg-cream-200 border border-cream-300 px-2 py-0.5 rounded-md">
+                          {product.productType}
+                        </span>
+                      )}
+                      {(product.quantityValue && product.quantityUnit) ? (
+                        <span className="text-[10px] font-extrabold text-terracotta-800 bg-terracotta-50 border border-terracotta-200/80 px-2 py-0.5 rounded-md">
+                          {product.quantityValue} {product.quantityUnit}
+                        </span>
+                      ) : null}
+                    </div>
                     <h3 className="font-bold text-sm text-forest-950 line-clamp-1">
                       {product.name}
                     </h3>
@@ -801,7 +883,7 @@ export default function SellerProductsPage() {
                       )}
                     </div>
                     <span className="text-[10px] text-forest-500 font-medium block">
-                      Unit: {product.unit}
+                      Unit: {product.unit || (product.quantityValue ? `${product.quantityValue} ${product.quantityUnit}` : "1 KG")}
                     </span>
                   </div>
 
@@ -1056,6 +1138,128 @@ export default function SellerProductsPage() {
                     placeholder="Describe how it is crafted, materials used, ingredients, or usage instructions..."
                     className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
                   />
+                </div>
+
+                {/* Product Type & Physical Form */}
+                <div className="p-3.5 rounded-2xl bg-cream-100/80 border border-cream-200/90 space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Package className="w-3.5 h-3.5 text-terracotta-600" />
+                        <span>Product Type & Classification *</span>
+                      </label>
+                      <span className="text-[10px] text-forest-500 font-medium">Liquid, Solid, Produce or Handcrafted</span>
+                    </div>
+                    <select
+                      data-testid="product-type-select"
+                      value={formData.productType}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const isLiquid = val.toLowerCase().includes("liquid") || val.toLowerCase().includes("beverage") || val.toLowerCase().includes("oil");
+                        const newUnit = isLiquid && formData.quantityUnit === "KG" ? "L" : formData.quantityUnit;
+                        setFormData((prev) => ({
+                          ...prev,
+                          productType: val,
+                          quantityUnit: newUnit,
+                          unit: prev.quantityValue ? `${prev.quantityValue} ${newUnit}` : prev.unit,
+                        }));
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-cream-50 border border-cream-300 rounded-xl text-xs text-forest-950 font-semibold focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
+                    >
+                      {PRODUCT_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {formData.productType === "Other / Custom" && (
+                    <div>
+                      <label className="text-[10px] font-bold text-forest-700 uppercase tracking-wider block mb-1">
+                        Custom Product Type Description
+                      </label>
+                      <input
+                        type="text"
+                        data-testid="product-custom-type-input"
+                        value={formData.customProductType}
+                        onChange={(e) => setFormData({ ...formData, customProductType: e.target.value })}
+                        placeholder="e.g. Cold-pressed Wood Ghani Oil, A2 Bilona Ghee, Stone-ground Masala"
+                        className="w-full px-3 py-2 bg-cream-50 border border-cream-300 rounded-xl text-xs text-forest-950 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                      />
+                    </div>
+                  )}
+
+                  {/* Quantity in KG / L / Metric Units */}
+                  <div className="pt-2 border-t border-cream-200/70">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-bold text-forest-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Scale className="w-3.5 h-3.5 text-terracotta-600" />
+                        <span>Packaged Quantity & Volume (in KG / L) *</span>
+                      </label>
+                      <span className="text-[10px] text-forest-500 font-medium">Standard metric weight/volume</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      <div className="col-span-1">
+                        <label className="text-[10px] font-semibold text-forest-700 block mb-1">
+                          Quantity Value
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          data-testid="product-quantity-value-input"
+                          value={formData.quantityValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              quantityValue: val,
+                              unit: val ? `${val} ${prev.quantityUnit}` : prev.unit,
+                            }));
+                          }}
+                          placeholder="e.g. 1, 0.5, 2, 5"
+                          className="w-full px-3 py-2 bg-cream-50 border border-cream-300 rounded-xl text-xs text-forest-950 font-bold focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+                        />
+                      </div>
+
+                      <div className="col-span-1">
+                        <label className="text-[10px] font-semibold text-forest-700 block mb-1">
+                          Measurement Unit (KG / L)
+                        </label>
+                        <select
+                          data-testid="product-quantity-unit-select"
+                          value={formData.quantityUnit}
+                          onChange={(e) => {
+                            const u = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              quantityUnit: u,
+                              unit: prev.quantityValue ? `${prev.quantityValue} ${u}` : u,
+                            }));
+                          }}
+                          className="w-full px-3 py-2 bg-cream-50 border border-cream-300 rounded-xl text-xs text-forest-950 font-bold focus:outline-none focus:ring-2 focus:ring-terracotta-400 cursor-pointer"
+                        >
+                          {QUANTITY_METRIC_UNITS.map((u) => (
+                            <option key={u.value} value={u.value}>
+                              {u.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="text-[10px] font-semibold text-forest-700 block mb-1">
+                          Formatted Net Quantity
+                        </label>
+                        <div className="px-3 py-2 bg-cream-200/70 border border-cream-300/80 rounded-xl text-xs text-forest-900 font-bold flex items-center justify-between">
+                          <span>{formData.quantityValue || "1"} {formData.quantityUnit || "KG"}</span>
+                          <span className="text-[9px] uppercase tracking-wider text-forest-500 font-semibold">Live Tag</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Pricing & Units Grid */}

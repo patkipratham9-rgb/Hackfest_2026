@@ -486,6 +486,10 @@ export interface CreateProductInput {
   imageUrl?: string;
   isBestseller?: boolean;
   tags?: string[];
+  productType?: string;
+  quantityValue?: string;
+  quantityUnit?: string;
+  netQuantity?: string;
 }
 
 export async function createProductAction(
@@ -527,6 +531,10 @@ export async function createProductAction(
         image_url: input.imageUrl?.trim() || "",
         is_bestseller: !!input.isBestseller,
         tags: input.tags || [],
+        product_type: input.productType?.trim() || null,
+        quantity_value: input.quantityValue?.trim() || null,
+        quantity_unit: input.quantityUnit?.trim() || null,
+        net_quantity: input.netQuantity?.trim() || null,
       })
       .select()
       .single();
@@ -547,6 +555,10 @@ export async function createProductAction(
         imageUrl: input.imageUrl?.trim() || "",
         isBestseller: !!input.isBestseller,
         tags: input.tags || [],
+        productType: input.productType?.trim(),
+        quantityValue: input.quantityValue?.trim(),
+        quantityUnit: input.quantityUnit?.trim(),
+        netQuantity: input.netQuantity?.trim(),
       };
       return { success: true, product: fallbackProduct };
     }
@@ -567,6 +579,10 @@ export async function createProductAction(
         imageUrl: data.image_url || "",
         isBestseller: data.is_bestseller ?? false,
         tags: data.tags || [],
+        productType: data.product_type || input.productType,
+        quantityValue: data.quantity_value || input.quantityValue,
+        quantityUnit: data.quantity_unit || input.quantityUnit,
+        netQuantity: data.net_quantity || input.netQuantity,
       },
     };
   } catch (err: any) {
@@ -613,6 +629,10 @@ export async function updateProductAction(
     if (updates.imageUrl !== undefined) payload.image_url = updates.imageUrl.trim();
     if (updates.isBestseller !== undefined) payload.is_bestseller = updates.isBestseller;
     if (updates.tags !== undefined) payload.tags = updates.tags;
+    if (updates.productType !== undefined) payload.product_type = updates.productType.trim();
+    if (updates.quantityValue !== undefined) payload.quantity_value = updates.quantityValue.trim();
+    if (updates.quantityUnit !== undefined) payload.quantity_unit = updates.quantityUnit.trim();
+    if (updates.netQuantity !== undefined) payload.net_quantity = updates.netQuantity.trim();
 
     const { error } = await supabase
       .from("products")

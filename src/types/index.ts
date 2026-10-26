@@ -62,6 +62,10 @@ export interface Product {
   imageUrl: string;
   isBestseller?: boolean;
   tags?: string[];
+  productType?: string;
+  quantityValue?: string;
+  quantityUnit?: string;
+  netQuantity?: string;
   availableSizes?: string;
   availableFormats?: string;
   aiGenerated?: boolean;
