@@ -119,8 +119,8 @@ export function LocalLoopAssistantBot() {
 
   return (
     <>
-      {/* Floating Trigger Button in Bottom Right */}
-      <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40">
+      {/* Floating Trigger Button in Bottom Right (Elevated above Footer & BottomNav) */}
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 sm:bottom-24 sm:right-6 z-[60]">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -152,7 +152,7 @@ export function LocalLoopAssistantBot() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             data-testid="localloop-assistant-bot-drawer"
-            className="fixed bottom-24 right-4 sm:bottom-20 sm:right-6 z-50 w-[92vw] sm:w-96 max-h-[520px] h-[500px] flex flex-col bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden"
+            className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 sm:bottom-24 sm:right-6 z-[70] w-[92vw] sm:w-96 max-h-[520px] h-[500px] flex flex-col bg-cream-50 rounded-3xl border border-cream-300 shadow-floating overflow-hidden"
           >
             {/* Header */}
             <div className="p-3.5 bg-forest-900 text-cream-100 flex items-center justify-between border-b border-forest-800">
