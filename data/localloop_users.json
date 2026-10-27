@@ -18,8 +18,8 @@
         }
       ],
       "emailPermissionsGranted": true,
-      "createdAt": "2026-10-26T21:40:42.716Z",
-      "updatedAt": "2026-10-26T21:40:42.717Z"
+      "createdAt": "2026-10-27T17:31:45.309Z",
+      "updatedAt": "2026-10-27T17:31:45.310Z"
     },
     {
       "id": "e8582be7-de9e-449b-aef4-d6f1546a42a0",
@@ -52,7 +52,7 @@
       "role": "customer",
       "addresses": [
         {
-          "id": "addr_store_1793047873178",
+          "id": "addr_store_1793071534782",
           "label": "Office",
           "locality": "Hubballi",
           "street": "Hubballi Counter Pickup",
@@ -63,10 +63,55 @@
       ],
       "emailPermissionsGranted": true,
       "createdAt": "2026-10-26T17:06:52.680Z",
-      "updatedAt": "2026-10-26T21:26:20.258Z",
-      "storeId": "store_7975633023",
+      "updatedAt": "2026-10-27T03:27:51.104Z",
+      "storeId": "e563d3df-b555-f91e-b5a8-79cab3fa1441",
       "storeName": "The Golden Crums"
+    },
+    {
+      "id": "fb9d95c9-88d6-49a5-a214-c6067a8604a6",
+      "name": "Hubballi Merchant",
+      "number": "9876543210",
+      "role": "seller",
+      "storeId": "store_9876543210",
+      "storeName": "Neighborhood Artisan Shop",
+      "addresses": [
+        {
+          "id": "addr_store_1793068061455",
+          "label": "Office",
+          "locality": "Vidyanagar",
+          "street": "Vidyanagar Market Cross",
+          "city": "Hubballi",
+          "pincode": "580021",
+          "isDefault": true
+        }
+      ],
+      "emailPermissionsGranted": true,
+      "createdAt": "2026-10-27T02:27:40.943Z",
+      "updatedAt": "2026-10-27T04:03:37.628Z"
+    },
+    {
+      "id": "73e5d687-a0ca-4e20-a542-de0a7c3bd378",
+      "name": "Kavita Patil",
+      "number": "9845199887",
+      "email": "threadstales@localloop.hubballi",
+      "role": "seller",
+      "storeId": "store_9845199887",
+      "storeName": "Threads & Tales",
+      "addresses": [
+        {
+          "id": "addr_store_1793071612246",
+          "label": "Office",
+          "locality": "CBT",
+          "street": "CBT Main Market Lane",
+          "city": "Hubballi",
+          "pincode": "580021",
+          "isDefault": true
+        }
+      ],
+      "emailPermissionsGranted": true,
+      "createdAt": "2026-10-27T03:26:52.246Z",
+      "updatedAt": "2026-10-27T03:26:52.560Z"
     }
   ],
-  "updatedAt": "2026-10-26T21:26:20.258Z"
+  "updatedAt": "2026-10-27T04:03:37.628Z"
 }

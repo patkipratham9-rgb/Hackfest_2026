@@ -48,6 +48,7 @@ export async function dispatchSmsOtp(
           variables_values: otpCode,
           numbers: digits,
         }),
+        signal: AbortSignal.timeout(3500),
       });
 
       let data = await response.json().catch(() => ({}));
@@ -75,6 +76,7 @@ export async function dispatchSmsOtp(
           flash: 0,
           numbers: digits,
         }),
+        signal: AbortSignal.timeout(3500),
       });
       data = await response.json().catch(() => ({}));
       if (response.ok && (data.return === true || data.status_code === 200)) {
@@ -113,6 +115,7 @@ export async function dispatchSmsOtp(
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body: params.toString(),
+          signal: AbortSignal.timeout(3500),
         }
       );
 
@@ -136,7 +139,7 @@ export async function dispatchSmsOtp(
     try {
       const res = await fetch(
         `https://2factor.in/API/V1/${twoFactorKey}/SMS/+91${digits}/${otpCode}/LocalLoop`,
-        { method: "GET" }
+        { method: "GET", signal: AbortSignal.timeout(3500) }
       );
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.Status === "Success") {

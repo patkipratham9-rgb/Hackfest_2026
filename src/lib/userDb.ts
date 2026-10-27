@@ -78,14 +78,26 @@ export function phoneToUuid(phone: string): string {
 }
 
 /**
+ * Generate a deterministic RFC 4122 v4 compliant UUID from an email address
+ */
+export function emailToUuid(email: string): string {
+  const clean = (email || "").trim().toLowerCase();
+  const hash = crypto.createHash("sha256").update(`localloop_user_email_${clean}`).digest("hex");
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+/**
  * Resolve or generate a valid UUID for a user session
  */
-export function ensureValidUserUuid(id?: string, phone?: string): string {
+export function ensureValidUserUuid(id?: string, phone?: string, email?: string): string {
   if (id && isValidUuid(id)) {
     return id;
   }
   if (phone) {
     return phoneToUuid(phone);
+  }
+  if (email) {
+    return emailToUuid(email);
   }
   return crypto.randomUUID();
 }
@@ -134,11 +146,15 @@ export function upsertStoredUser(data: {
   addresses?: any[];
 }): StoredUserProfile {
   const cleanPhone = (data.number || "").replace(/\D/g, "").slice(-10);
-  const validId = ensureValidUserUuid(data.id, cleanPhone);
+  const cleanEmail = (data.email || "").trim().toLowerCase();
+  const validId = ensureValidUserUuid(data.id, cleanPhone, cleanEmail);
   const users = readUsers();
 
   const existingIndex = users.findIndex(
-    (u) => u.id === validId || (cleanPhone && u.number.replace(/\D/g, "").slice(-10) === cleanPhone)
+    (u) =>
+      u.id === validId ||
+      (cleanPhone && u.number && u.number.replace(/\D/g, "").slice(-10) === cleanPhone) ||
+      (cleanEmail && u.email && u.email.trim().toLowerCase() === cleanEmail)
   );
 
   const now = new Date().toISOString();

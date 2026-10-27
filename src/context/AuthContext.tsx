@@ -8,7 +8,9 @@ import {
   validateEmail,
   validateUserAddress,
   requestPhoneOtp,
+  requestEmailOtp,
   verifyPhoneOtp,
+  verifyEmailOtp,
   generateSessionToken,
 } from "@/lib/authSecurity";
 import {
@@ -29,7 +31,10 @@ interface AuthContextType {
   activeAppMode: AppMode;
   setActiveAppMode: (mode: AppMode) => void;
   sendOtp: (
-    phone: string
+    phoneOrEmail: string
+  ) => Promise<{ success: boolean; message: string; testOtp?: string; cooldownSeconds: number }>;
+  sendEmailOtp: (
+    email: string
   ) => Promise<{ success: boolean; message: string; testOtp?: string; cooldownSeconds: number }>;
   signup: (data: {
     name: string;
@@ -40,6 +45,7 @@ interface AuthContextType {
     initialAddress?: Omit<UserAddress, "id">;
   }) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
   loginWithPhoneOtp: (phone: string, otp: string, role?: UserRole) => Promise<{ success: boolean; message: string }>;
+  loginWithEmailOtp: (email: string, otp: string, role?: UserRole) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
   loginWithFirebaseToken: (
     idToken: string,
     name?: string,
@@ -127,22 +133,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   };
 
-  const sendOtp = async (phone: string) => {
+  const sendOtp = async (phoneOrEmail: string) => {
     // 1. Dispatch to server-side OTP API endpoint
     try {
       if (typeof window !== "undefined" && typeof fetch === "function") {
+        const isEmail = phoneOrEmail.includes("@");
+        const payload = isEmail
+          ? { email: phoneOrEmail, method: "email" }
+          : { phone: phoneOrEmail, method: "phone" };
+
         const res = await fetch("/api/auth/otp/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone }),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
-        // Keep local security engine synchronized
-        requestPhoneOtp(phone);
+        const code = data.testOtp || data.otp || "123456";
+        if (isEmail) {
+          requestEmailOtp(phoneOrEmail, code);
+        } else {
+          requestPhoneOtp(phoneOrEmail, code);
+        }
         return {
           success: Boolean(data.success),
-          message: data.message || `OTP sent to ${phone}`,
-          testOtp: data.testOtp,
+          message: data.message || `OTP sent to ${phoneOrEmail}`,
+          testOtp: code,
           cooldownSeconds:
             typeof data.cooldownSeconds === "number" ? data.cooldownSeconds : 30,
         };
@@ -150,7 +165,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Fallback to local security engine
     }
-    return requestPhoneOtp(phone);
+    if (phoneOrEmail.includes("@")) {
+      return requestEmailOtp(phoneOrEmail);
+    }
+    return requestPhoneOtp(phoneOrEmail);
+  };
+
+  const sendEmailOtp = async (email: string) => {
+    return sendOtp(email);
   };
 
   const signup = async (data: {
@@ -536,6 +558,109 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: true, message: "Signed in with email permissions successfully!", user: loggedInUser };
   };
 
+  const loginWithEmailOtp = async (
+    email: string,
+    otp: string,
+    role: UserRole = "customer"
+  ) => {
+    let verifiedUserFromApi: UserProfile | null = null;
+    if (typeof window !== "undefined" && typeof fetch === "function") {
+      try {
+        const res = await fetch("/api/auth/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp, role, method: "email" }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          return {
+            success: false,
+            message: data.message || "Invalid OTP code. Please check and try again.",
+          };
+        }
+        if (data.user) {
+          verifiedUserFromApi = data.user;
+        }
+      } catch (networkErr) {
+        const localVerification = verifyEmailOtp(email, otp);
+        if (!localVerification.success) {
+          return { success: false, message: localVerification.message };
+        }
+      }
+    } else {
+      const localVerification = verifyEmailOtp(email, otp);
+      if (!localVerification.success) {
+        return { success: false, message: localVerification.message };
+      }
+    }
+
+    const emailValidation = validateEmail(email);
+    const cleanEmail = emailValidation.sanitized;
+    const cleanRole: UserRole = role === "seller" ? "seller" : "customer";
+
+    let savedUserFromDb: UserProfile | null = verifiedUserFromApi;
+
+    try {
+      if (cleanRole === "seller") {
+        const dbRes = await loginOrRegisterMerchantDbAction({
+          ownerName: verifiedUserFromApi?.name || user?.name || cleanEmail.split("@")[0] || "Hubballi Merchant",
+          shopName: verifiedUserFromApi?.storeName || user?.storeName || "Neighborhood Store",
+          phone: verifiedUserFromApi?.number || user?.number || "9845012345",
+          email: cleanEmail,
+        });
+        if (dbRes.success && dbRes.user) {
+          savedUserFromDb = dbRes.user;
+        }
+      } else {
+        const dbRes = await loginOrRegisterUserDbAction({
+          fullName: verifiedUserFromApi?.name || user?.name || cleanEmail.split("@")[0] || "Hubballi Shopper",
+          phone: verifiedUserFromApi?.number || user?.number || "9845122334",
+          email: cleanEmail,
+          addresses: verifiedUserFromApi?.addresses || user?.addresses || DEFAULT_ADDRESSES,
+        });
+        if (dbRes.success && dbRes.user) {
+          savedUserFromDb = dbRes.user;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("DB sync note during email OTP login:", dbErr);
+    }
+
+    const loggedInUser: UserProfile = savedUserFromDb || {
+      id: user?.id || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `user_${Date.now()}`),
+      name: user?.name || cleanEmail.split("@")[0] || (cleanRole === "seller" ? "Hubballi Merchant" : "Hubballi Shopper"),
+      number: user?.number || "9845122334",
+      email: cleanEmail,
+      role: cleanRole,
+      storeId: cleanRole === "seller" ? (user?.storeId || `store_${cleanEmail.replace(/[^a-z0-9]/gi, "_")}`) : undefined,
+      storeName: cleanRole === "seller" ? (user?.storeName || "Neighborhood Store") : undefined,
+      addresses: user?.addresses || DEFAULT_ADDRESSES,
+      emailPermissionsGranted: true,
+      createdAt: user?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveUserProfileToDbAction({
+      id: loggedInUser.id,
+      fullName: loggedInUser.name,
+      phone: loggedInUser.number,
+      email: loggedInUser.email,
+      addresses: loggedInUser.addresses,
+    }).catch(console.warn);
+
+    setUser(loggedInUser);
+    setIsAuthenticated(true);
+    persistSession(loggedInUser, true);
+
+    if (cleanRole === "seller") {
+      setActiveAppMode("merchant");
+    } else {
+      setActiveAppMode("shopper");
+    }
+
+    return { success: true, message: "Welcome to LocalLoop!", user: loggedInUser };
+  };
+
   const setAuthenticatedSession = async (sessionUser: UserProfile) => {
     setUser(sessionUser);
     setIsAuthenticated(true);
@@ -759,8 +884,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         activeAppMode,
         setActiveAppMode,
         sendOtp,
+        sendEmailOtp,
         signup,
         loginWithPhoneOtp,
+        loginWithEmailOtp,
         loginWithFirebaseToken,
         loginWithEmailPermission,
         setAuthenticatedSession,

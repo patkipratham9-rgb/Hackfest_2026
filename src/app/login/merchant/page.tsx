@@ -55,7 +55,7 @@ export default function MerchantLoginPage() {
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPin, setLoginPin] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [loginEmailOtp, setLoginEmailOtp] = useState("");
 
   // Sign Up Form States
   const [ownerName, setOwnerName] = useState("");
@@ -69,11 +69,20 @@ export default function MerchantLoginPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [dbVerified, setDbVerified] = useState(false);
+
+  // Phone OTP States
   const [otpSent, setOtpSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [otpExpiry, setOtpExpiry] = useState(300);
+  const [dispatchedOtp, setDispatchedOtp] = useState("");
 
-  // Active Cooldown Timer
+  // Email OTP States
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailCooldown, setEmailCooldown] = useState(0);
+  const [emailOtpExpiry, setEmailOtpExpiry] = useState(300);
+  const [emailDispatchedOtp, setEmailDispatchedOtp] = useState("");
+
+  // Active Cooldown Timer (Phone)
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (cooldown > 0) {
@@ -84,7 +93,18 @@ export default function MerchantLoginPage() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  // Active OTP Expiry Countdown Timer
+  // Active Cooldown Timer (Email)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (emailCooldown > 0) {
+      timer = setInterval(() => {
+        setEmailCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [emailCooldown]);
+
+  // Active OTP Expiry Countdown Timer (Phone)
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (otpSent && otpExpiry > 0) {
@@ -95,9 +115,54 @@ export default function MerchantLoginPage() {
     return () => clearInterval(timer);
   }, [otpSent, otpExpiry]);
 
+  // Active OTP Expiry Countdown Timer (Email)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (emailOtpSent && emailOtpExpiry > 0) {
+      timer = setInterval(() => {
+        setEmailOtpExpiry((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [emailOtpSent, emailOtpExpiry]);
+
   const formattedOtpExpiry = `${Math.floor(otpExpiry / 60)}:${String(
     otpExpiry % 60
   ).padStart(2, "0")}`;
+
+  const formattedEmailOtpExpiry = `${Math.floor(emailOtpExpiry / 60)}:${String(
+    emailOtpExpiry % 60
+  ).padStart(2, "0")}`;
+
+  const handleSendEmailOtp = async () => {
+    setErrorMessage("");
+    setStatusMessage("");
+    const cleanEmail = loginEmail.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setErrorMessage("Please enter a valid merchant email address.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, method: "email", role: "seller" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailOtpSent(true);
+        const code = data.testOtp || data.otp || "123456";
+        setEmailDispatchedOtp(code);
+        setStatusMessage(data.message || `Merchant OTP code sent to ${cleanEmail}`);
+        setEmailCooldown(data.cooldownSeconds || 30);
+        setEmailOtpExpiry(300);
+      } else {
+        setErrorMessage(data.message || "Failed to send Email OTP.");
+      }
+    } catch {
+      setErrorMessage("Network error while requesting Merchant Email OTP.");
+    }
+  };
 
   const handleSendOtp = async () => {
     setErrorMessage("");
@@ -116,6 +181,8 @@ export default function MerchantLoginPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setOtpSent(true);
+        const code = data.testOtp || data.otp || "123456";
+        setDispatchedOtp(code);
         setStatusMessage(data.message || `OTP sent to +91 ${clean}`);
         setCooldown(data.cooldownSeconds || 30);
         setOtpExpiry(300);
@@ -187,6 +254,54 @@ export default function MerchantLoginPage() {
     setStatusMessage("Authenticating store profile in Supabase Database...");
 
     try {
+      if (authMethod === "email") {
+        const cleanEmail = loginEmail.trim().toLowerCase();
+        if (!cleanEmail || !cleanEmail.includes("@")) {
+          setErrorMessage("Please enter a valid merchant email address.");
+          setIsLoading(false);
+          return;
+        }
+
+        const otpRes = await fetch("/api/auth/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: cleanEmail,
+            otp: loginEmailOtp || "123456",
+            role: "seller",
+            method: "email",
+          }),
+        });
+        const otpData = await otpRes.json();
+        if (!otpRes.ok || !otpData.success) {
+          setErrorMessage(otpData.message || "Invalid OTP code. Please check and try again.");
+          setIsLoading(false);
+          return;
+        }
+
+        const res = await loginOrRegisterMerchantDbAction({
+          ownerName: otpData.user?.name || cleanEmail.split("@")[0],
+          shopName: otpData.user?.storeName || "Neighborhood Artisan Shop",
+          category: "Household",
+          phone: otpData.user?.number || "9876543210",
+          area: "Vidyanagar",
+          pickupAddress: "Vidyanagar Market Cross",
+          email: cleanEmail,
+        });
+
+        if (res.success) {
+          setDbVerified(true);
+          setStatusMessage("Merchant authenticated successfully via Email OTP!");
+          await setAuthenticatedSession(res.user);
+          setUserRole("seller");
+          setTimeout(() => {
+            router.push("/seller");
+            router.refresh();
+          }, 600);
+        }
+        return;
+      }
+
       const cleanPhone = loginPhone.replace(/\D/g, "").slice(-10);
       if (authMethod === "phone" && cleanPhone.length < 10) {
         setErrorMessage("Please enter a valid 10-digit mobile number.");
@@ -371,18 +486,36 @@ export default function MerchantLoginPage() {
                   type="button"
                   onClick={() =>
                     handleQuickLogin(
-                      "Meena Deshpande",
-                      "Meena's Diyas & Filter Coffee",
-                      "Filter Coffee & Tea",
-                      "+91 98765 43210",
+                      "Pratham Patki",
+                      "The Golden Crums",
+                      "Bakery",
+                      "+91 79756 33023",
                       "Vidyanagar"
                     )
                   }
                   className="p-2.5 rounded-xl border border-cream-300 bg-white hover:border-forest-700 text-left transition-all cursor-pointer hover:shadow-2xs"
                 >
-                  <p className="font-bold text-xs text-forest-900 truncate">Meena&apos;s Diyas &amp; Coffee</p>
-                  <p className="text-[10px] text-forest-500 font-mono">+91 98765 43210</p>
-                  <p className="text-[10px] text-forest-700 font-medium">Vidyanagar • Filter Coffee</p>
+                  <p className="font-bold text-xs text-forest-900 truncate">The Golden Crums</p>
+                  <p className="text-[10px] text-forest-500 font-mono">+91 79756 33023</p>
+                  <p className="text-[10px] text-forest-700 font-medium">Vidyanagar • Bakery</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleQuickLogin(
+                      "Srushti Desai",
+                      "Knot & Tale",
+                      "Handloom & Crafts",
+                      "+91 86186 36617",
+                      "Station Road"
+                    )
+                  }
+                  className="p-2.5 rounded-xl border border-cream-300 bg-white hover:border-forest-700 text-left transition-all cursor-pointer hover:shadow-2xs"
+                >
+                  <p className="font-bold text-xs text-forest-900 truncate">Knot &amp; Tale</p>
+                  <p className="text-[10px] text-forest-500 font-mono">+91 86186 36617</p>
+                  <p className="text-[10px] text-forest-700 font-medium">Station Road • Handloom &amp; Crafts</p>
                 </button>
 
                 <button
@@ -401,6 +534,24 @@ export default function MerchantLoginPage() {
                   <p className="font-bold text-xs text-forest-900 truncate">Threads &amp; Tales</p>
                   <p className="text-[10px] text-forest-500 font-mono">+91 98451 99887</p>
                   <p className="text-[10px] text-forest-700 font-medium">CBT • Handloom &amp; Crafts</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleQuickLogin(
+                      "Meena Deshpande",
+                      "Meena's Diyas & Filter Coffee",
+                      "Filter Coffee & Tea",
+                      "+91 98765 43210",
+                      "Vidyanagar"
+                    )
+                  }
+                  className="p-2.5 rounded-xl border border-cream-300 bg-white hover:border-forest-700 text-left transition-all cursor-pointer hover:shadow-2xs"
+                >
+                  <p className="font-bold text-xs text-forest-900 truncate">Meena&apos;s Diyas &amp; Coffee</p>
+                  <p className="text-[10px] text-forest-500 font-mono">+91 98765 43210</p>
+                  <p className="text-[10px] text-forest-700 font-medium">Vidyanagar • Filter Coffee</p>
                 </button>
               </div>
             </div>
@@ -461,7 +612,7 @@ export default function MerchantLoginPage() {
                   }`}
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Email</span>
+                  <span>Email (OTP)</span>
                 </button>
               </div>
 
@@ -496,6 +647,43 @@ export default function MerchantLoginPage() {
                     </div>
                   </div>
 
+                  {otpSent && (
+                    <div
+                      data-testid="otp-demo-badge"
+                      className="p-3.5 rounded-2xl bg-forest-900 text-cream-100 border border-forest-800 shadow-sm space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-xs font-bold text-white tracking-wide">
+                            OTP Dispatched
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-terracotta-300 font-semibold font-mono">
+                          Expires in {formattedOtpExpiry}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-cream-200">
+                        Verification code:{" "}
+                        <span className="font-mono font-bold text-white text-xs bg-forest-800 px-2 py-0.5 rounded-lg tracking-wider">
+                          {dispatchedOtp || "123456"}
+                        </span>
+                      </p>
+                      <div className="pt-2 border-t border-forest-800/80 flex items-center justify-between">
+                        <span className="text-[10px] text-cream-300">
+                          Dispatched to +91 {loginPhone.replace(/\D/g, "").slice(-10)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setLoginPin(dispatchedOtp || "123456")}
+                          className="px-2.5 py-1 rounded-lg bg-terracotta-600 hover:bg-terracotta-700 text-white text-[11px] font-bold transition-all shadow-2xs cursor-pointer"
+                        >
+                          Auto-fill PIN/OTP
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <label className="font-bold text-forest-900">
@@ -522,26 +710,79 @@ export default function MerchantLoginPage() {
                     <label className="text-xs font-bold text-forest-900 block">
                       Merchant Email
                     </label>
-                    <input
-                      type="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="merchant@localloop.hubballi"
-                      className="w-full text-xs font-medium py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-forest-600 focus:bg-white"
-                      required
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="merchant@localloop.hubballi"
+                        className="w-full text-xs font-medium py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-forest-600 focus:bg-white"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendEmailOtp}
+                        disabled={!loginEmail.includes("@") || emailCooldown > 0}
+                        className="px-3.5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-950 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+                      >
+                        {emailCooldown > 0 ? `${emailCooldown}s` : emailOtpSent ? "Resend" : "Send OTP"}
+                      </button>
+                    </div>
                   </div>
 
+                  {emailOtpSent && (
+                    <div
+                      data-testid="email-otp-demo-badge"
+                      className="p-3.5 rounded-2xl bg-forest-900 text-cream-100 border border-forest-800 shadow-sm space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-xs font-bold text-white tracking-wide">
+                            Merchant Email OTP Dispatched
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-terracotta-300 font-semibold font-mono">
+                          Expires in {formattedEmailOtpExpiry}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-cream-200">
+                        Verification code:{" "}
+                        <span className="font-mono font-bold text-white text-xs bg-forest-800 px-2 py-0.5 rounded-lg tracking-wider">
+                          {emailDispatchedOtp || "123456"}
+                        </span>
+                      </p>
+                      <div className="pt-2 border-t border-forest-800/80 flex items-center justify-between">
+                        <span className="text-[10px] text-cream-300">
+                          Dispatched to {loginEmail.trim()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setLoginEmailOtp(emailDispatchedOtp || "123456")}
+                          className="px-2.5 py-1 rounded-lg bg-terracotta-600 hover:bg-terracotta-700 text-white text-[11px] font-bold transition-all shadow-2xs cursor-pointer"
+                        >
+                          Auto-fill OTP
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-forest-900 block">
-                      Password
-                    </label>
+                    <div className="flex items-center justify-between text-xs">
+                      <label className="font-bold text-forest-900">
+                        Enter 6-Digit Email OTP
+                      </label>
+                      <span className="text-[10px] text-terracotta-600 font-mono font-semibold">
+                        Expires in {formattedEmailOtpExpiry}
+                      </span>
+                    </div>
                     <input
-                      type="password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full text-xs font-medium py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-forest-600 focus:bg-white"
+                      type="text"
+                      maxLength={6}
+                      value={loginEmailOtp}
+                      onChange={(e) => setLoginEmailOtp(e.target.value)}
+                      placeholder="Enter 6-digit code"
+                      className="w-full text-xs font-mono font-bold tracking-widest py-2.5 px-3 rounded-xl bg-cream-50 border border-cream-300 text-forest-950 focus:ring-2 focus:ring-forest-600 focus:bg-white text-center"
                       required
                     />
                   </div>
